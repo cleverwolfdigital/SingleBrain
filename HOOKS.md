@@ -10,7 +10,9 @@ _See also: [[OFFERS_STATE]] [[PLAYBOOK]]_
 
 | Hook | Offer | Result | Date |
 |---|---|---|---|
-| _(none yet)_ | | | |
+| "You wear all the hats. Let one of them run itself." | AI Agent Setup | testing | 2026-06-17 |
+| "Your marketing shouldn't stop the second you get busy." | AI Agent Setup | testing | 2026-06-17 |
+| "Still running on word of mouth? Let's make it run on autopilot." | AI Agent Setup | testing | 2026-06-17 |
 
 ---
 
