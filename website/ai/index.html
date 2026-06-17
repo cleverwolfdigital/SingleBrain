@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Agent Setup — Clever Wolf Digital</title>
+<meta name="description" content="We set up an AI system that quietly handles your marketing and busywork in the background. Clever Wolf Digital — Hawaiʻi &amp; Seattle.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#0E1419;
+    --ink-raised:#161D24;
+    --ink-elevated:#1E272F;
+    --hairline:#2A343D;
+    --paper:#F6F4EF;
+    --paper-raised:#FFFFFF;
+    --paper-hairline:#E3DFD6;
+    --teal:#0E9D8E;
+    --teal-hover:#0B857A;
+    --teal-soft:#12C4B0;
+    --brass:#C9912E;
+    --brass-soft:#E0B45E;
+    --text-strong:#F2F5F6;
+    --text:#C3CCD2;
+    --text-muted:#8A949C;
+    --text-faint:#5C666D;
+    --success:#2FB67C;
+    --warning:#E0A23A;
+    --error:#E0524E;
+    --info:#3D8FE0;
+    --maxw:1120px;
+    --r-sm:6px;
+    --r-md:10px;
+    --r-lg:16px;
+    --r-pill:999px;
+    --shadow-sm:0 1px 2px rgba(14,20,25,.06), 0 1px 3px rgba(14,20,25,.10);
+    --shadow-md:0 4px 12px rgba(14,20,25,.10), 0 2px 4px rgba(14,20,25,.06);
+    --shadow-lg:0 18px 48px rgba(14,20,25,.18);
+    --shadow-teal:0 8px 32px rgba(14,157,142,.28);
+    --dur-fast:140ms;
+    --dur:240ms;
+    --dur-slow:520ms;
+    --ease-out:cubic-bezier(.16,1,.3,1);
+    --ease-inout:cubic-bezier(.65,0,.35,1);
+    --font-display:"Clash Display",system-ui,sans-serif;
+    --font-body:"Satoshi",system-ui,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:18px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3{font-family:var(--font-display);line-height:1.05;letter-spacing:-0.02em}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  a{color:inherit}
+
+  /* ---------- shared atoms ---------- */
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:13px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--brass);display:inline-flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--brass);display:inline-block}
+
+  .btn{
+    display:inline-block;font-family:var(--font-body);font-weight:700;font-size:18px;
+    color:var(--text-strong);background:var(--teal);border:none;border-radius:var(--r-md);
+    padding:18px 34px;cursor:pointer;text-decoration:none;
+    transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out), background var(--dur-fast) ease;
+    box-shadow:var(--shadow-md);
+  }
+  .btn:hover{transform:translateY(-2px);background:var(--teal-hover);box-shadow:var(--shadow-teal)}
+  .btn:focus-visible{outline:3px solid var(--teal-soft);outline-offset:3px}
+  .btn-ghost{
+    background:transparent;color:var(--text);border:1px solid var(--hairline);
+    box-shadow:none;font-weight:600;
+  }
+  .btn-ghost:hover{background:var(--ink-elevated);border-color:var(--teal)}
+
+  .microtrust{margin-top:14px;font-size:14.5px;color:var(--text-muted)}
+
+  /* ---------- horizon divider ---------- */
+  .horizon{height:1px;width:100%;background:linear-gradient(90deg,transparent,var(--hairline) 20%,var(--hairline) 80%,transparent);margin:0}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;padding:120px 0 90px;overflow:hidden}
+  .hero-sky{
+    position:absolute;inset:0;z-index:0;
+    background:
+      radial-gradient(120% 80% at 78% 8%, rgba(14,157,142,.15), transparent 45%),
+      radial-gradient(90% 70% at 90% 0%, rgba(201,145,46,.12), transparent 50%),
+      linear-gradient(180deg,#0a1015 0%, var(--ink) 60%, var(--ink-raised) 100%);
+  }
+  .hero-sun{
+    position:absolute;z-index:0;right:-120px;top:-120px;width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle, rgba(14,157,142,.25), rgba(14,157,142,.05) 60%, transparent 70%);
+    filter:blur(6px);
+  }
+  .hero .wrap{position:relative;z-index:1}
+  .hero h1{font-size:clamp(40px,6.2vw,76px);font-weight:800;max-width:14ch;margin:22px 0 0;color:var(--text-strong)}
+  .hero h1 .lift{color:var(--brass-soft)}
+  .hero .sub{font-size:clamp(19px,2.2vw,23px);color:var(--text);max-width:46ch;margin:22px 0 34px;font-weight:400}
+  .hero .sub b{font-weight:700;color:var(--text-strong)}
+
+  .cred{display:flex;flex-wrap:wrap;gap:26px;margin-top:54px;padding-top:30px;border-top:1px solid var(--hairline)}
+  .cred .item{display:flex;flex-direction:column;gap:2px}
+  .cred .num{font-family:var(--font-display);font-weight:700;font-size:26px;color:var(--teal-soft)}
+  .cred .lab{font-size:14px;color:var(--text-muted);max-width:22ch}
+
+  /* ---------- pain mirror ---------- */
+  .pain{padding:96px 0}
+  .pain h2{font-size:clamp(30px,4vw,46px);font-weight:700;max-width:18ch;margin:18px 0 40px;color:var(--text-strong)}
+  .pain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .pain-card{
+    background:var(--ink-raised);border:1px solid var(--hairline);border-radius:var(--r-lg);
+    padding:26px 28px;font-size:19px;color:var(--text);position:relative;
+    transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+  }
+  .pain-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .pain-card span{color:var(--teal-soft);font-weight:700}
+  .pain-foot{margin-top:34px;font-size:21px;color:var(--text-muted);max-width:40ch}
+  .pain-foot b{color:var(--text-strong);font-weight:700}
+
+  /* ---------- what we do ---------- */
+  .offer{padding:96px 0;background:linear-gradient(180deg, var(--ink) 0%, var(--ink-raised) 100%)}
+  .offer h2{font-size:clamp(30px,4vw,46px);font-weight:700;max-width:16ch;margin:18px 0 14px;color:var(--text-strong)}
+  .offer .lede{color:var(--text-muted);max-width:48ch;margin-bottom:46px;font-size:19px}
+  .do-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .do-card{
+    background:var(--ink-raised);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:30px 26px;
+    transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+  }
+  .do-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .do-card .ic{width:44px;height:44px;border-radius:var(--r-md);display:grid;place-items:center;background:rgba(14,157,142,.12);margin-bottom:18px;font-size:22px}
+  .do-card h3{font-size:21px;font-weight:700;margin-bottom:8px;color:var(--text-strong)}
+  .do-card p{font-size:16.5px;color:var(--text-muted)}
+
+  /* ---------- how it works ---------- */
+  .how{padding:96px 0}
+  .how h2{font-size:clamp(30px,4vw,46px);font-weight:700;margin:18px 0 50px;color:var(--text-strong)}
+  .step{display:grid;grid-template-columns:88px 1fr;gap:26px;padding:30px 0;border-top:1px solid var(--hairline);align-items:start}
+  .step:last-child{border-bottom:1px solid var(--hairline)}
+  .step .n{font-family:var(--font-display);font-weight:800;font-size:46px;color:var(--hairline);line-height:1}
+  .step h3{font-size:23px;font-weight:700;margin-bottom:6px;color:var(--text-strong)}
+  .step p{color:var(--text-muted);font-size:17.5px;max-width:54ch}
+
+  /* ---------- why us ---------- */
+  .why{padding:96px 0;background:var(--ink-raised)}
+  .why-inner{display:grid;grid-template-columns:1.1fr .9fr;gap:60px;align-items:center}
+  .why h2{font-size:clamp(28px,3.6vw,42px);font-weight:700;max-width:16ch;margin:16px 0 22px;color:var(--text-strong)}
+  .why p{color:var(--text-muted);font-size:18px;margin-bottom:16px;max-width:50ch}
+  .why p b{color:var(--text);font-weight:600}
+  .why-card{background:var(--ink);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:34px}
+  .why-card .q{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1.3;color:var(--text-strong)}
+  .why-card .by{margin-top:18px;font-size:15px;color:var(--text-muted)}
+  .placeholder{margin-top:22px;font-size:13px;color:var(--text-faint);border:1px dashed var(--hairline);border-radius:var(--r-md);padding:10px 12px}
+
+  /* ---------- offer ladder ---------- */
+  .ladder{padding:90px 0}
+  .ladder h2{font-size:clamp(26px,3.2vw,38px);font-weight:700;margin:14px 0 8px;color:var(--text-strong)}
+  .ladder .lede{color:var(--text-muted);margin-bottom:40px;max-width:46ch}
+  .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .tier{border:1px solid var(--hairline);border-radius:var(--r-lg);padding:28px 26px;background:var(--ink-raised);
+    transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);}
+  .tier:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .tier.feat{border-color:var(--teal);background:linear-gradient(180deg, rgba(14,157,142,.08), var(--ink-raised))}
+  .tier .tag{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+  .tier h3{font-size:22px;font-weight:700;margin:12px 0 8px;color:var(--text-strong)}
+  .tier p{font-size:16px;color:var(--text-muted)}
+  .tier .flag{display:inline-block;margin-top:14px;font-size:13px;font-weight:700;color:var(--teal-soft)}
+
+  /* ---------- final CTA ---------- */
+  .final{padding:110px 0;position:relative;overflow:hidden;text-align:center}
+  .final-sky{position:absolute;inset:0;z-index:0;background:
+    radial-gradient(80% 120% at 50% 120%, rgba(14,157,142,.20), transparent 55%),
+    radial-gradient(60% 90% at 50% 130%, rgba(201,145,46,.15), transparent 60%);}
+  .final .wrap{position:relative;z-index:1}
+  .final h2{font-size:clamp(34px,5vw,58px);font-weight:800;max-width:16ch;margin:0 auto 20px;color:var(--text-strong)}
+  .final p{color:var(--text-muted);font-size:20px;max-width:42ch;margin:0 auto 36px}
+
+  .cta-variant{display:none}
+  body[data-cta="A"] .cta-A{display:block}
+  body[data-cta="B"] .cta-B{display:block}
+  body[data-cta="C"] .cta-C{display:block}
+  .price-line{font-family:var(--font-display);font-weight:800;font-size:40px;color:var(--text-strong);margin-bottom:6px}
+  .price-line small{font-family:var(--font-body);font-weight:500;font-size:16px;color:var(--text-muted);display:block;margin-top:4px}
+
+  /* ---------- footer ---------- */
+  footer{padding:46px 0;border-top:1px solid var(--hairline);color:var(--text-muted);font-size:14.5px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
+  .logo{font-family:var(--font-display);font-weight:800;font-size:19px;color:var(--text-strong);letter-spacing:-0.01em}
+  .logo span{color:var(--teal)}
+
+  /* ---------- responsive ---------- */
+  @media(max-width:860px){
+    .pain-grid,.do-grid,.tiers{grid-template-columns:1fr}
+    .why-inner{grid-template-columns:1fr;gap:34px}
+    .hero{padding:100px 0 70px}
+    .step{grid-template-columns:56px 1fr;gap:18px}
+    .step .n{font-size:34px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{scroll-behavior:auto}
+    .btn,.pain-card,.do-card,.tier{transition:none}
+  }
+</style>
+</head>
+
+<body data-cta="B">
+
+<header class="hero">
+  <div class="hero-sky" aria-hidden="true"></div>
+  <div class="hero-sun" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow">Clever Wolf Digital · Hawaiʻi</span>
+    <h1>You wear all the hats. Let us run <span class="lift">a few of them</span> for you.</h1>
+    <p class="sub">We set up an AI system that quietly handles your marketing and busywork in the background, so the work keeps happening <b>even when you are slammed on the job.</b></p>
+
+    <a class="btn" href="#start">Book a 15-minute fit call</a>
+    <p class="microtrust">Local and plain-spoken. No tech jargon, no commitment, no pressure.</p>
+
+    <div class="cred">
+      <div class="item"><span class="num">15+ yrs</span><span class="lab">in digital marketing for local and national brands</span></div>
+      <div class="item"><span class="num">State of Hawaiʻi</span><span class="lab">adult educator and conference speaker</span></div>
+      <div class="item"><span class="num">Built here</span><span class="lab">Mililani-based, running these same systems in-house</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="pain">
+  <div class="wrap">
+    <span class="eyebrow">Sound familiar?</span>
+    <h2>Right now your growth lives and dies on who happens to refer you.</h2>
+    <div class="pain-grid">
+      <div class="pain-card">"It is <span>all word of mouth</span> right now. Some months are packed, some are dead quiet."</div>
+      <div class="pain-card">"I know I should be doing more online, I just <span>don't have time</span> for it."</div>
+      <div class="pain-card">"Marketing is the first thing that <span>falls off</span> the second a job gets busy."</div>
+      <div class="pain-card">"I'm curious about AI but I <span>don't even know where to start.</span>"</div>
+    </div>
+    <p class="pain-foot">You are not behind because you are doing it wrong. You are behind because <b>you are the only one doing it.</b> That is the part we fix.</p>
+  </div>
+</section>
+
+<div class="horizon"></div>
+
+<section class="offer">
+  <div class="wrap">
+    <span class="eyebrow">AI Agent Setup</span>
+    <h2>One system that works while you are on the job.</h2>
+    <p class="lede">We build and wire up an AI setup tailored to your business, then hand you something that runs without babysitting. Here is what it takes off your plate.</p>
+    <div class="do-grid">
+      <div class="do-card">
+        <div class="ic" aria-hidden="true">💬</div>
+        <h3>Answers customers fast</h3>
+        <p>New leads and questions get a quick, on-brand reply, day or night, so nobody slips through while you are working.</p>
+      </div>
+      <div class="do-card">
+        <div class="ic" aria-hidden="true">🔁</div>
+        <h3>Keeps marketing running</h3>
+        <p>Posts, follow-ups, and outreach keep going on a steady rhythm instead of stopping the week you get busy.</p>
+      </div>
+      <div class="do-card">
+        <div class="ic" aria-hidden="true">⏳</div>
+        <h3>Gives you hours back</h3>
+        <p>The repeatable busywork runs itself, so the time goes back to the work only you can do.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="wrap">
+    <span class="eyebrow">How it works</span>
+    <h2>Done for you, not handed to you.</h2>
+    <div class="step">
+      <div class="n">1</div>
+      <div><h3>We learn your business</h3><p>A short call to understand how you actually get customers, what eats your time, and what "good" looks like for you. No homework on your end.</p></div>
+    </div>
+    <div class="step">
+      <div class="n">2</div>
+      <div><h3>We build the system</h3><p>We set up your AI agent, wire it into the tools you already use, and train it on your voice and your offers. You approve everything before it goes live.</p></div>
+    </div>
+    <div class="step">
+      <div class="n">3</div>
+      <div><h3>It runs in the background</h3><p>You get a system that handles the busywork on its own. We hand it over working, and show you exactly how to use it in plain language.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="why">
+  <div class="wrap why-inner">
+    <div>
+      <span class="eyebrow">Why Clever Wolf</span>
+      <h2>We are not a mainland agency reading from a script.</h2>
+      <p>This is built and run right here. <b>We use these exact systems inside our own businesses first,</b> then set them up for local owners who do not have time to figure it out alone.</p>
+      <p>No jargon, no lock-in, no pretending AI is magic. Just a system that does the parts of the job you keep meaning to get to.</p>
+    </div>
+    <div class="why-card">
+      <div class="q">"If it actually saves me time, I'm in. That's the whole bar."</div>
+      <div class="by">The thing every owner we talk to says, in some form or another.</div>
+      <div class="placeholder">↳ Real client testimonial goes here after your first setups. Do not fabricate one.</div>
+    </div>
+  </div>
+</section>
+
+<section class="ladder">
+  <div class="wrap">
+    <span class="eyebrow">Where people start</span>
+    <h2>Start small or go all in.</h2>
+    <p class="lede">Most owners begin with one piece and grow into the full setup. No wrong door.</p>
+    <div class="tiers">
+      <div class="tier">
+        <span class="tag">Front door</span>
+        <h3>AI-Built Launch Page</h3>
+        <p>A high-converting page and copy for one offer, built fast and tuned to your customer.</p>
+      </div>
+      <div class="tier feat">
+        <span class="tag">Most popular</span>
+        <h3>AI Agent Setup</h3>
+        <p>The full done-for-you system that answers customers and keeps marketing running.</p>
+        <span class="flag">You are here</span>
+      </div>
+      <div class="tier">
+        <span class="tag">Ongoing</span>
+        <h3>AI Managed Marketing</h3>
+        <p>We keep the loop running month to month, track what works, and scale it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final" id="start">
+  <div class="final-sky" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow" style="justify-content:center">Let's get your time back</span>
+    <h2>Find out what this would look like for your business.</h2>
+    <p>A quick, no-pressure conversation. If it is not a fit, we will tell you straight.</p>
+
+    <div class="cta-variant cta-A">
+      <div class="price-line">Flat setup fee<small>One-time build, yours to keep. Final price confirmed on a short call.</small></div>
+      <a class="btn" href="#">Start your setup</a>
+      <p class="microtrust">Local. No subscription required to start.</p>
+    </div>
+
+    <div class="cta-variant cta-B">
+      <a class="btn" href="#">Book a 15-minute fit call</a>
+      <p class="microtrust">Pick a time that works. We will show you exactly what we'd set up.</p>
+    </div>
+
+    <div class="cta-variant cta-C">
+      <a class="btn" href="#">Get a free AI audit of your business</a>
+      <p class="microtrust">We map where AI saves you the most time. Free, and yours to keep.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="logo">Clever Wolf<span>.</span> Digital</div>
+    <div>Mililani, Hawaiʻi · Serving Hawaiʻi and the Seattle market</div>
+  </div>
+</footer>
+
+</body>
+</html>
