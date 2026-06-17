@@ -53,17 +53,17 @@ Cool-warm slate neutrals (the "pelt"), one cool primary, one warm reserved highl
 
 ```css
 :root {
-  --ink:#0E1419; --ink-raised:#161D24; --ink-elevated:#1E272F; --hairline:#2A343D;
-  --paper:#F6F4EF; --paper-raised:#FFFFFF; --paper-hairline:#E3DFD6;
-  --teal:#0E9D8E; --teal-hover:#0B857A; --teal-soft:#12C4B0;
-  --brass:#C9912E; --brass-soft:#E0B45E;
-  --success:#2FB67C; --warning:#E0A23A; --error:#E0524E; --info:#3D8FE0;
-  /* default = light mode text */
-  --text-strong:#10171C; --text:#2C353B; --text-muted:#5C666D; --text-faint:#9099A0;
+ --ink:#0E1419; --ink-raised:#161D24; --ink-elevated:#1E272F; --hairline:#2A343D;
+ --paper:#F6F4EF; --paper-raised:#FFFFFF; --paper-hairline:#E3DFD6;
+ --teal:#0E9D8E; --teal-hover:#0B857A; --teal-soft:#12C4B0;
+ --brass:#C9912E; --brass-soft:#E0B45E;
+ --success:#2FB67C; --warning:#E0A23A; --error:#E0524E; --info:#3D8FE0;
+ /* default = light mode text */
+ --text-strong:#10171C; --text:#2C353B; --text-muted:#5C666D; --text-faint:#9099A0;
 }
 [data-theme="dark"] {
-  --paper:#0E1419; --paper-raised:#161D24; --paper-hairline:#2A343D;
-  --text-strong:#F2F5F6; --text:#C3CCD2; --text-muted:#8A949C; --text-faint:#5C666D;
+ --paper:#0E1419; --paper-raised:#161D24; --paper-hairline:#2A343D;
+ --text-strong:#F2F5F6; --text:#C3CCD2; --text-muted:#8A949C; --text-faint:#5C666D;
 }
 ```
 
@@ -84,18 +84,18 @@ Deliberately *not* the Fraunces/serif route used on other Clever Wolf builds. Mo
 **Type scale** (1.250 major-third, 16px base)
 ```css
 :root {
-  --font-display:"Clash Display",system-ui,sans-serif;
-  --font-body:"Satoshi",system-ui,sans-serif;
-  --font-mono:"JetBrains Mono",ui-monospace,monospace;
+ --font-display:"Clash Display",system-ui,sans-serif;
+ --font-body:"Satoshi",system-ui,sans-serif;
+ --font-mono:"JetBrains Mono",ui-monospace,monospace;
 
-  --fs-eyebrow:0.78rem;   /* 12.5px — mono, uppercase, tracked */
-  --fs-body-sm:0.875rem;  /* 14px  */
-  --fs-body:1rem;         /* 16px  */
-  --fs-lead:1.25rem;      /* 20px — intros */
-  --fs-h3:1.563rem;       /* 25px  */
-  --fs-h2:2.441rem;       /* 39px  */
-  --fs-h1:3.815rem;       /* 61px — clamp on mobile */
-  --fs-hero:clamp(2.8rem,6vw,5.96rem);
+ --fs-eyebrow:0.78rem; /* 12.5px — mono, uppercase, tracked */
+ --fs-body-sm:0.875rem; /* 14px */
+ --fs-body:1rem; /* 16px */
+ --fs-lead:1.25rem; /* 20px — intros */
+ --fs-h3:1.563rem; /* 25px */
+ --fs-h2:2.441rem; /* 39px */
+ --fs-h1:3.815rem; /* 61px — clamp on mobile */
+ --fs-hero:clamp(2.8rem,6vw,5.96rem);
 }
 ```
 - Headlines: weight 600, `letter-spacing:-0.02em`, `line-height:1.05`.
@@ -110,11 +110,11 @@ Deliberately *not* the Fraunces/serif route used on other Clever Wolf builds. Mo
 
 ```css
 :root{
-  --r-sm:6px; --r-md:10px; --r-lg:16px; --r-pill:999px;
-  --shadow-sm:0 1px 2px rgba(14,20,25,.06), 0 1px 3px rgba(14,20,25,.10);
-  --shadow-md:0 4px 12px rgba(14,20,25,.10), 0 2px 4px rgba(14,20,25,.06);
-  --shadow-lg:0 18px 48px rgba(14,20,25,.18);
-  --shadow-teal:0 8px 32px rgba(14,157,142,.28); /* primary CTA glow, sparing */
+ --r-sm:6px; --r-md:10px; --r-lg:16px; --r-pill:999px;
+ --shadow-sm:0 1px 2px rgba(14,20,25,.06), 0 1px 3px rgba(14,20,25,.10);
+ --shadow-md:0 4px 12px rgba(14,20,25,.10), 0 2px 4px rgba(14,20,25,.06);
+ --shadow-lg:0 18px 48px rgba(14,20,25,.18);
+ --shadow-teal:0 8px 32px rgba(14,157,142,.28); /* primary CTA glow, sparing */
 }
 ```
 Border-radius philosophy: soft-but-not-bubbly (`--r-md` default). No zero-radius broadsheet look, no fully rounded pills except chips/badges.
@@ -137,9 +137,9 @@ Codifying the moves you like (count-up, edge-wipe, hover-lift). Respect `prefers
 
 ```css
 :root{
-  --dur-fast:140ms; --dur:240ms; --dur-slow:520ms;
-  --ease-out:cubic-bezier(.16,1,.3,1);     /* entrances, hovers */
-  --ease-inout:cubic-bezier(.65,0,.35,1);  /* transitions */
+ --dur-fast:140ms; --dur:240ms; --dur-slow:520ms;
+ --ease-out:cubic-bezier(.16,1,.3,1); /* entrances, hovers */
+ --ease-inout:cubic-bezier(.65,0,.35,1); /* transitions */
 }
 ```
 - **Hover-lift** (cards): `translateY(-4px)` + `--shadow-lg`, `--dur` `--ease-out`.
