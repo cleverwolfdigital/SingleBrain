@@ -13,6 +13,9 @@ A shared context layer for Clever Wolf Digital's marketing operation. It tells y
 
 | File | What it is | When to read it |
 |---|---|---|
+| `AI_TEAM_BRIEF.md` | Shared alignment layer for Hermes, Claude, Claude Code, Codex, OpenClaw, and the team | First, every run |
+| `AI_TOOL_PROMPTS.md` | Startup prompts and repo update protocol for every AI tool | When onboarding or handing off to another AI |
+| `CURRENT_FOCUS.md` | Current sprint directive. This wins when files conflict | First, every run |
 | `OFFERS_STATE.md` | Three active offers — status, metrics, market | Every morning nudge |
 | `BRAND_VOICE.md` | Two buyer avatars (HI + Seattle) + guardrails | Before writing any copy or hook |
 | `PLAYBOOK.md` | Mon/Wed/Fri/Day14 marketing rhythm | Monday morning |
@@ -28,9 +31,11 @@ A shared context layer for Clever Wolf Digital's marketing operation. It tells y
 
 **8:00 AM HST — Morning**
 1. `git pull origin main`
-2. Post to `#daily-numbers`: `"Morning. Log yesterday's number in OFFERS_STATE.md (1 min): traffic / replies."`
-3. Run `node distill.js` if new files exist in `knowledge/raw/`
-4. If INSIGHTS.md changed: `git add -A && git commit -m "daily: distill raw notes" && git push origin main`
+2. Read `AI_TEAM_BRIEF.md`, then `CURRENT_FOCUS.md`. If there is a conflict, `CURRENT_FOCUS.md` wins.
+3. Post to `#daily-numbers`: `"Morning. Log yesterday's sprint numbers: sent / replies / calls booked / closes / revenue collected."`
+4. Surface the single next action that gets a message sent or a call booked.
+5. Run `node distill.js` if new files exist in `knowledge/raw/`
+6. If INSIGHTS.md changed: `git add -A && git commit -m "daily: distill raw notes" && git push origin main`
 
 **6:00 PM HST — Evening**
 1. Post to `#alerts`: `"End of day. Did this week's ONE marketing action move? Update PLAYBOOK if yes."`

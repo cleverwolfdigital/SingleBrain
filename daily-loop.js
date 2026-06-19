@@ -128,7 +128,7 @@ async function morning() {
 
   // 3. Discord morning nudge
   try {
-    await discord('Morning. Log yesterday\'s number in OFFERS_STATE.md (1 min): traffic / replies.');
+    await discord('Morning. Log yesterday\'s sprint numbers: sent / replies / calls booked / closes / revenue collected. Then pick the one action that gets a message sent or a call booked today.');
     log('Discord morning sent.');
   } catch (e) { log(`Discord failed: ${e.message}`); }
 
