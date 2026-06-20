@@ -58,7 +58,7 @@ A beautiful system with zero closed deals on July 2 = failure.
 | Who      | Owns                                                        | Approval |
 |----------|-------------------------------------------------------------|----------|
 | Hermes   | Drafts outreach/copy/sequences, logs outcomes, surfaces next action | Quincy approves |
-| Jeremy   | Email system — but only AFTER the manual motion is proven   | Quincy approves |
+| Jordan   | Email system — but only AFTER the manual motion is proven   | Quincy approves |
 | ClawBot  | Lead stage + task tracking                                  | Quincy reviews |
 | Quincy   | Approves, hits send, runs fit calls, closes, bills          | Decides |
 
@@ -115,7 +115,7 @@ in the next 7 days? If no → "Not yet. Here's the revenue action instead."
 
 Each item unlocks only after the manual version produces data:
 
-- Email nurture sequences (Jeremy) — unlock after ~10 live conversations show the winning hook.
+- Email nurture sequences (Jordan) — unlock after ~10 live conversations show the winning hook.
 - ClawBot reply routing — unlock after lead stages are real and moving.
 - Retargeting — unlock after the landing page has live traffic + working pixel.
 - Content engine — unlock after the offer's converting message is known.
