@@ -7,7 +7,7 @@
 
 ### Team Members
 - **Malia** — Discord ID: 691018065655234611
-- **Jordan** — Discord ID: 188176885883207690 _(ID carried over from Jeremy — confirm this is Jordan's actual Discord ID)_
+- **Jordan** — Discord ID: 915898884960714762
 
 ### Key Channels
 - #general — 1276999904291717122
