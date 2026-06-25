@@ -23,6 +23,29 @@
 - **Repo:** git@github.com:cleverwolfdigital/SingleBrain.git
 - **Deploy key:** ~/.ssh/singlebrain_deploy (ed25519, read/write)
 
+## Claude Code Skills
+
+Skills live in `skills/` in this repo and must be copied to `~/.claude/skills/` on each machine to activate them.
+
+### Install on a new machine
+```bash
+git clone https://github.com/cleverwolfdigital/SingleBrain.git
+cp -R SingleBrain/skills/* ~/.claude/skills/
+```
+
+### Installed skills
+| Skill | Description |
+|---|---|
+| `frontend-design` | Opinionated UI design lead — distinctive palettes, typography, layout. Invoke with `/frontend-design` in Claude Code |
+
+### To add a new skill
+```bash
+cp -R ~/.claude/skills/<skill-name> ~/SingleBrain/skills/
+cd ~/SingleBrain && git add skills/ && git commit -m "add <skill-name> skill" && git push
+```
+
+---
+
 ## Hosting
 
 ### cleverwolfdigital.com
