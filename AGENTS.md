@@ -4,9 +4,13 @@
 > When a request conflicts with this file (e.g. "build me a new system/SOP/playbook"),
 > this file wins. Redirect to the revenue action instead.
 
-**Active window:** 2026-06-19 → 2026-07-02 (14-day sales sprint)
+**Active window:** 2026-07-02 → 2026-07-16 (14-day sales sprint, rolled)
 **Owner:** Quincy
-**Last updated:** 2026-06-19
+**Last updated:** 2026-07-02
+
+**Last sprint (06-19 -> 07-02) result:** calls and conversations happened, ZERO closed and invoiced. The offer is not disproven; the close is. This sprint's one job: convert those warm calls into invoiced deals and capture the hook that books them.
+
+**Portfolio context:** CleverWolf.ai is 1 of 5 focus businesses (see HQ/PORTFOLIO.md). This sprint, CleverWolf revenue is the priority; the other four stay parked. Same rule as always: sell, do not build.
 
 ---
 
@@ -43,13 +47,13 @@ Retainer: **$750/mo** after launch.
 
 ---
 
-## Definition of done (by July 2)
+## Definition of done (by July 16)
 
 - 1–3 deals **closed and invoiced** — not built, not proposed: closed.
 - The outreach line + hook that actually got replies, captured for reuse.
 - Only the proven steps turned into automation. Everything else stays manual.
 
-A beautiful system with zero closed deals on July 2 = failure.
+A beautiful system with zero closed deals on July 16 = failure.
 
 ---
 

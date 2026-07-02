@@ -32,6 +32,4 @@ _(Update each Monday. Pull current metrics from [[OFFERS_STATE]].  )_
 
 | Offer | Action | Market | Owner | Status |
 |---|---|---|---|---|
-| AI Agent Setup | -- | -- | Quincy | -- |
-| AI-Built Launch Page + Copy | -- | -- | Quincy | -- |
-| AI Managed Marketing | -- | -- | Quincy | -- |
+| AI-Built Lead-Gen Website ($2.5k) | Follow up every warm call from last sprint and ask for the close | HI + Seattle | Quincy | active |
