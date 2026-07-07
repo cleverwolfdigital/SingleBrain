@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 860" font-family="'Segoe UI','Avenir Next',Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#16302B"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#C97F1A"/>
+    </marker>
+    <radialGradient id="glow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#F6C25B" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#E8A13C" stop-opacity="0.15"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1240" height="860" fill="#F5F7F6"/>
+
+  <!-- Title -->
+  <text x="60" y="64" font-size="30" font-weight="700" fill="#16302B">The Web of AI — and where context engineering sits</text>
+  <text x="60" y="92" font-size="15" fill="#5B6770">The model is frozen. The context window is the only door in. Everything else is the craft of what goes through it.</text>
+
+  <!-- ================= COLUMN 1: SOURCE OF TRUTH ================= -->
+  <text x="60" y="168" font-size="12" letter-spacing="2" font-weight="700" fill="#177E6D">WHAT YOU OWN</text>
+  <rect x="60" y="180" width="250" height="330" rx="14" fill="#FFFFFF" stroke="#177E6D" stroke-width="2.5"/>
+  <text x="185" y="214" font-size="17" font-weight="700" fill="#16302B" text-anchor="middle">Your Source of Truth</text>
+  <text x="185" y="234" font-size="12.5" fill="#5B6770" text-anchor="middle">files you own, outside any AI tool</text>
+
+  <!-- file cards -->
+  <g font-size="13" fill="#16302B">
+    <rect x="84" y="252" width="202" height="36" rx="7" fill="#E6F2EF" stroke="#177E6D" stroke-width="1"/>
+    <text x="98" y="275">Master outline</text>
+    <rect x="84" y="296" width="202" height="36" rx="7" fill="#E6F2EF" stroke="#177E6D" stroke-width="1"/>
+    <text x="98" y="319">Voice guide</text>
+    <rect x="84" y="340" width="202" height="36" rx="7" fill="#E6F2EF" stroke="#177E6D" stroke-width="1"/>
+    <text x="98" y="363">Audience profile</text>
+    <rect x="84" y="384" width="202" height="36" rx="7" fill="#E6F2EF" stroke="#177E6D" stroke-width="1"/>
+    <text x="98" y="407">Source &amp; attribution log</text>
+    <rect x="84" y="428" width="202" height="36" rx="7" fill="#E6F2EF" stroke="#177E6D" stroke-width="1"/>
+    <text x="98" y="451">Finished work (the building)</text>
+  </g>
+  <text x="185" y="496" font-size="11.5" fill="#177E6D" text-anchor="middle" font-style="italic">Single Source of Truth (SSOT)</text>
+
+  <!-- PCM label under arrow -->
+  <line x1="310" y1="345" x2="420" y2="345" stroke="#16302B" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="365" y="322" font-size="12.5" font-weight="700" fill="#16302B" text-anchor="middle">Personal Context</text>
+  <text x="365" y="338" font-size="12.5" font-weight="700" fill="#16302B" text-anchor="middle">Management</text>
+  <text x="365" y="368" font-size="11" fill="#5B6770" text-anchor="middle">keep the supply</text>
+  <text x="365" y="382" font-size="11" fill="#5B6770" text-anchor="middle">chain current</text>
+
+  <!-- ================= COLUMN 2: CONTEXT ENGINEERING ================= -->
+  <text x="430" y="168" font-size="12" letter-spacing="2" font-weight="700" fill="#2C5F8A">THE CRAFT</text>
+  <rect x="430" y="180" width="300" height="330" rx="14" fill="#FFFFFF" stroke="#2C5F8A" stroke-width="2.5"/>
+  <text x="580" y="214" font-size="17" font-weight="700" fill="#16302B" text-anchor="middle">Context Engineering</text>
+  <text x="580" y="234" font-size="12.5" fill="#5B6770" text-anchor="middle">choosing what enters — and what stays out</text>
+
+  <g font-size="13" fill="#16302B">
+    <rect x="454" y="252" width="252" height="32" rx="7" fill="#E9F0F6" stroke="#2C5F8A" stroke-width="1"/>
+    <text x="468" y="273">Instructions &amp; prompts</text>
+    <rect x="454" y="292" width="252" height="32" rx="7" fill="#E9F0F6" stroke="#2C5F8A" stroke-width="1"/>
+    <text x="468" y="313">Knowledge files (Projects)</text>
+    <rect x="454" y="332" width="252" height="32" rx="7" fill="#E9F0F6" stroke="#2C5F8A" stroke-width="1"/>
+    <text x="468" y="353">Retrieval / RAG</text>
+    <rect x="454" y="372" width="252" height="32" rx="7" fill="#E9F0F6" stroke="#2C5F8A" stroke-width="1"/>
+    <text x="468" y="393">Memory between sessions</text>
+    <rect x="454" y="412" width="252" height="32" rx="7" fill="#E9F0F6" stroke="#2C5F8A" stroke-width="1"/>
+    <text x="468" y="433">Tools &amp; agents fetching data</text>
+  </g>
+  <text x="580" y="472" font-size="11.5" fill="#2C5F8A" text-anchor="middle" font-style="italic">prompt engineering is one ingredient;</text>
+  <text x="580" y="488" font-size="11.5" fill="#2C5F8A" text-anchor="middle" font-style="italic">this is the whole recipe</text>
+
+  <!-- converging arrows into window -->
+  <line x1="730" y1="268" x2="822" y2="320" stroke="#C97F1A" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <line x1="730" y1="345" x2="822" y2="345" stroke="#C97F1A" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <line x1="730" y1="424" x2="822" y2="372" stroke="#C97F1A" stroke-width="2" marker-end="url(#arrowAmber)"/>
+
+  <!-- ================= COLUMN 3: THE MODEL ================= -->
+  <text x="838" y="168" font-size="12" letter-spacing="2" font-weight="700" fill="#5B6770">THE MACHINE</text>
+  <rect x="838" y="180" width="340" height="330" rx="14" fill="#22333B"/>
+  <text x="1008" y="216" font-size="17" font-weight="700" fill="#F5F7F6" text-anchor="middle">The Model</text>
+  <text x="1008" y="236" font-size="12.5" fill="#AEB9BC" text-anchor="middle">frozen training · generic knowledge</text>
+  <text x="1008" y="252" font-size="12.5" fill="#AEB9BC" text-anchor="middle">knows nothing about you</text>
+
+  <!-- the window aperture -->
+  <rect x="826" y="300" width="150" height="92" rx="10" fill="url(#glow)" stroke="#C97F1A" stroke-width="3"/>
+  <text x="901" y="338" font-size="14.5" font-weight="700" fill="#5A3A08" text-anchor="middle">The Context</text>
+  <text x="901" y="356" font-size="14.5" font-weight="700" fill="#5A3A08" text-anchor="middle">Window</text>
+  <text x="901" y="376" font-size="10.5" fill="#5A3A08" text-anchor="middle">the only door in · empties after use</text>
+
+  <!-- output arrow -->
+  <line x1="1008" y1="392" x2="1008" y2="448" stroke="#F5F7F6" stroke-width="2.5" marker-end="url(#arrowAmber)"/>
+  <rect x="928" y="450" width="160" height="42" rx="9" fill="#E8A13C"/>
+  <text x="1008" y="477" font-size="15" font-weight="700" fill="#3A2604" text-anchor="middle">Output</text>
+
+  <!-- ================= THE LOOP ================= -->
+  <path d="M 1008 510 C 1008 590, 620 610, 185 590 C 150 588, 130 560, 150 528"
+        fill="none" stroke="#177E6D" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+  <text x="600" y="580" font-size="14" font-weight="700" fill="#177E6D" text-anchor="middle">THE SESSION LOOP — save the work, update the blueprint, re-upload. No session starts from zero.</text>
+
+  <!-- ================= TIMELINE BAND ================= -->
+  <rect x="60" y="660" width="1118" height="150" rx="14" fill="#FFFFFF" stroke="#D6DDDB" stroke-width="1.5"/>
+  <text x="80" y="692" font-size="12" letter-spacing="2" font-weight="700" fill="#5B6770">HOW THE CRAFT HAS EVOLVED</text>
+
+  <g font-size="14">
+    <circle cx="180" cy="740" r="7" fill="#AEB9BC"/>
+    <text x="180" y="726" text-anchor="middle" font-weight="700" fill="#16302B">Prompt engineering</text>
+    <text x="180" y="768" text-anchor="middle" font-size="12" fill="#5B6770">craft the perfect instruction</text>
+    <text x="180" y="784" text-anchor="middle" font-size="11" fill="#8A9497">"say it better"</text>
+
+    <line x1="290" y1="740" x2="480" y2="740" stroke="#AEB9BC" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <circle cx="600" cy="740" r="7" fill="#2C5F8A"/>
+    <text x="600" y="726" text-anchor="middle" font-weight="700" fill="#16302B">Context engineering</text>
+    <text x="600" y="768" text-anchor="middle" font-size="12" fill="#5B6770">curate everything in the window</text>
+    <text x="600" y="784" text-anchor="middle" font-size="11" fill="#8A9497">"feed it better"</text>
+
+    <line x1="710" y1="740" x2="900" y2="740" stroke="#AEB9BC" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <circle cx="1020" cy="740" r="7" fill="#177E6D"/>
+    <text x="1020" y="726" text-anchor="middle" font-weight="700" fill="#16302B">Personal context management</text>
+    <text x="1020" y="768" text-anchor="middle" font-size="12" fill="#5B6770">maintain the supply chain that feeds it</text>
+    <text x="1020" y="784" text-anchor="middle" font-size="11" fill="#8A9497">"own the truth it's fed from"</text>
+  </g>
+</svg>
