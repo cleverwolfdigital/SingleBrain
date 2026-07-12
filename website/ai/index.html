@@ -453,31 +453,8 @@
   </style>
 </head>
 <body>
-  <div class="auth-overlay" id="authOverlay">
-    <section class="auth-card" id="magicStep">
-      <div class="auth-brand">
-        <div class="brand-mark"><i data-lucide="brain-circuit" class="icon-lg"></i></div>
-        <div><strong>Single Brain</strong><small>SECURE COMMAND ACCESS</small></div>
-      </div>
-      <div class="eyebrow">Identity verification</div>
-      <h1>Welcome back, Quincy.</h1>
-      <p class="auth-lead">Enter your email to receive a secure magic link. Authentication is simulated locally for this MVP.</p>
-      <div class="field"><label>Email address</label><input class="input" id="authEmail" type="email" value="quincy@cleverwolf.ai" autocomplete="email"></div>
-      <button class="button" id="magicButton"><i data-lucide="send" class="icon-sm"></i>Send magic link</button>
-      <div class="secure"><i data-lucide="lock-keyhole" class="icon-sm"></i>Magic link + two-factor authentication</div>
-    </section>
-    <section class="auth-card hidden" id="twoFactorStep">
-      <button class="back-button" id="authBack">Back to email</button>
-      <div class="eyebrow">Second factor</div>
-      <h1>Enter security code.</h1>
-      <p class="auth-lead">A six-digit code was sent to your trusted device. For this MVP, use <strong style="color:var(--text)">246810</strong>.</p>
-      <div class="code-inputs" id="codeInputs">
-        <input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1">
-      </div>
-      <button class="button" id="verifyButton"><i data-lucide="shield-check" class="icon-sm"></i>Verify and enter</button>
-      <div class="secure"><i data-lucide="shield" class="icon-sm"></i>Owner access only</div>
-    </section>
-  </div>
+  <!-- Authentication is enforced upstream by Cloudflare Access (GitHub login + 2FA).
+       The in-page mock login was removed; the page only renders for authenticated users. -->
 
   <header class="topbar">
     <button class="icon-button mobile-menu" id="menuButton" aria-label="Open navigation"><i data-lucide="menu" class="icon"></i></button>
@@ -489,7 +466,8 @@
         <button class="button top-quick-add" data-open-task aria-label="Global quick add task"><i data-lucide="plus" class="icon-sm"></i><span>Quick add</span></button>
         <button class="icon-button" aria-label="Search"><i data-lucide="search" class="icon"></i></button>
         <button class="icon-button" aria-label="Notifications"><i data-lucide="bell" class="icon"></i></button>
-        <div class="avatar">QS</div>
+        <div class="avatar" id="userAvatar" title="Signed in">QS</div>
+        <a class="icon-button" id="logoutButton" href="/cdn-cgi/access/logout" aria-label="Log out" title="Log out"><i data-lucide="log-out" class="icon"></i></a>
       </div>
     </div>
   </header>
@@ -519,7 +497,7 @@
   <main class="main">
     <section class="view active" id="overview">
       <div class="view-header">
-        <div><div class="eyebrow">Sunday / July 12, 2026</div><h1>Good morning, Quincy.</h1><p>Your command brief is focused on one outcome: close and invoice the next deal.</p></div>
+        <div><div class="eyebrow">Sunday / July 12, 2026</div><h1>Good morning, <span id="greetingName">Quincy</span>.</h1><p>Your command brief is focused on one outcome: close and invoice the next deal.</p></div>
         <div class="date-chip"><i data-lucide="calendar-days" class="icon-sm"></i><strong style="color:var(--gold-soft)">Manual snapshot</strong> / Sales sprint / Day 11 of 14</div>
       </div>
       <div class="grid metrics">
@@ -949,25 +927,26 @@
       toastTimer = setTimeout(() => $("#toast").classList.remove("show"), 2200);
     }
 
-    if (localStorage.getItem("singlebrain-auth")) $("#authOverlay").classList.add("hidden");
-    $("#magicButton").addEventListener("click", () => {
-      if (!$("#authEmail").checkValidity()) return showToast("Enter a valid email address.");
-      $("#magicStep").classList.add("hidden");
-      $("#twoFactorStep").classList.remove("hidden");
-      $$("#codeInputs input")[0].focus();
-    });
-    $("#authBack").addEventListener("click", () => { $("#twoFactorStep").classList.add("hidden"); $("#magicStep").classList.remove("hidden"); });
-    $$("#codeInputs input").forEach((input, index, inputs) => {
-      input.addEventListener("input", () => { input.value = input.value.replace(/\D/g, ""); if (input.value && index < inputs.length - 1) inputs[index + 1].focus(); });
-      input.addEventListener("keydown", event => { if (event.key === "Backspace" && !input.value && index > 0) inputs[index - 1].focus(); });
-    });
-    $("#verifyButton").addEventListener("click", () => {
-      const code = $$("#codeInputs input").map(input => input.value).join("");
-      if (code !== "246810") return showToast("Use MVP code 246810.");
-      localStorage.setItem("singlebrain-auth", "true");
-      $("#authOverlay").classList.add("hidden");
-      showToast("Identity verified. Welcome back.");
-    });
+    // Authentication is enforced upstream by Cloudflare Access (GitHub login + 2FA),
+    // so the in-page mock login was removed. Personalize the header from the
+    // signed-in Access identity; fall back silently if it isn't reachable.
+    (async () => {
+      try {
+        const res = await fetch("/cdn-cgi/access/get-identity", { credentials: "include" });
+        if (!res.ok) return;
+        const id = await res.json();
+        const email = id.email || "";
+        const name = (id.name && id.name.trim()) || (email ? email.split("@")[0] : "");
+        if (!name) return;
+        const parts = name.split(/[\s._-]+/).filter(Boolean);
+        const first = parts[0] || name;
+        const greeting = document.getElementById("greetingName");
+        if (greeting) greeting.textContent = first.charAt(0).toUpperCase() + first.slice(1);
+        const initials = (parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase();
+        const avatar = document.getElementById("userAvatar");
+        if (avatar) { avatar.textContent = initials; avatar.title = email || name; }
+      } catch (e) { /* not behind Access / offline — keep defaults */ }
+    })();
 
     $$(".journal-form").forEach(form => {
       const kind = form.dataset.kind;
