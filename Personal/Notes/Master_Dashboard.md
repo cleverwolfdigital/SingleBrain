@@ -127,7 +127,7 @@ Active building energy is focused on these **5 things**:
 ## Where Things Live
 
 - **Single Source of Truth**: GitHub repo (`SingleBrain`)
-- **Primary Interface**: Web Dashboard (in development)
+- **Primary Interface**: Web Dashboard — **LIVE** at https://single-brain.pages.dev (protected by Cloudflare Access · GitHub login + 2FA · access limited to quincy@cleverwolfdigital.com)
 - **Backup**: Obsidian (Google Drive)
 - **Daily Work**: Hermes + Claude Code
 - **Deep Work**: Claude Chat Projects
