@@ -1,115 +1,152 @@
-# Master Dashboard — Clever Wolf Digital
+# Master Dashboard — Single Brain
 
-**Last Updated:** 2026-07-12
+**Last Updated:** July 12, 2026  
 **Owner:** Quincy Solano
 
-This is the single source of truth for all businesses, projects, and team activity.
+This is the single source of truth for all businesses, projects, staff, and activity across the entire portfolio.
 
 ---
 
-## Quick Overview
+## ⭐ Current Focus (as of 2026-07-01)
 
-| Area                  | Status     | Notes |
-|-----------------------|------------|-------|
-| **Clever Wolf Digital** | Active    | Current sales sprint running |
-| **Other Businesses**   | Parked    | See Portfolio section |
-| **Active Staff**       | 10 people | See Team section |
-| **Open Projects**      | —         | See Projects section |
-| **Blockers**           | —         | See Blockers section |
+Active building energy is focused on these **5 things**:
 
----
+| Focus | Maps to | The One Lever |
+|-------|---------|---------------|
+| **CleverWolf.ai** | Productize ONE offer (the $10k AI website) and sell to CWD clients | Sell |
+| **Level Up Corp** | Podcast = funnel; Level Up Smarter = paid offer | Podcast + offer |
+| **Let's Try Hawaii** | Publish weekly from photo backlog for trip planners | Content consistency |
+| **Fort Madison Monthly** | Write vision brief → hire one local correspondent | Launch |
+| **Opala Hoa** | Validate freight vs margin before scaling | Unit economics |
 
-## Current Focus (This Sprint)
-
-**Sprint:** July 2 – July 16, 2026 (14-day sales sprint)  
-**Main Goal:** Close 1–3 deals with the AI-Built Lead Gen Website offer  
-**Priority:** Sell, not build
-
-**Top 3 Priorities Right Now:**
-1. 
-2. 
-3. 
+**Cash Engine (runs daily):**  
+**Clever Wolf Digital** — ~$30k/mo, 100% Quincy
 
 ---
 
-## Team
+## Portfolio Overview (Tier System)
 
-| Name       | Role                        | Current Focus                          | Status     |
-|------------|-----------------------------|----------------------------------------|------------|
-| Quincy     | Owner                       | Sales + overall direction              | Active     |
-| Jeremy Lum | Sr. Digital Marketing Manager | Marketing & content                    | Active     |
-| Jordan     | Email Systems               | Email infrastructure                   | Active     |
-| Nicole     | —                           | —                                      | —          |
-| Kari       | —                           | —                                      | —          |
-| Delmore    | —                           | —                                      | —          |
-| Jay        | —                           | —                                      | —          |
-| Madison    | —                           | —                                      | —          |
-| Gio        | —                           | —                                      | —          |
-| Tyler      | —                           | —                                      | —          |
+### Tier 1 — Revenue Engines (Daily Attention)
+
+| Entity                        | Status   | Revenue/mo     | Owner              | Cadence | Next Action |
+|-------------------------------|----------|----------------|--------------------|---------|-------------|
+| Clever Wolf Digital           | Active   | ~$30k          | Quincy             | Daily   | — |
+| CleverWolf.ai                 | Active   | —              | Quincy             | Daily   | Productize offer |
+| Titan Medical Transportation  | Active   | $10k           | Quincy + Peter (50/50) | Daily | — |
+| Kapwa Coffee Bar              | Active   | $7k            | —                  | Daily   | — |
+| Vending / HVAC                | Active   | $4–6k          | Quincy             | Daily   | — |
+
+### Tier 2 — Growth Bets (Weekly Rotation)
+
+| Entity                    | Status    | Owner | Cadence | Next Action |
+|---------------------------|-----------|-------|---------|-------------|
+| Kapuna Meals              | Starting  | —     | Weekly  | — |
+| Opala Hoa                 | Starting  | —     | Weekly  | Validate unit economics |
+| Shaka's Food Truck        | Active    | —     | Weekly  | — |
+| Ghost Kitchen Hawaii      | Starting  | —     | Weekly  | — |
+| Island Laundromat Co.     | Diligence | —     | Weekly  | Evaluate investment |
+
+### Tier 3 — Media / Niche Sites (Systematized)
+
+| Entity                  | Status | Cadence       | Pipeline Built? |
+|-------------------------|--------|---------------|-----------------|
+| Level Up Self           | Active | Weekly review | ☐ |
+| Level Up Smarter        | Active | Weekly review | ☐ |
+| Level Up Library        | Active | Weekly review | ☐ |
+| The Smarter Podcast     | Active | Weekly review | ☐ |
+| The Ongoing Conversation| Active | Weekly review | ☐ |
+| Let's Try Hawaii        | Active | Weekly review | ☐ |
+| Pop808Hawaii            | Active | Weekly review | ☐ |
+| Fort Madison Monthly    | Active | Weekly review | ☐ |
+| Feedback Seattle        | Active | Weekly review | ☐ |
+| Spooky Action           | Active | Weekly review | ☐ |
+| Aries                   | Active | Weekly review | ☐ |
+| Guns A Blazin'          | Active | Weekly review | ☐ |
+| Hawaii SEO              | Active | Weekly review | ☐ |
+| Shopify Hawaii          | Active | Weekly review | ☐ |
+| Spotify Hawaii          | Active | Weekly review | ☐ |
+
+### Tier 4 — Pipeline / Investments (Monthly Review)
+
+| Entity                    | Status | Cadence | Next Action |
+|---------------------------|--------|---------|-------------|
+| Island Parking Services   | Idea   | Monthly | Define concept |
+| Privatized Storage Units  | Idea   | Monthly | Define concept |
+| Bing Bros                 | Idea   | Monthly | Clarify what this is |
+| Salmon Distribution       | Idea   | Monthly | Clarify what this is |
+
+---
+
+## Staff
+
+| Name            | Background & Responsibilities                                                                 | Current Support Work                  | Status |
+|-----------------|---------------------------------------------------------------------------------------------------|---------------------------------------|--------|
+| **Jay Goodearl**| Former roles: Catholic Charities (Housing Relief), YMCA (Academic Tutor), KTUH (Operations Director – audio production, PSAs, executive leadership). Currently runs YouTube gaming channel "Good Games dude" and previously worked at Star Wars News Net. | Editing, social media planning, content creation for HomeAid Hawaii, Lifeline, and Tory's Roofing | Active |
 
 ---
 
 ## Active Projects
 
-| Project                    | Business     | Owner     | Status     | Next Action                  | Due     |
-|---------------------------|--------------|-----------|------------|------------------------------|---------|
-| Email Cleanup (Inbox)     | Personal     | Quincy    | In Progress| Continue daily review        | —       |
-| Composio Integration      | CWD          | Quincy    | Partial    | Improve Gmail/Calendar tools | —       |
-| Hermes Bot (2nd Gateway)  | CWD          | Quincy    | In Progress| Finish Discord connection    | —       |
-| ScrapeGraphAI Research    | CWD          | Quincy    | Not Started| Competitor research          | —       |
-| Single Brain Dashboard    | CWD          | Quincy    | MVP Ready | Verify protected live deployment | 2026-07-12 |
+| Project                              | Business                  | Status      | Next Action                              | Due          |
+|--------------------------------------|---------------------------|-------------|------------------------------------------|--------------|
+| Email Cleanup (Inbox)                | Personal / CWD            | In Progress | Continue daily review                    | —            |
+| Composio Integration                 | CWD                       | Partial     | Improve Gmail/Calendar tools             | —            |
+| Hermes Bot (2nd Gateway)             | CWD                       | In Progress | Finish Discord connection                | —            |
+| ScrapeGraphAI Research               | CWD                       | Not Started | Define first target                      | —            |
+| July 15 Meetings (Koko Head + Rise)  | Let's Try Hawaii          | Scheduled   | Confirm with Gio and Jay                 | July 15      |
+| Kimchee #88 Restaurant Launch        | Kimchee #88               | Planning    | Legal setup + brand development          | Feb/Apr 2027 |
+| Titan Medical Transportation         | Titan Medical             | Active      | Ongoing operations                       | —            |
+| Vending / HVAC Operations            | Vending / HVAC            | Active      | Financial tracking & vendor management   | —            |
+| Kapwa Coffee Bar Operations          | Kapwa Coffee Bar          | Active      | Margin optimization                      | —            |
 
 ---
 
-## Portfolio (All Businesses)
+## Daily Rotation (Proposed)
 
-- **Clever Wolf Digital** (Active)
-- **Tea Monkey**
-- **Lifeline Hawaii**
-- **Red Dot Productions**
-- Other transferred calendars/projects (see Google Calendar)
+| Day | Tier 2 Focus              | Tier 3 Review Batch |
+|-----|---------------------------|---------------------|
+| Mon | Kapuna Meals              | Level Up (Self/Smarter/Library) |
+| Tue | Opala Hoa                 | Smarter Podcast + Ongoing Conversation |
+| Wed | Shaka's Food Truck        | Let's Try Hawaii + Pop808Hawaii |
+| Thu | Ghost Kitchen Hawaii      | Fort Madison Monthly + Feedback Seattle + Spooky Action |
+| Fri | Island Laundromat (diligence) | Aries + Guns A Blazin' |
+| Sat | —                         | Hawaii SEO + Shopify Hawaii + Spotify Hawaii |
+| Sun | Weekly review + Tier 4 (monthly weeks) | — |
 
 ---
 
-## Blockers
+## Automation Backlog (CleverWolf.ai Builds These)
 
-- Composio tools often return “Tool not found” when called directly
-- Many emails still need review
-- Second Hermes gateway not yet connected to Discord
+- Content engine for Level Up trio + Let's Try Hawaii + Pop808
+- Podcast → assets pipeline
+- Local-SEO productized delivery (Hawaii SEO / Shopify Hawaii / Spotify Hawaii)
+- Publishing calendar + review queue across all brands
 
 ---
 
 ## Where Things Live
 
-- **Master Brain**: This repo (`SingleBrain` on GitHub)
-- **Obsidian Vaults**: Google Drive (`G:\My Drive\AI\`)
-- **Daily Work**: Hermes (Discord) + Claude Code
-- **Deep Work / Research**: Claude Chat Projects + WebUI sessions
-- **Operations**: OpenClaw
+- **Single Source of Truth**: GitHub repo (`SingleBrain`)
+- **Primary Interface**: Web Dashboard (in development)
+- **Backup**: Obsidian (Google Drive)
+- **Daily Work**: Hermes + Claude Code
+- **Deep Work**: Claude Chat Projects
+- **Operations**: OpenClaw (24/7)
 
 ---
 
-## Daily Protocol (Morning + End of Day)
+## Daily Protocol
 
-**Morning (3–5 min)**
-- Open this file
-- Review Active Projects + Blockers
-- Choose 1 main focus for the day
+**Morning (5–10 min)**
+- Open dashboard
+- Review Current Focus + Active Projects
+- Set top 3 priorities
 
-**End of Day (5–7 min)**
+**End of Day (5–10 min)**
+- Log journal entry (wins, blockers, decisions)
 - Update any project status
-- Log decisions or important notes
-- Choose tomorrow’s focus
+- Set tomorrow’s focus
 
 ---
 
-## Next Steps
-
-- [ ] Finish email cleanup
-- [ ] Improve Composio reliability
-- [ ] Launch Hermes Bot (second gateway)
-- [ ] Run competitor research with ScrapeGraphAI
-
----
-
-*This file should be updated at the end of every session where meaningful work happened.*
+*This file is the single source of truth for the entire portfolio.*
