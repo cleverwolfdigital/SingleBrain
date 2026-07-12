@@ -461,7 +461,7 @@
       </div>
       <div class="eyebrow">Identity verification</div>
       <h1>Welcome back, Quincy.</h1>
-      <p class="auth-lead">Enter your email to receive a secure magic link. Authentication is simulated locally for this prototype.</p>
+      <p class="auth-lead">Enter your email to receive a secure magic link. Authentication is simulated locally for this MVP.</p>
       <div class="field"><label>Email address</label><input class="input" id="authEmail" type="email" value="quincy@cleverwolf.ai" autocomplete="email"></div>
       <button class="button" id="magicButton"><i data-lucide="send" class="icon-sm"></i>Send magic link</button>
       <div class="secure"><i data-lucide="lock-keyhole" class="icon-sm"></i>Magic link + two-factor authentication</div>
@@ -470,7 +470,7 @@
       <button class="back-button" id="authBack">Back to email</button>
       <div class="eyebrow">Second factor</div>
       <h1>Enter security code.</h1>
-      <p class="auth-lead">A six-digit code was sent to your trusted device. For this prototype, use <strong style="color:var(--text)">246810</strong>.</p>
+      <p class="auth-lead">A six-digit code was sent to your trusted device. For this MVP, use <strong style="color:var(--text)">246810</strong>.</p>
       <div class="code-inputs" id="codeInputs">
         <input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1">
       </div>
@@ -520,7 +520,7 @@
     <section class="view active" id="overview">
       <div class="view-header">
         <div><div class="eyebrow">Sunday / July 12, 2026</div><h1>Good morning, Quincy.</h1><p>Your command brief is focused on one outcome: close and invoice the next deal.</p></div>
-        <div class="date-chip"><i data-lucide="calendar-days" class="icon-sm"></i><strong style="color:var(--gold-soft)">Prototype data</strong> / Sales sprint / Day 11 of 14</div>
+        <div class="date-chip"><i data-lucide="calendar-days" class="icon-sm"></i><strong style="color:var(--gold-soft)">Manual snapshot</strong> / Sales sprint / Day 11 of 14</div>
       </div>
       <div class="grid metrics">
         <article class="card metric"><div class="metric-label">Warm outreach<i data-lucide="send" class="icon-sm"></i></div><div class="metric-value">24</div><div class="metric-note"><strong>+6</strong> this week</div><div class="spark"><i style="height:25%"></i><i style="height:42%"></i><i style="height:34%"></i><i style="height:68%"></i><i style="height:92%"></i></div></article>
@@ -578,7 +578,7 @@
       <div class="filters"><button class="filter active" data-filter="all">All projects</button><button class="filter" data-filter="active">Active</button><button class="filter" data-filter="blocked">Blocked</button><button class="filter" data-filter="parked">Parked</button></div>
       <div class="grid project-grid" id="projectGrid"></div>
       <section class="task-board" aria-labelledby="taskQueueTitle">
-        <div class="task-board-header"><div><div class="eyebrow">Action Queue</div><h2 id="taskQueueTitle">Tasks</h2><p>Prototype tasks are stored in this browser.</p></div><span class="task-count" id="taskCount">0 tasks</span></div>
+        <div class="task-board-header"><div><div class="eyebrow">Action Queue</div><h2 id="taskQueueTitle">Tasks</h2><p>Tasks are stored on this device.</p></div><span class="task-count" id="taskCount">0 tasks</span></div>
         <div class="task-list" id="taskList" aria-live="polite"></div>
       </section>
     </section>
@@ -599,7 +599,7 @@
     </section>
 
     <section class="view" id="journal">
-      <div class="view-header"><div><div class="eyebrow">Daily Protocol</div><h1>Journal</h1><p>Morning intention and end-of-day reflection. Saved locally in this prototype.</p></div><div class="date-chip"><i data-lucide="calendar" class="icon-sm"></i>July 12, 2026</div></div>
+      <div class="view-header"><div><div class="eyebrow">Daily Protocol</div><h1>Journal</h1><p>Morning intention and end-of-day reflection. Saved on this device.</p></div><div class="date-chip"><i data-lucide="calendar" class="icon-sm"></i>July 12, 2026</div></div>
       <div class="grid journal-grid">
         <form class="card journal-card journal-form" data-kind="morning">
           <h2>Morning Brief</h2><p class="journal-hint">Choose one focus. Keep the day pointed at revenue.</p>
@@ -646,7 +646,7 @@
   <div class="modal-overlay hidden" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle" aria-hidden="true">
     <section class="task-modal">
       <header class="modal-header">
-        <div><div class="eyebrow">Command Input</div><h2 id="taskModalTitle">Quick Add Task</h2><p>Prototype entry / stored locally</p></div>
+        <div><div class="eyebrow">Command Input</div><h2 id="taskModalTitle">Quick Add Task</h2><p>Local task entry / stored on this device</p></div>
         <button class="icon-button modal-close" type="button" data-close-task aria-label="Close quick add task" title="Close"><i data-lucide="x" class="icon"></i></button>
       </header>
       <form class="task-form" id="quickTaskForm" novalidate>
@@ -692,7 +692,7 @@
             <span class="field-error"></span>
           </div>
         </div>
-        <div class="modal-actions"><button class="button secondary" type="button" data-close-task>Cancel</button><button class="button" type="submit"><i data-lucide="plus" class="icon-sm"></i>Add task</button></div>
+        <div class="modal-actions"><button class="button secondary" type="button" id="clearTaskForm"><i data-lucide="eraser" class="icon-sm"></i>Clear</button><button class="button" type="submit"><i data-lucide="save" class="icon-sm"></i>Save task</button></div>
       </form>
     </section>
   </div>
@@ -853,6 +853,15 @@
       taskModalOpener?.focus();
     }
 
+    function clearTaskForm() {
+      $("#quickTaskForm").reset();
+      $("#dependencySearch").value = "";
+      clearTaskErrors();
+      renderDependencyOptions();
+      $("#taskDueDate").min = todayString();
+      $("#taskName").focus();
+    }
+
     $("#taskBusiness").insertAdjacentHTML("beforeend", businesses.map(business => `<option value="${escapeHTML(business.name)}">${escapeHTML(business.name)}</option>`).join(""));
     $("#taskDueDate").min = todayString();
     renderTaskList();
@@ -860,6 +869,7 @@
 
     $$('[data-open-task]').forEach(button => button.addEventListener("click", openTaskModal));
     $$('[data-close-task]').forEach(button => button.addEventListener("click", closeTaskModal));
+    $("#clearTaskForm").addEventListener("click", clearTaskForm);
     $("#taskModal").addEventListener("click", event => { if (event.target === $("#taskModal")) closeTaskModal(); });
     document.addEventListener("keydown", event => { if (event.key === "Escape" && !$("#taskModal").classList.contains("hidden")) closeTaskModal(); });
     $("#dependencySearch").addEventListener("input", event => renderDependencyOptions(selectedDependencyIds(), event.target.value));
@@ -953,7 +963,7 @@
     });
     $("#verifyButton").addEventListener("click", () => {
       const code = $$("#codeInputs input").map(input => input.value).join("");
-      if (code !== "246810") return showToast("Use prototype code 246810.");
+      if (code !== "246810") return showToast("Use MVP code 246810.");
       localStorage.setItem("singlebrain-auth", "true");
       $("#authOverlay").classList.add("hidden");
       showToast("Identity verified. Welcome back.");

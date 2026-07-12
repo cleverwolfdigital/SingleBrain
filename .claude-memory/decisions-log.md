@@ -5,6 +5,42 @@ Format: date — what was decided/changed, why, and any follow-up.
 
 ---
 
+## 2026-07-12 — Single Brain scope promoted from prototype to working MVP
+
+**Decision:** Treat the current static dashboard as the usable MVP. All requested core
+views, daily journal, chat, mock authentication flow, and Quick Add Task workflow are
+present. Keep manual metrics explicitly labeled and keep device-local storage visible so
+the UI does not imply shared persistence that does not exist yet.
+
+**Actions taken:**
+- Removed prototype positioning from the product UI and labeled metrics as a manual snapshot.
+- Replaced the task-form Cancel action with explicit Clear and Save Task controls.
+- Verified Clear resets fields, dependencies, validation, and focus without closing the form.
+- Re-verified Save, task-list update, success notification, and browser console output.
+
+**Next gate:** Verify the protected Cloudflare deployment. Repository-backed shared task and
+journal persistence is a later integration, not part of this MVP scope.
+
+## 2026-07-12 — Quick Add Task prototype added to Single Brain
+
+**Source:** Quincy explicitly requested a fast task-entry workflow inside the dashboard.
+
+**Decision:** Keep the feature inside the existing static prototype and store tasks in
+browser local storage. Do not introduce a backend, account integration, or automation layer
+during the active sales sprint.
+
+**Actions taken:**
+- Added global and Projects-view Quick Add commands.
+- Added required Business, Task, Category, Priority, and Due Date fields with inline
+  validation, including a five-character task minimum and past-date rejection.
+- Added searchable multi-select dependencies from the current task queue and optional notes.
+- Added success notification, form reset, immediate task-list updates, and reload persistence.
+- Verified empty, short-task, past-date, dependency, success, persistence, and responsive
+  task-row behavior with no browser console errors.
+
+**Follow-up:** Replace browser storage with a canonical repository-backed task model only
+after Quincy explicitly prioritizes that integration.
+
 ## 2026-07-12 — Single Brain prototype browser QA completed
 
 **Result:** Verified the installed dashboard at desktop and 390px mobile sizes. Mock
