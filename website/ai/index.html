@@ -1,379 +1,1008 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI Agent Setup — Clever Wolf Digital</title>
-<meta name="description" content="We set up an AI system that quietly handles your marketing and busywork in the background. Clever Wolf Digital — Hawaiʻi &amp; Seattle.">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07121d">
+  <title>Single Brain | Command Center</title>
+  <meta name="description" content="Single Brain command center for businesses, projects, staff, risks, and daily decisions.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Schibsted+Grotesk:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #07121d;
+      --sidebar: #091724;
+      --panel: #0d1d2b;
+      --panel-raised: #112537;
+      --panel-hover: #142b3f;
+      --line: rgba(185, 210, 232, 0.10);
+      --line-strong: rgba(185, 210, 232, 0.18);
+      --text: #edf4fa;
+      --muted: #91a9bc;
+      --faint: #5f788c;
+      --gold: #d0a853;
+      --gold-soft: #edcb80;
+      --blue: #4a91d8;
+      --cyan: #45bdc4;
+      --green: #42c98d;
+      --amber: #e4ad52;
+      --red: #ea7272;
+      --sidebar-width: 228px;
+      --topbar-height: 64px;
+      --radius: 7px;
+      --font-display: "Schibsted Grotesk", sans-serif;
+      --font-body: "Hanken Grotesk", sans-serif;
+    }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link href="https://api.fontshare.com/v2/css?f[]=clash-display@500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400;500;600;700&display=swap" rel="stylesheet">
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(89, 143, 187, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(89, 143, 187, 0.025) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(to bottom, #000, transparent 85%);
+    }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    .hidden { display: none !important; }
+    .icon { width: 18px; height: 18px; stroke-width: 1.8; }
+    .icon-sm { width: 15px; height: 15px; stroke-width: 1.9; }
+    .icon-lg { width: 22px; height: 22px; stroke-width: 1.7; }
 
-<style>
-  :root{
-    --ink:#0E1419;
-    --ink-raised:#161D24;
-    --ink-elevated:#1E272F;
-    --hairline:#2A343D;
-    --paper:#F6F4EF;
-    --paper-raised:#FFFFFF;
-    --paper-hairline:#E3DFD6;
-    --teal:#0E9D8E;
-    --teal-hover:#0B857A;
-    --teal-soft:#12C4B0;
-    --brass:#C9912E;
-    --brass-soft:#E0B45E;
-    --text-strong:#F2F5F6;
-    --text:#C3CCD2;
-    --text-muted:#8A949C;
-    --text-faint:#5C666D;
-    --success:#2FB67C;
-    --warning:#E0A23A;
-    --error:#E0524E;
-    --info:#3D8FE0;
-    --maxw:1120px;
-    --r-sm:6px;
-    --r-md:10px;
-    --r-lg:16px;
-    --r-pill:999px;
-    --shadow-sm:0 1px 2px rgba(14,20,25,.06), 0 1px 3px rgba(14,20,25,.10);
-    --shadow-md:0 4px 12px rgba(14,20,25,.10), 0 2px 4px rgba(14,20,25,.06);
-    --shadow-lg:0 18px 48px rgba(14,20,25,.18);
-    --shadow-teal:0 8px 32px rgba(14,157,142,.28);
-    --dur-fast:140ms;
-    --dur:240ms;
-    --dur-slow:520ms;
-    --ease-out:cubic-bezier(.16,1,.3,1);
-    --ease-inout:cubic-bezier(.65,0,.35,1);
-    --font-display:"Clash Display",system-ui,sans-serif;
-    --font-body:"Satoshi",system-ui,sans-serif;
-    --font-mono:"JetBrains Mono",ui-monospace,monospace;
-  }
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 50;
+      height: var(--topbar-height);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      background: rgba(7, 18, 29, 0.91);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand {
+      width: calc(var(--sidebar-width) - 1px);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font: 800 16px var(--font-display);
+      white-space: nowrap;
+    }
+    .brand small {
+      display: block;
+      margin-top: 2px;
+      color: var(--faint);
+      font: 700 8px var(--font-body);
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      flex: none;
+      display: grid;
+      place-items: center;
+      color: var(--gold-soft);
+      background: rgba(208, 168, 83, 0.08);
+      border: 1px solid rgba(208, 168, 83, 0.28);
+      clip-path: polygon(50% 0, 91% 22%, 91% 74%, 50% 100%, 9% 74%, 9% 22%);
+    }
+    .top-context {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .breadcrumb { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
+    .breadcrumb strong { color: var(--text); font-weight: 600; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .system-state { display: flex; align-items: center; gap: 7px; padding-right: 8px; color: var(--muted); font-size: 11px; }
+    .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(66, 201, 141, 0.10); }
+    .icon-button {
+      width: 35px;
+      height: 35px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .icon-button:hover { color: var(--text); background: var(--panel-raised); border-color: var(--line-strong); }
+    .avatar {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      border-radius: 50%;
+      color: #dceaf5;
+      background: #1a3951;
+      border: 1px solid var(--line-strong);
+      font-size: 11px;
+      font-weight: 700;
+    }
 
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{
-    background:var(--ink);
-    color:var(--text);
-    font-family:var(--font-body);
-    font-size:18px;
-    line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
-  }
-  h1,h2,h3{font-family:var(--font-display);line-height:1.05;letter-spacing:-0.02em}
-  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
-  a{color:inherit}
+    .sidebar {
+      position: fixed;
+      z-index: 40;
+      top: var(--topbar-height);
+      bottom: 0;
+      left: 0;
+      width: var(--sidebar-width);
+      display: flex;
+      flex-direction: column;
+      padding: 17px 12px;
+      background: rgba(9, 23, 36, 0.96);
+      border-right: 1px solid var(--line);
+    }
+    .nav-label { padding: 7px 10px; color: var(--faint); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+    .nav { display: grid; gap: 3px; }
+    .nav-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      border-left: 2px solid transparent;
+      border-radius: 5px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .nav-button:hover { color: var(--text); background: rgba(255,255,255,0.025); }
+    .nav-button.active { padding-left: 10px; color: #e4f1fc; background: rgba(74, 145, 216, 0.11); border-left-color: var(--blue); }
+    .nav-badge { margin-left: auto; padding: 1px 6px; color: #f1a0a0; background: rgba(234,114,114,0.12); border-radius: 9px; font-size: 9px; }
+    .sidebar-footer { margin-top: auto; padding: 14px 9px 2px; border-top: 1px solid var(--line); }
+    .sync-state { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
+    .sidebar-footer p { margin: 8px 0 0; color: var(--faint); font-size: 9px; line-height: 1.5; }
 
-  /* ---------- shared atoms ---------- */
-  .eyebrow{
-    font-family:var(--font-mono);
-    font-size:13px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
-    color:var(--brass);display:inline-flex;align-items:center;gap:10px;
-  }
-  .eyebrow::before{content:"";width:26px;height:1px;background:var(--brass);display:inline-block}
+    .main { min-height: 100vh; margin-left: var(--sidebar-width); padding-top: var(--topbar-height); }
+    .view { display: none; max-width: 1520px; margin: auto; padding: 23px 25px 40px; animation: reveal 180ms ease-out; }
+    .view.active { display: block; }
+    @keyframes reveal { from { opacity: 0.25; transform: translateY(3px); } }
+    .view-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+    .eyebrow { margin-bottom: 5px; color: var(--gold); font-size: 9px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; }
+    .view-header h1 { margin: 0; font: 700 24px var(--font-display); letter-spacing: 0; }
+    .view-header p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .date-chip { display: flex; align-items: center; gap: 7px; padding: 7px 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 5px; font-size: 11px; }
+    .grid { display: grid; gap: 13px; }
+    .card { position: relative; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .card:hover { border-color: rgba(185, 210, 232, 0.14); }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; min-height: 43px; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+    .panel-header h2 { margin: 0; font: 600 13px var(--font-display); }
+    .panel-header span { color: var(--faint); font-size: 10px; }
+    .panel-body { padding: 14px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: #0d1923;
+      background: var(--gold);
+      border: 0;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .button:hover { background: var(--gold-soft); }
+    .button.secondary { color: var(--text); background: transparent; border: 1px solid var(--line-strong); }
+    .button.secondary:hover { background: var(--panel-raised); }
+    .button.blue { color: #fff; background: var(--blue); }
+    .top-quick-add { height: 35px; white-space: nowrap; }
 
-  .btn{
-    display:inline-block;font-family:var(--font-body);font-weight:700;font-size:18px;
-    color:var(--text-strong);background:var(--teal);border:none;border-radius:var(--r-md);
-    padding:18px 34px;cursor:pointer;text-decoration:none;
-    transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out), background var(--dur-fast) ease;
-    box-shadow:var(--shadow-md);
-  }
-  .btn:hover{transform:translateY(-2px);background:var(--teal-hover);box-shadow:var(--shadow-teal)}
-  .btn:focus-visible{outline:3px solid var(--teal-soft);outline-offset:3px}
-  .btn-ghost{
-    background:transparent;color:var(--text);border:1px solid var(--hairline);
-    box-shadow:none;font-weight:600;
-  }
-  .btn-ghost:hover{background:var(--ink-elevated);border-color:var(--teal)}
+    .metrics { grid-template-columns: repeat(5, 1fr); margin-bottom: 13px; }
+    .metric { min-height: 116px; padding: 15px; }
+    .metric-label { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
+    .metric-value { margin: 13px 0 5px; font: 700 28px var(--font-display); }
+    .metric-note { color: var(--faint); font-size: 10px; }
+    .metric-note strong { color: var(--green); }
+    .spark { position: absolute; right: 13px; bottom: 14px; height: 25px; display: flex; align-items: flex-end; gap: 3px; }
+    .spark i { width: 3px; border-radius: 2px; background: rgba(74, 145, 216, 0.38); }
+    .spark i:last-child { background: var(--gold); }
+    .command-action { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 18px; margin-bottom: 13px; padding: 14px 16px; background: #111f2b; border-color: rgba(208, 168, 83, 0.28); }
+    .action-copy { display: flex; align-items: center; gap: 12px; }
+    .action-icon { width: 38px; height: 38px; display: grid; place-items: center; flex: none; color: var(--gold-soft); background: rgba(208, 168, 83, 0.10); border-radius: 6px; }
+    .action-copy strong { display: block; font: 600 14px var(--font-display); }
+    .action-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .dashboard-grid { grid-template-columns: minmax(0, 1.65fr) minmax(285px, 0.8fr); }
+    .stack { display: grid; gap: 13px; align-content: start; }
+    .sprint-row { display: flex; align-items: center; justify-content: space-between; gap: 13px; margin-bottom: 12px; }
+    .sprint-title { font-weight: 600; font-size: 12px; }
+    .sprint-title small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 400; }
+    .days-left { color: var(--gold-soft); font: 700 19px var(--font-display); text-align: right; }
+    .days-left small { display: block; color: var(--faint); font: 700 8px var(--font-body); letter-spacing: 1px; text-transform: uppercase; }
+    .progress { height: 5px; overflow: hidden; background: #07131e; border-radius: 3px; }
+    .progress span { display: block; height: 100%; background: var(--blue); border-radius: 3px; }
+    .progress.gold span { background: var(--gold); }
+    .table-wrap { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th { padding: 0 8px 9px; color: var(--faint); font-size: 8px; font-weight: 700; letter-spacing: 0.9px; text-align: left; text-transform: uppercase; }
+    .table td { padding: 10px 8px; border-top: 1px solid var(--line); font-size: 11px; white-space: nowrap; }
+    .table tr:hover td { background: rgba(255,255,255,0.012); }
+    .item-name { color: var(--text); font-weight: 600; }
+    .item-name small { display: block; margin-top: 2px; color: var(--faint); font-size: 9px; font-weight: 400; }
+    .status { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .status.warning::before { background: var(--amber); }
+    .status.blocked::before { background: var(--red); }
+    .status.parked::before { background: var(--faint); }
+    .risk-row { display: grid; grid-template-columns: auto 1fr; gap: 9px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .risk-row:last-child { border: 0; }
+    .risk-icon { width: 28px; height: 28px; display: grid; place-items: center; color: var(--red); background: rgba(234,114,114,0.09); border-radius: 5px; }
+    .risk-row strong, .recommendation strong { display: block; font-size: 11px; }
+    .risk-row p, .recommendation p { margin: 2px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .risk-tag { color: var(--red); font-size: 8px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
+    .recommendation { display: flex; gap: 9px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .recommendation:last-child { border: 0; }
+    .rank { width: 21px; height: 21px; display: grid; place-items: center; flex: none; color: var(--gold-soft); border: 1px solid rgba(208,168,83,0.28); border-radius: 50%; font: 700 9px var(--font-display); }
 
-  .microtrust{margin-top:14px;font-size:14.5px;color:var(--text-muted)}
+    .business-grid { grid-template-columns: repeat(3, 1fr); }
+    .business-card { min-height: 192px; padding: 17px; }
+    .business-top { display: flex; align-items: center; justify-content: space-between; }
+    .business-logo { width: 38px; height: 38px; display: grid; place-items: center; color: var(--gold-soft); background: #18354d; border: 1px solid var(--line); border-radius: 6px; font: 700 12px var(--font-display); }
+    .business-card h3 { margin: 14px 0 4px; font: 600 14px var(--font-display); }
+    .business-card > p { min-height: 31px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .business-meta { display: flex; justify-content: space-between; margin-top: 13px; padding-top: 11px; color: var(--faint); border-top: 1px solid var(--line); font-size: 9px; }
+    .business-meta b { display: block; margin-top: 3px; color: var(--text); font-size: 10px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .filter { padding: 6px 9px; cursor: pointer; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 4px; font-size: 10px; }
+    .filter.active, .filter:hover { color: var(--text); background: var(--panel-raised); border-color: var(--line-strong); }
+    .project-grid { grid-template-columns: repeat(2, 1fr); }
+    .project-card { padding: 16px; }
+    .project-top, .project-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .priority { padding: 3px 6px; color: var(--amber); background: rgba(228,173,82,0.09); border-radius: 4px; font-size: 8px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+    .project-card h3 { margin: 12px 0 4px; font: 600 13px var(--font-display); }
+    .project-card > p { min-height: 31px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .project-footer { margin-top: 13px; }
+    .owner { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 9px; }
+    .owner .avatar { width: 23px; height: 23px; font-size: 8px; }
+    .mini-progress { width: 84px; }
+    .mini-progress label { display: block; margin-bottom: 4px; color: var(--faint); font-size: 8px; text-align: right; }
+    .task-board { margin-top: 20px; }
+    .task-board-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
+    .task-board-header h2 { margin: 0; font: 600 15px var(--font-display); }
+    .task-board-header p { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+    .task-count { color: var(--faint); font-size: 9px; letter-spacing: 0.7px; text-transform: uppercase; }
+    .task-list { display: grid; gap: 7px; }
+    .task-row { display: grid; grid-template-columns: minmax(200px, 1.7fr) minmax(110px, 0.8fr) 92px 92px 105px; gap: 14px; align-items: center; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+    .task-row:hover { background: var(--panel-raised); border-color: var(--line-strong); }
+    .task-main { min-width: 0; display: flex; align-items: center; gap: 10px; }
+    .task-state { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 4px rgba(74,145,216,0.08); }
+    .task-main strong { display: block; overflow: hidden; color: var(--text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .task-main small { display: block; margin-top: 2px; color: var(--faint); font-size: 9px; }
+    .task-cell { min-width: 0; color: var(--muted); font-size: 10px; }
+    .task-label { display: block; margin-bottom: 2px; color: var(--faint); font-size: 7px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
+    .task-priority { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+    .task-priority::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--faint); }
+    .task-priority.high { color: var(--red); }
+    .task-priority.high::before { background: var(--red); }
+    .task-priority.medium { color: var(--amber); }
+    .task-priority.medium::before { background: var(--amber); }
+    .task-priority.low { color: var(--green); }
+    .task-priority.low::before { background: var(--green); }
+    .task-empty { padding: 30px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 6px; text-align: center; font-size: 11px; }
+    .team-grid { grid-template-columns: repeat(4, 1fr); }
+    .person-card { min-height: 184px; padding: 16px; text-align: center; }
+    .person-card .avatar { width: 46px; height: 46px; margin: 0 auto 9px; font-size: 13px; }
+    .person-card h3 { margin: 0; font: 600 12px var(--font-display); }
+    .person-role { margin: 3px 0 10px; color: var(--muted); font-size: 9px; }
+    .focus-box { min-height: 42px; padding: 7px; color: var(--muted); background: rgba(255,255,255,0.022); border-radius: 4px; font-size: 9px; line-height: 1.45; text-align: left; }
+    .person-state { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 9px; color: var(--green); font-size: 8px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+    .risk-grid, .recommendation-grid, .journal-grid { grid-template-columns: repeat(2, 1fr); }
+    .risk-card { padding: 16px; border-left: 2px solid var(--red); }
+    .risk-card.medium { border-left-color: var(--amber); }
+    .risk-card h3 { margin: 4px 0; font: 600 13px var(--font-display); }
+    .risk-card p { margin: 0 0 12px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .risk-meta { display: flex; justify-content: space-between; color: var(--faint); font-size: 9px; }
+    .recommendation-card { display: grid; grid-template-columns: auto 1fr auto; gap: 11px; align-items: start; padding: 16px; }
+    .recommendation-card h3 { margin: 1px 0 4px; font: 600 13px var(--font-display); }
+    .recommendation-card p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .impact { padding: 3px 6px; color: var(--green); background: rgba(66,201,141,0.08); border-radius: 4px; font-size: 8px; font-weight: 700; text-transform: uppercase; }
 
-  /* ---------- horizon divider ---------- */
-  .horizon{height:1px;width:100%;background:linear-gradient(90deg,transparent,var(--hairline) 20%,var(--hairline) 80%,transparent);margin:0}
+    .journal-card { padding: 17px; }
+    .journal-card h2 { margin: 0; font: 600 14px var(--font-display); }
+    .journal-hint { margin: 4px 0 13px; color: var(--muted); font-size: 10px; }
+    .field { margin-bottom: 11px; }
+    .field label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+    .input, .textarea { width: 100%; padding: 9px 10px; outline: 0; color: var(--text); background: #081521; border: 1px solid var(--line); border-radius: 5px; }
+    .input:focus, .textarea:focus { border-color: rgba(74,145,216,0.65); box-shadow: 0 0 0 3px rgba(74,145,216,0.08); }
+    .textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+    select.input { color-scheme: dark; }
+    select.input option { color: var(--text); background: var(--panel); }
+    input[type="date"] { color-scheme: dark; }
+    .required-mark { color: var(--red); }
+    .field-error { min-height: 13px; display: block; margin-top: 4px; color: #f19a9a; font-size: 9px; line-height: 1.3; }
+    .field.invalid .input, .field.invalid .textarea { border-color: rgba(234,114,114,0.72); box-shadow: 0 0 0 3px rgba(234,114,114,0.07); }
+    .journal-actions { display: flex; align-items: center; justify-content: space-between; }
+    .save-state { color: var(--faint); font-size: 9px; }
 
-  /* ---------- hero ---------- */
-  .hero{position:relative;padding:120px 0 90px;overflow:hidden}
-  .hero-sky{
-    position:absolute;inset:0;z-index:0;
-    background:
-      radial-gradient(120% 80% at 78% 8%, rgba(14,157,142,.15), transparent 45%),
-      radial-gradient(90% 70% at 90% 0%, rgba(201,145,46,.12), transparent 50%),
-      linear-gradient(180deg,#0a1015 0%, var(--ink) 60%, var(--ink-raised) 100%);
-  }
-  .hero-sun{
-    position:absolute;z-index:0;right:-120px;top:-120px;width:520px;height:520px;border-radius:50%;
-    background:radial-gradient(circle, rgba(14,157,142,.25), rgba(14,157,142,.05) 60%, transparent 70%);
-    filter:blur(6px);
-  }
-  .hero .wrap{position:relative;z-index:1}
-  .hero h1{font-size:clamp(40px,6.2vw,76px);font-weight:800;max-width:14ch;margin:22px 0 0;color:var(--text-strong)}
-  .hero h1 .lift{color:var(--brass-soft)}
-  .hero .sub{font-size:clamp(19px,2.2vw,23px);color:var(--text);max-width:46ch;margin:22px 0 34px;font-weight:400}
-  .hero .sub b{font-weight:700;color:var(--text-strong)}
+    .chat-shell { height: calc(100vh - 139px); min-height: 480px; display: grid; grid-template-columns: 250px 1fr; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .chat-sidebar { padding: 13px; border-right: 1px solid var(--line); }
+    .new-chat { width: 100%; }
+    .thread { margin-top: 7px; padding: 9px; cursor: pointer; color: var(--muted); border-radius: 5px; font-size: 10px; }
+    .thread.active { color: var(--text); background: var(--panel-raised); }
+    .thread span { display: block; margin-top: 2px; color: var(--faint); font-size: 8px; }
+    .chat-main { min-width: 0; display: flex; flex-direction: column; }
+    .messages { flex: 1; overflow-y: auto; padding: 24px max(22px, 7vw); }
+    .message { max-width: 760px; display: flex; gap: 10px; margin-bottom: 18px; }
+    .message.user { margin-left: auto; flex-direction: row-reverse; }
+    .bot-avatar { width: 29px; height: 29px; display: grid; place-items: center; flex: none; color: var(--gold-soft); background: rgba(208,168,83,0.11); border-radius: 5px; }
+    .bubble { padding: 10px 12px; color: #d9e6f0; background: var(--panel-raised); border: 1px solid var(--line); border-radius: 6px; font-size: 11px; line-height: 1.55; }
+    .bubble strong { color: var(--gold-soft); }
+    .message.user .bubble { background: rgba(74,145,216,0.13); border-color: rgba(74,145,216,0.23); }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; }
+    .suggestion { padding: 5px 8px; cursor: pointer; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 4px; font-size: 9px; }
+    .chat-input { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
+    .chat-input .input { flex: 1; }
+    .send-button { width: 38px; padding: 0; }
 
-  .cred{display:flex;flex-wrap:wrap;gap:26px;margin-top:54px;padding-top:30px;border-top:1px solid var(--hairline)}
-  .cred .item{display:flex;flex-direction:column;gap:2px}
-  .cred .num{font-family:var(--font-display);font-weight:700;font-size:26px;color:var(--teal-soft)}
-  .cred .lab{font-size:14px;color:var(--text-muted);max-width:22ch}
+    .auth-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(3,9,15,0.90); backdrop-filter: blur(18px); }
+    .auth-card { width: min(410px, 100%); padding: 27px; background: #0d1d2b; border: 1px solid var(--line-strong); border-radius: 9px; box-shadow: 0 24px 90px rgba(0,0,0,0.5); }
+    .auth-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .auth-brand strong { font: 700 14px var(--font-display); }
+    .auth-brand small { display: block; margin-top: 2px; color: var(--faint); font-size: 8px; letter-spacing: 1.4px; }
+    .auth-card h1 { margin: 0; font: 700 22px var(--font-display); }
+    .auth-lead { margin: 7px 0 19px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .auth-card > .button { width: 100%; padding: 10px; }
+    .secure { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 15px; color: var(--faint); font-size: 9px; }
+    .back-button { padding: 0; margin-bottom: 12px; cursor: pointer; color: var(--muted); background: transparent; border: 0; font-size: 10px; }
+    .code-inputs { display: flex; gap: 6px; margin: 17px 0; }
+    .code-inputs input { width: calc((100% - 30px) / 6); height: 44px; padding: 0; font-size: 17px; text-align: center; }
+    .toast { position: fixed; z-index: 120; right: 17px; bottom: 17px; padding: 10px 13px; color: var(--text); background: #142b3f; border: 1px solid var(--line-strong); border-left: 3px solid var(--green); border-radius: 5px; box-shadow: 0 12px 30px rgba(0,0,0,0.35); font-size: 10px; opacity: 0; transform: translateY(70px); transition: 200ms; }
+    .toast.show { opacity: 1; transform: none; }
+    body.modal-open { overflow: hidden; }
+    .modal-overlay { position: fixed; z-index: 90; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(3,9,15,0.78); backdrop-filter: blur(12px); }
+    .task-modal { width: min(700px, 100%); max-height: calc(100vh - 36px); overflow-y: auto; background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; box-shadow: 0 25px 90px rgba(0,0,0,0.55); }
+    .modal-header { position: sticky; z-index: 2; top: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 17px 18px 14px; background: rgba(13,29,43,0.97); border-bottom: 1px solid var(--line); }
+    .modal-header h2 { margin: 0; font: 700 18px var(--font-display); }
+    .modal-header p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .modal-close { flex: none; }
+    .task-form { padding: 17px 18px 18px; }
+    .task-form .textarea { min-height: 64px; }
+    .task-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+    .field-full { grid-column: 1 / -1; }
+    .dependency-picker { overflow: hidden; background: #081521; border: 1px solid var(--line); border-radius: 5px; }
+    .dependency-picker:focus-within { border-color: rgba(74,145,216,0.65); box-shadow: 0 0 0 3px rgba(74,145,216,0.08); }
+    .dependency-search { width: 100%; padding: 8px 10px; outline: 0; color: var(--text); background: transparent; border: 0; border-bottom: 1px solid var(--line); }
+    .dependency-options { max-height: 82px; overflow-y: auto; padding: 4px; }
+    .dependency-option { display: flex; align-items: center; gap: 8px; padding: 7px; cursor: pointer; border-radius: 4px; }
+    .dependency-option:hover { background: rgba(255,255,255,0.03); }
+    .dependency-option input { width: 14px; height: 14px; margin: 0; accent-color: var(--blue); }
+    .dependency-option span { min-width: 0; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .dependency-empty { padding: 12px 8px; color: var(--faint); font-size: 9px; text-align: center; }
+    .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+    .mobile-menu { display: none; }
+    .mobile-overlay { display: none; }
 
-  /* ---------- pain mirror ---------- */
-  .pain{padding:96px 0}
-  .pain h2{font-size:clamp(30px,4vw,46px);font-weight:700;max-width:18ch;margin:18px 0 40px;color:var(--text-strong)}
-  .pain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-  .pain-card{
-    background:var(--ink-raised);border:1px solid var(--hairline);border-radius:var(--r-lg);
-    padding:26px 28px;font-size:19px;color:var(--text);position:relative;
-    transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
-  }
-  .pain-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
-  .pain-card span{color:var(--teal-soft);font-weight:700}
-  .pain-foot{margin-top:34px;font-size:21px;color:var(--text-muted);max-width:40ch}
-  .pain-foot b{color:var(--text-strong);font-weight:700}
-
-  /* ---------- what we do ---------- */
-  .offer{padding:96px 0;background:linear-gradient(180deg, var(--ink) 0%, var(--ink-raised) 100%)}
-  .offer h2{font-size:clamp(30px,4vw,46px);font-weight:700;max-width:16ch;margin:18px 0 14px;color:var(--text-strong)}
-  .offer .lede{color:var(--text-muted);max-width:48ch;margin-bottom:46px;font-size:19px}
-  .do-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .do-card{
-    background:var(--ink-raised);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:30px 26px;
-    transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
-  }
-  .do-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
-  .do-card .ic{width:44px;height:44px;border-radius:var(--r-md);display:grid;place-items:center;background:rgba(14,157,142,.12);margin-bottom:18px;font-size:22px}
-  .do-card h3{font-size:21px;font-weight:700;margin-bottom:8px;color:var(--text-strong)}
-  .do-card p{font-size:16.5px;color:var(--text-muted)}
-
-  /* ---------- how it works ---------- */
-  .how{padding:96px 0}
-  .how h2{font-size:clamp(30px,4vw,46px);font-weight:700;margin:18px 0 50px;color:var(--text-strong)}
-  .step{display:grid;grid-template-columns:88px 1fr;gap:26px;padding:30px 0;border-top:1px solid var(--hairline);align-items:start}
-  .step:last-child{border-bottom:1px solid var(--hairline)}
-  .step .n{font-family:var(--font-display);font-weight:800;font-size:46px;color:var(--hairline);line-height:1}
-  .step h3{font-size:23px;font-weight:700;margin-bottom:6px;color:var(--text-strong)}
-  .step p{color:var(--text-muted);font-size:17.5px;max-width:54ch}
-
-  /* ---------- why us ---------- */
-  .why{padding:96px 0;background:var(--ink-raised)}
-  .why-inner{display:grid;grid-template-columns:1.1fr .9fr;gap:60px;align-items:center}
-  .why h2{font-size:clamp(28px,3.6vw,42px);font-weight:700;max-width:16ch;margin:16px 0 22px;color:var(--text-strong)}
-  .why p{color:var(--text-muted);font-size:18px;margin-bottom:16px;max-width:50ch}
-  .why p b{color:var(--text);font-weight:600}
-  .why-card{background:var(--ink);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:34px}
-  .why-card .q{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1.3;color:var(--text-strong)}
-  .why-card .by{margin-top:18px;font-size:15px;color:var(--text-muted)}
-  .placeholder{margin-top:22px;font-size:13px;color:var(--text-faint);border:1px dashed var(--hairline);border-radius:var(--r-md);padding:10px 12px}
-
-  /* ---------- offer ladder ---------- */
-  .ladder{padding:90px 0}
-  .ladder h2{font-size:clamp(26px,3.2vw,38px);font-weight:700;margin:14px 0 8px;color:var(--text-strong)}
-  .ladder .lede{color:var(--text-muted);margin-bottom:40px;max-width:46ch}
-  .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .tier{border:1px solid var(--hairline);border-radius:var(--r-lg);padding:28px 26px;background:var(--ink-raised);
-    transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);}
-  .tier:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
-  .tier.feat{border-color:var(--teal);background:linear-gradient(180deg, rgba(14,157,142,.08), var(--ink-raised))}
-  .tier .tag{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
-  .tier h3{font-size:22px;font-weight:700;margin:12px 0 8px;color:var(--text-strong)}
-  .tier p{font-size:16px;color:var(--text-muted)}
-  .tier .flag{display:inline-block;margin-top:14px;font-size:13px;font-weight:700;color:var(--teal-soft)}
-
-  /* ---------- final CTA ---------- */
-  .final{padding:110px 0;position:relative;overflow:hidden;text-align:center}
-  .final-sky{position:absolute;inset:0;z-index:0;background:
-    radial-gradient(80% 120% at 50% 120%, rgba(14,157,142,.20), transparent 55%),
-    radial-gradient(60% 90% at 50% 130%, rgba(201,145,46,.15), transparent 60%);}
-  .final .wrap{position:relative;z-index:1}
-  .final h2{font-size:clamp(34px,5vw,58px);font-weight:800;max-width:16ch;margin:0 auto 20px;color:var(--text-strong)}
-  .final p{color:var(--text-muted);font-size:20px;max-width:42ch;margin:0 auto 36px}
-
-  .cta-variant{display:none}
-  body[data-cta="A"] .cta-A{display:block}
-  body[data-cta="B"] .cta-B{display:block}
-  body[data-cta="C"] .cta-C{display:block}
-  .price-line{font-family:var(--font-display);font-weight:800;font-size:40px;color:var(--text-strong);margin-bottom:6px}
-  .price-line small{font-family:var(--font-body);font-weight:500;font-size:16px;color:var(--text-muted);display:block;margin-top:4px}
-
-  /* ---------- footer ---------- */
-  footer{padding:46px 0;border-top:1px solid var(--hairline);color:var(--text-muted);font-size:14.5px}
-  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
-  .logo{font-family:var(--font-display);font-weight:800;font-size:19px;color:var(--text-strong);letter-spacing:-0.01em}
-  .logo span{color:var(--teal)}
-
-  /* ---------- responsive ---------- */
-  @media(max-width:860px){
-    .pain-grid,.do-grid,.tiers{grid-template-columns:1fr}
-    .why-inner{grid-template-columns:1fr;gap:34px}
-    .hero{padding:100px 0 70px}
-    .step{grid-template-columns:56px 1fr;gap:18px}
-    .step .n{font-size:34px}
-  }
-  @media(prefers-reduced-motion:reduce){
-    *{scroll-behavior:auto}
-    .btn,.pain-card,.do-card,.tier{transition:none}
-  }
-</style>
+    @media (max-width: 1100px) {
+      .metrics { grid-template-columns: repeat(3, 1fr); }
+      .business-grid { grid-template-columns: repeat(2, 1fr); }
+      .team-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 820px) {
+      :root { --sidebar-width: 0px; }
+      .topbar { padding: 0 13px; }
+      .brand { width: auto; }
+      .brand small, .breadcrumb { display: none; }
+      .top-context { justify-content: flex-end; }
+      .mobile-menu { display: grid; margin-right: 9px; }
+      .sidebar { width: 228px; transform: translateX(-100%); transition: transform 180ms ease; }
+      .sidebar.open { transform: none; }
+      .mobile-overlay { position: fixed; z-index: 30; inset: var(--topbar-height) 0 0; display: block; background: rgba(0,0,0,0.52); }
+      .view { padding: 18px 13px 34px; }
+      .dashboard-grid, .journal-grid, .risk-grid, .recommendation-grid { grid-template-columns: 1fr; }
+      .project-grid { grid-template-columns: 1fr; }
+      .task-row { grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(90px, 0.6fr)); }
+      .task-row .task-cell:nth-of-type(2), .task-row .task-cell:nth-of-type(3) { display: none; }
+      .team-grid { grid-template-columns: repeat(2, 1fr); }
+      .command-action { grid-template-columns: 1fr; }
+      .command-action .button { width: 100%; }
+      .chat-shell { grid-template-columns: 1fr; }
+      .chat-sidebar { display: none; }
+    }
+    @media (max-width: 560px) {
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .metric:last-child { grid-column: 1 / -1; }
+      .business-grid, .team-grid { grid-template-columns: 1fr; }
+      .top-quick-add { width: 35px; padding: 0; }
+      .top-quick-add span { display: none; }
+      .task-board-header { align-items: flex-start; }
+      .task-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .task-main { grid-column: 1 / -1; }
+      .task-row .task-cell:nth-of-type(2), .task-row .task-cell:nth-of-type(3) { display: block; }
+      .task-form-grid { grid-template-columns: 1fr; }
+      .field-full { grid-column: auto; }
+      .modal-overlay { align-items: end; padding: 8px; }
+      .task-modal { max-height: calc(100vh - 16px); }
+      .modal-header { padding: 15px; }
+      .task-form { padding: 15px; }
+      .system-state, .date-chip { display: none; }
+      .table th:nth-child(3), .table td:nth-child(3) { display: none; }
+      .messages { padding: 18px 11px; }
+      .view-header h1 { font-size: 21px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
 </head>
-
-<body data-cta="B">
-
-<header class="hero">
-  <div class="hero-sky" aria-hidden="true"></div>
-  <div class="hero-sun" aria-hidden="true"></div>
-  <div class="wrap">
-    <span class="eyebrow">Clever Wolf Digital · Hawaiʻi</span>
-    <h1>You wear all the hats. Let us run <span class="lift">a few of them</span> for you.</h1>
-    <p class="sub">We set up an AI system that quietly handles your marketing and busywork in the background, so the work keeps happening <b>even when you are slammed on the job.</b></p>
-
-    <a class="btn" href="https://calendly.com/cwd/new-meeting">Book a 15-minute fit call</a>
-    <p class="microtrust">Local and plain-spoken. No tech jargon, no commitment, no pressure.</p>
-
-    <div class="cred">
-      <div class="item"><span class="num">15+ yrs</span><span class="lab">in digital marketing for local and national brands</span></div>
-      <div class="item"><span class="num">State of Hawaiʻi</span><span class="lab">adult educator and conference speaker</span></div>
-      <div class="item"><span class="num">Built here</span><span class="lab">Mililani-based, running these same systems in-house</span></div>
-    </div>
-  </div>
-</header>
-
-<section class="pain">
-  <div class="wrap">
-    <span class="eyebrow">Sound familiar?</span>
-    <h2>Right now your growth lives and dies on who happens to refer you.</h2>
-    <div class="pain-grid">
-      <div class="pain-card">"It is <span>all word of mouth</span> right now. Some months are packed, some are dead quiet."</div>
-      <div class="pain-card">"I know I should be doing more online, I just <span>don't have time</span> for it."</div>
-      <div class="pain-card">"Marketing is the first thing that <span>falls off</span> the second a job gets busy."</div>
-      <div class="pain-card">"I'm curious about AI but I <span>don't even know where to start.</span>"</div>
-    </div>
-    <p class="pain-foot">You are not behind because you are doing it wrong. You are behind because <b>you are the only one doing it.</b> That is the part we fix.</p>
-  </div>
-</section>
-
-<div class="horizon"></div>
-
-<section class="offer">
-  <div class="wrap">
-    <span class="eyebrow">AI Agent Setup</span>
-    <h2>One system that works while you are on the job.</h2>
-    <p class="lede">We build and wire up an AI setup tailored to your business, then hand you something that runs without babysitting. Here is what it takes off your plate.</p>
-    <div class="do-grid">
-      <div class="do-card">
-        <div class="ic" aria-hidden="true">💬</div>
-        <h3>Answers customers fast</h3>
-        <p>New leads and questions get a quick, on-brand reply, day or night, so nobody slips through while you are working.</p>
+<body>
+  <div class="auth-overlay" id="authOverlay">
+    <section class="auth-card" id="magicStep">
+      <div class="auth-brand">
+        <div class="brand-mark"><i data-lucide="brain-circuit" class="icon-lg"></i></div>
+        <div><strong>Single Brain</strong><small>SECURE COMMAND ACCESS</small></div>
       </div>
-      <div class="do-card">
-        <div class="ic" aria-hidden="true">🔁</div>
-        <h3>Keeps marketing running</h3>
-        <p>Posts, follow-ups, and outreach keep going on a steady rhythm instead of stopping the week you get busy.</p>
+      <div class="eyebrow">Identity verification</div>
+      <h1>Welcome back, Quincy.</h1>
+      <p class="auth-lead">Enter your email to receive a secure magic link. Authentication is simulated locally for this prototype.</p>
+      <div class="field"><label>Email address</label><input class="input" id="authEmail" type="email" value="quincy@cleverwolf.ai" autocomplete="email"></div>
+      <button class="button" id="magicButton"><i data-lucide="send" class="icon-sm"></i>Send magic link</button>
+      <div class="secure"><i data-lucide="lock-keyhole" class="icon-sm"></i>Magic link + two-factor authentication</div>
+    </section>
+    <section class="auth-card hidden" id="twoFactorStep">
+      <button class="back-button" id="authBack">Back to email</button>
+      <div class="eyebrow">Second factor</div>
+      <h1>Enter security code.</h1>
+      <p class="auth-lead">A six-digit code was sent to your trusted device. For this prototype, use <strong style="color:var(--text)">246810</strong>.</p>
+      <div class="code-inputs" id="codeInputs">
+        <input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1"><input class="input" inputmode="numeric" maxlength="1">
       </div>
-      <div class="do-card">
-        <div class="ic" aria-hidden="true">⏳</div>
-        <h3>Gives you hours back</h3>
-        <p>The repeatable busywork runs itself, so the time goes back to the work only you can do.</p>
+      <button class="button" id="verifyButton"><i data-lucide="shield-check" class="icon-sm"></i>Verify and enter</button>
+      <div class="secure"><i data-lucide="shield" class="icon-sm"></i>Owner access only</div>
+    </section>
+  </div>
+
+  <header class="topbar">
+    <button class="icon-button mobile-menu" id="menuButton" aria-label="Open navigation"><i data-lucide="menu" class="icon"></i></button>
+    <div class="brand"><div class="brand-mark"><i data-lucide="brain-circuit" class="icon"></i></div><div>Single Brain<small>Command Center</small></div></div>
+    <div class="top-context">
+      <div class="breadcrumb"><span>SingleBrain</span><i data-lucide="chevron-right" class="icon-sm"></i><strong id="breadcrumbName">Overview</strong></div>
+      <div class="top-actions">
+        <div class="system-state"><span class="pulse"></span>Systems nominal</div>
+        <button class="button top-quick-add" data-open-task aria-label="Global quick add task"><i data-lucide="plus" class="icon-sm"></i><span>Quick add</span></button>
+        <button class="icon-button" aria-label="Search"><i data-lucide="search" class="icon"></i></button>
+        <button class="icon-button" aria-label="Notifications"><i data-lucide="bell" class="icon"></i></button>
+        <div class="avatar">QS</div>
       </div>
     </div>
-  </div>
-</section>
+  </header>
+  <div class="mobile-overlay hidden" id="mobileOverlay"></div>
 
-<section class="how">
-  <div class="wrap">
-    <span class="eyebrow">How it works</span>
-    <h2>Done for you, not handed to you.</h2>
-    <div class="step">
-      <div class="n">1</div>
-      <div><h3>We learn your business</h3><p>A short call to understand how you actually get customers, what eats your time, and what "good" looks like for you. No homework on your end.</p></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="nav-label">Command</div>
+    <nav class="nav">
+      <button class="nav-button active" data-view="overview"><i data-lucide="layout-dashboard" class="icon"></i>Overview</button>
+      <button class="nav-button" data-view="businesses"><i data-lucide="building-2" class="icon"></i>Businesses</button>
+      <button class="nav-button" data-view="projects"><i data-lucide="folder-kanban" class="icon"></i>Projects</button>
+      <button class="nav-button" data-view="staff"><i data-lucide="users" class="icon"></i>Staff</button>
+      <button class="nav-button" data-view="blockers"><i data-lucide="triangle-alert" class="icon"></i>Blockers<span class="nav-badge">3</span></button>
+      <button class="nav-button" data-view="recommendations"><i data-lucide="route" class="icon"></i>Recommendations</button>
+    </nav>
+    <div class="nav-label" style="margin-top:15px">Intelligence</div>
+    <nav class="nav">
+      <button class="nav-button" data-view="journal"><i data-lucide="notebook-pen" class="icon"></i>Daily Journal</button>
+      <button class="nav-button" data-view="chat"><i data-lucide="message-square-text" class="icon"></i>Brain Chat</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sync-state"><i data-lucide="git-branch" class="icon-sm"></i><span class="pulse"></span>Synced to repository</div>
+      <p>Source of truth<br>SingleBrain / main</p>
     </div>
-    <div class="step">
-      <div class="n">2</div>
-      <div><h3>We build the system</h3><p>We set up your AI agent, wire it into the tools you already use, and train it on your voice and your offers. You approve everything before it goes live.</p></div>
-    </div>
-    <div class="step">
-      <div class="n">3</div>
-      <div><h3>It runs in the background</h3><p>You get a system that handles the busywork on its own. We hand it over working, and show you exactly how to use it in plain language.</p></div>
-    </div>
-  </div>
-</section>
+  </aside>
 
-<section class="why">
-  <div class="wrap why-inner">
-    <div>
-      <span class="eyebrow">Why Clever Wolf</span>
-      <h2>We are not a mainland agency reading from a script.</h2>
-      <p>This is built and run right here. <b>We use these exact systems inside our own businesses first,</b> then set them up for local owners who do not have time to figure it out alone.</p>
-      <p>No jargon, no lock-in, no pretending AI is magic. Just a system that does the parts of the job you keep meaning to get to.</p>
-    </div>
-    <div class="why-card">
-      <div class="q">"If it actually saves me time, I'm in. That's the whole bar."</div>
-      <div class="by">The thing every owner we talk to says, in some form or another.</div>
-      <div class="placeholder">↳ Real client testimonial goes here after your first setups. Do not fabricate one.</div>
-    </div>
-  </div>
-</section>
-
-<section class="ladder">
-  <div class="wrap">
-    <span class="eyebrow">Where people start</span>
-    <h2>Start small or go all in.</h2>
-    <p class="lede">Most owners begin with one piece and grow into the full setup. No wrong door.</p>
-    <div class="tiers">
-      <div class="tier">
-        <span class="tag">Front door</span>
-        <h3>AI-Built Launch Page</h3>
-        <p>A high-converting page and copy for one offer, built fast and tuned to your customer.</p>
+  <main class="main">
+    <section class="view active" id="overview">
+      <div class="view-header">
+        <div><div class="eyebrow">Sunday / July 12, 2026</div><h1>Good morning, Quincy.</h1><p>Your command brief is focused on one outcome: close and invoice the next deal.</p></div>
+        <div class="date-chip"><i data-lucide="calendar-days" class="icon-sm"></i><strong style="color:var(--gold-soft)">Prototype data</strong> / Sales sprint / Day 11 of 14</div>
       </div>
-      <div class="tier feat">
-        <span class="tag">Most popular</span>
-        <h3>AI Agent Setup</h3>
-        <p>The full done-for-you system that answers customers and keeps marketing running.</p>
-        <span class="flag">You are here</span>
+      <div class="grid metrics">
+        <article class="card metric"><div class="metric-label">Warm outreach<i data-lucide="send" class="icon-sm"></i></div><div class="metric-value">24</div><div class="metric-note"><strong>+6</strong> this week</div><div class="spark"><i style="height:25%"></i><i style="height:42%"></i><i style="height:34%"></i><i style="height:68%"></i><i style="height:92%"></i></div></article>
+        <article class="card metric"><div class="metric-label">Replies<i data-lucide="reply" class="icon-sm"></i></div><div class="metric-value">7</div><div class="metric-note"><strong>29%</strong> reply rate</div><div class="spark"><i style="height:20%"></i><i style="height:36%"></i><i style="height:54%"></i><i style="height:46%"></i><i style="height:76%"></i></div></article>
+        <article class="card metric"><div class="metric-label">Fit calls<i data-lucide="phone-call" class="icon-sm"></i></div><div class="metric-value">3</div><div class="metric-note">2 completed / 1 booked</div></article>
+        <article class="card metric"><div class="metric-label">Closes<i data-lucide="circle-check-big" class="icon-sm"></i></div><div class="metric-value">0</div><div class="metric-note" style="color:var(--amber)">Target: 1-3 by Jul 16</div></article>
+        <article class="card metric"><div class="metric-label">Revenue<i data-lucide="badge-dollar-sign" class="icon-sm"></i></div><div class="metric-value">$0</div><div class="metric-note">Invoiced and collected</div></article>
       </div>
-      <div class="tier">
-        <span class="tag">Ongoing</span>
-        <h3>AI Managed Marketing</h3>
-        <p>We keep the loop running month to month, track what works, and scale it.</p>
+
+      <article class="card command-action">
+        <div class="action-copy"><div class="action-icon"><i data-lucide="crosshair" class="icon-lg"></i></div><div><div class="eyebrow" style="margin-bottom:2px">Highest-leverage action</div><strong>Follow up with the 3 warm prospects from last week</strong><span>Send a direct close-the-loop message before 11:00 AM. No new build work.</span></div></div>
+        <button class="button" data-go="chat"><i data-lucide="wand-sparkles" class="icon-sm"></i>Draft follow-ups</button>
+      </article>
+
+      <div class="grid dashboard-grid">
+        <div class="stack">
+          <article class="card">
+            <div class="panel-header"><h2>Active Sales Sprint</h2><span>July 2 - July 16</span></div>
+            <div class="panel-body"><div class="sprint-row"><div class="sprint-title">AI-Built Lead Gen Website<small>Close 1-3 deals / Lead with $2,500</small></div><div class="days-left">4<small>days remaining</small></div></div><div class="progress gold"><span style="width:71%"></span></div></div>
+          </article>
+          <article class="card">
+            <div class="panel-header"><h2>Active Projects</h2><button class="filter" data-go="projects">View all</button></div>
+            <div class="panel-body table-wrap">
+              <table class="table"><thead><tr><th>Project</th><th>Status</th><th>Owner</th><th>Next action</th></tr></thead><tbody>
+                <tr><td class="item-name">Sales Sprint<small>Clever Wolf Digital</small></td><td><span class="status">Active</span></td><td>Quincy</td><td>Warm follow-ups</td></tr>
+                <tr><td class="item-name">Email Cleanup<small>Personal</small></td><td><span class="status warning">In progress</span></td><td>Quincy</td><td>Daily review</td></tr>
+                <tr><td class="item-name">Composio Integration<small>CWD</small></td><td><span class="status warning">Partial</span></td><td>Quincy</td><td>Improve tools</td></tr>
+                <tr><td class="item-name">Hermes Gateway<small>CWD</small></td><td><span class="status blocked">Blocked</span></td><td>Quincy</td><td>Discord connection</td></tr>
+              </tbody></table>
+            </div>
+          </article>
+        </div>
+        <div class="stack">
+          <article class="card"><div class="panel-header"><h2>Blockers & Risks</h2><button class="filter" data-go="blockers">Review</button></div><div class="panel-body">
+            <div class="risk-row"><div class="risk-icon"><i data-lucide="target" class="icon-sm"></i></div><div><span class="risk-tag">Critical</span><strong>Zero closed and invoiced</strong><p>Conversations happened; conversion remains the constraint.</p></div></div>
+            <div class="risk-row"><div class="risk-icon"><i data-lucide="plug-zap" class="icon-sm"></i></div><div><span class="risk-tag">Operational</span><strong>Composio reliability</strong><p>Direct calls frequently return "tool not found."</p></div></div>
+            <div class="risk-row"><div class="risk-icon"><i data-lucide="radio" class="icon-sm"></i></div><div><span class="risk-tag">Blocked</span><strong>Second Hermes gateway</strong><p>Discord connection is not yet complete.</p></div></div>
+          </div></article>
+          <article class="card"><div class="panel-header"><h2>Recommended Next Actions</h2><span>By revenue impact</span></div><div class="panel-body">
+            <div class="recommendation"><span class="rank">1</span><div><strong>Send three warm follow-ups</strong><p>Ask directly for the next step or close the loop.</p></div></div>
+            <div class="recommendation"><span class="rank">2</span><div><strong>Prepare the next fit call</strong><p>Use live objection notes from prior calls.</p></div></div>
+            <div class="recommendation"><span class="rank">3</span><div><strong>Log reply outcomes</strong><p>Capture the exact hook that earns a response.</p></div></div>
+          </div></article>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <section class="view" id="businesses">
+      <div class="view-header"><div><div class="eyebrow">Portfolio</div><h1>Businesses</h1><p>One active revenue focus. Four businesses intentionally parked.</p></div></div>
+      <div class="grid business-grid" id="businessGrid"></div>
+    </section>
+
+    <section class="view" id="projects">
+      <div class="view-header"><div><div class="eyebrow">Execution</div><h1>Projects</h1><p>Status, priority, ownership, blockers, and the next concrete move.</p></div><button class="button" data-open-task aria-label="Quick add task from projects"><i data-lucide="plus" class="icon-sm"></i>Quick add task</button></div>
+      <div class="filters"><button class="filter active" data-filter="all">All projects</button><button class="filter" data-filter="active">Active</button><button class="filter" data-filter="blocked">Blocked</button><button class="filter" data-filter="parked">Parked</button></div>
+      <div class="grid project-grid" id="projectGrid"></div>
+      <section class="task-board" aria-labelledby="taskQueueTitle">
+        <div class="task-board-header"><div><div class="eyebrow">Action Queue</div><h2 id="taskQueueTitle">Tasks</h2><p>Prototype tasks are stored in this browser.</p></div><span class="task-count" id="taskCount">0 tasks</span></div>
+        <div class="task-list" id="taskList" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section class="view" id="staff">
+      <div class="view-header"><div><div class="eyebrow">People</div><h1>Staff & Team</h1><p>Ownership and current focus across the operating system.</p></div></div>
+      <div class="grid team-grid" id="teamGrid"></div>
+    </section>
+
+    <section class="view" id="blockers">
+      <div class="view-header"><div><div class="eyebrow">Attention Required</div><h1>Blockers & Risks</h1><p>Constraints that threaten revenue, execution, or system reliability.</p></div></div>
+      <div class="grid risk-grid" id="riskGrid"></div>
+    </section>
+
+    <section class="view" id="recommendations">
+      <div class="view-header"><div><div class="eyebrow">Decision Support</div><h1>Recommendations</h1><p>Ranked actions based on immediacy, revenue impact, and current constraints.</p></div><div class="date-chip"><i data-lucide="sparkles" class="icon-sm"></i>Generated from current focus</div></div>
+      <div class="grid recommendation-grid" id="recommendationGrid"></div>
+    </section>
+
+    <section class="view" id="journal">
+      <div class="view-header"><div><div class="eyebrow">Daily Protocol</div><h1>Journal</h1><p>Morning intention and end-of-day reflection. Saved locally in this prototype.</p></div><div class="date-chip"><i data-lucide="calendar" class="icon-sm"></i>July 12, 2026</div></div>
+      <div class="grid journal-grid">
+        <form class="card journal-card journal-form" data-kind="morning">
+          <h2>Morning Brief</h2><p class="journal-hint">Choose one focus. Keep the day pointed at revenue.</p>
+          <div class="field"><label>Primary outcome</label><input class="input persist" name="outcome" value="Send 3 warm follow-ups and book the next fit call"></div>
+          <div class="field"><label>Top three priorities</label><textarea class="textarea persist" name="priorities">1. Follow up with warm prospects
+2. Prepare for the booked fit call
+3. Log every response and objection</textarea></div>
+          <div class="field"><label>What could block me?</label><textarea class="textarea persist" name="blocker" placeholder="Name the likely constraint before it shows up."></textarea></div>
+          <div class="journal-actions"><span class="save-state">Not yet saved</span><button class="button" type="submit"><i data-lucide="save" class="icon-sm"></i>Save morning</button></div>
+        </form>
+        <form class="card journal-card journal-form" data-kind="evening">
+          <h2>End-of-Day Review</h2><p class="journal-hint">Capture outcomes, decisions, and tomorrow's first move.</p>
+          <div class="field"><label>What moved forward?</label><textarea class="textarea persist" name="wins" placeholder="Messages sent, replies, calls, closes..."></textarea></div>
+          <div class="field"><label>Decisions and lessons</label><textarea class="textarea persist" name="lessons" placeholder="What did the market tell you today?"></textarea></div>
+          <div class="field"><label>Tomorrow's first action</label><input class="input persist" name="tomorrow" placeholder="The first concrete action for tomorrow."></div>
+          <div class="journal-actions"><span class="save-state">Not yet saved</span><button class="button" type="submit"><i data-lucide="save" class="icon-sm"></i>Save review</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="view" id="chat">
+      <div class="view-header"><div><div class="eyebrow">Conversational Intelligence</div><h1>Brain Chat</h1></div></div>
+      <div class="chat-shell">
+        <aside class="chat-sidebar">
+          <button class="button secondary new-chat"><i data-lucide="plus" class="icon-sm"></i>New conversation</button>
+          <div class="nav-label" style="margin-top:12px">Recent</div>
+          <div class="thread active">Sales sprint brief<span>Today / 8:42 AM</span></div>
+          <div class="thread">Warm prospect follow-ups<span>Yesterday</span></div>
+          <div class="thread">Weekly review<span>Friday</span></div>
+        </aside>
+        <div class="chat-main">
+          <div class="messages" id="messages">
+            <div class="message"><div class="bot-avatar"><i data-lucide="brain-circuit" class="icon-sm"></i></div><div class="bubble"><strong>Morning brief</strong><br>Your constraint is still the close, not infrastructure. The highest-leverage move is to send a direct follow-up to the three warm prospects from last week.</div></div>
+            <div class="message user"><div class="avatar">QS</div><div class="bubble">What should I focus on first today?</div></div>
+            <div class="message"><div class="bot-avatar"><i data-lucide="brain-circuit" class="icon-sm"></i></div><div class="bubble"><strong>Send the three follow-ups before 11:00 AM.</strong><br>Do not work on Composio or the Hermes gateway until those messages are sent. That is the action most likely to create a booked call or invoice inside the sprint window.</div></div>
+          </div>
+          <div class="suggestions"><button class="suggestion">Draft the 3 follow-ups</button><button class="suggestion">Summarize blockers</button><button class="suggestion">Show sprint scoreboard</button></div>
+          <form class="chat-input" id="chatForm"><input class="input" id="chatText" placeholder="Ask about priorities, projects, or decisions..." autocomplete="off"><button class="button blue send-button" aria-label="Send"><i data-lucide="arrow-up" class="icon-sm"></i></button></form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay hidden" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle" aria-hidden="true">
+    <section class="task-modal">
+      <header class="modal-header">
+        <div><div class="eyebrow">Command Input</div><h2 id="taskModalTitle">Quick Add Task</h2><p>Prototype entry / stored locally</p></div>
+        <button class="icon-button modal-close" type="button" data-close-task aria-label="Close quick add task" title="Close"><i data-lucide="x" class="icon"></i></button>
+      </header>
+      <form class="task-form" id="quickTaskForm" novalidate>
+        <div class="task-form-grid">
+          <div class="field field-full" data-field="task">
+            <label for="taskName">Task <span class="required-mark">*</span></label>
+            <input class="input" id="taskName" name="task" minlength="5" maxlength="120" autocomplete="off" required>
+            <span class="field-error" id="taskError" role="alert"></span>
+          </div>
+          <div class="field" data-field="business">
+            <label for="taskBusiness">Business <span class="required-mark">*</span></label>
+            <select class="input" id="taskBusiness" name="business" required><option value="">Select business</option></select>
+            <span class="field-error" id="businessError" role="alert"></span>
+          </div>
+          <div class="field" data-field="category">
+            <label for="taskCategory">Category <span class="required-mark">*</span></label>
+            <select class="input" id="taskCategory" name="category" required>
+              <option value="">Select category</option><option>Legal</option><option>Operations</option><option>Marketing</option><option>Tech</option><option>Staffing</option><option>Finance</option><option>Other</option>
+            </select>
+            <span class="field-error" id="categoryError" role="alert"></span>
+          </div>
+          <div class="field" data-field="priority">
+            <label for="taskPriority">Priority <span class="required-mark">*</span></label>
+            <select class="input" id="taskPriority" name="priority" required><option value="">Select priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+            <span class="field-error" id="priorityError" role="alert"></span>
+          </div>
+          <div class="field" data-field="dueDate">
+            <label for="taskDueDate">Due Date <span class="required-mark">*</span></label>
+            <input class="input" id="taskDueDate" name="dueDate" type="date" required>
+            <span class="field-error" id="dueDateError" role="alert"></span>
+          </div>
+          <div class="field field-full">
+            <label for="dependencySearch">Dependencies</label>
+            <div class="dependency-picker">
+              <input class="dependency-search" id="dependencySearch" type="search" placeholder="Search existing tasks" autocomplete="off">
+              <div class="dependency-options" id="dependencyOptions"></div>
+            </div>
+            <span class="field-error"></span>
+          </div>
+          <div class="field field-full">
+            <label for="taskNotes">Notes</label>
+            <textarea class="textarea" id="taskNotes" name="notes" maxlength="1000"></textarea>
+            <span class="field-error"></span>
+          </div>
+        </div>
+        <div class="modal-actions"><button class="button secondary" type="button" data-close-task>Cancel</button><button class="button" type="submit"><i data-lucide="plus" class="icon-sm"></i>Add task</button></div>
+      </form>
+    </section>
   </div>
-</section>
 
-<section class="final" id="start">
-  <div class="final-sky" aria-hidden="true"></div>
-  <div class="wrap">
-    <span class="eyebrow" style="justify-content:center">Let's get your time back</span>
-    <h2>Find out what this would look like for your business.</h2>
-    <p>A quick, no-pressure conversation. If it is not a fit, we will tell you straight.</p>
+  <div class="toast" id="toast" role="status" aria-live="polite">Saved.</div>
 
-    <div class="cta-variant cta-A">
-      <div class="price-line">Flat setup fee<small>One-time build, yours to keep. Final price confirmed on a short call.</small></div>
-      <a class="btn" href="https://calendly.com/cwd/new-meeting">Start your setup</a>
-      <p class="microtrust">Local. No subscription required to start.</p>
-    </div>
+  <script>
+    const businesses = [
+      { initials: "CW", name: "Clever Wolf Digital", state: "Active", status: "active", description: "AI-powered lead generation and digital growth for local businesses.", left: ["Current offer", "Lead Gen Website"], right: ["Sprint target", "1-3 closes"] },
+      { initials: "TM", name: "Tea Monkey", state: "Parked", status: "parked", description: "Portfolio business held outside the current sales sprint.", left: ["Projects", "0 active"], right: ["Attention", "0%"] },
+      { initials: "LH", name: "Lifeline Hawaii", state: "Parked", status: "parked", description: "Portfolio business held outside the current sales sprint.", left: ["Projects", "0 active"], right: ["Attention", "0%"] },
+      { initials: "RD", name: "Red Dot Productions", state: "Parked", status: "parked", description: "Creative production business awaiting future focus.", left: ["Projects", "0 active"], right: ["Attention", "0%"] },
+      { initials: "QS", name: "Personal Operations", state: "Maintenance", status: "warning", description: "Inbox, calendar, knowledge, and daily operating rhythm.", left: ["Open item", "Email cleanup"], right: ["Owner", "Quincy"] }
+    ];
+    const projects = [
+      { name: "July Sales Sprint", status: "active", state: "Active", priority: "P0 / Revenue", description: "Convert warm website conversations into invoiced deals.", progress: 71 },
+      { name: "Email Cleanup", status: "active", state: "In progress", stateClass: "warning", priority: "P2", description: "Reduce the inbox backlog through a small daily review.", progress: 62 },
+      { name: "Composio Integration", status: "active", state: "Partial", stateClass: "warning", priority: "P2", description: "Improve Gmail and Calendar reliability after the sales sprint.", progress: 40 },
+      { name: "Hermes Bot / Second Gateway", status: "blocked", state: "Blocked", stateClass: "blocked", priority: "P2", description: "Finish the second Discord gateway connection.", progress: 55 },
+      { name: "ScrapeGraphAI Research", status: "parked", state: "Not started", stateClass: "parked", priority: "Backlog", description: "Competitor research deferred while revenue is the priority.", progress: 0 }
+    ];
+    const seedTasks = [
+      { id: "task-warm-followups", business: "Clever Wolf Digital", task: "Send three warm follow-ups", category: "Marketing", priority: "High", dueDate: "2026-07-13", dependencies: [], notes: "Close the loop with last week's warm prospects." },
+      { id: "task-fit-call", business: "Clever Wolf Digital", task: "Prepare for the booked fit call", category: "Operations", priority: "High", dueDate: "2026-07-14", dependencies: ["task-warm-followups"], notes: "Review the prospect site and prior objections." },
+      { id: "task-inbox", business: "Personal Operations", task: "Review priority inbox messages", category: "Operations", priority: "Medium", dueDate: "2026-07-14", dependencies: [], notes: "Keep the review focused on warm opportunities." },
+      { id: "task-hermes-gateway", business: "Clever Wolf Digital", task: "Connect the second Hermes gateway", category: "Tech", priority: "Low", dueDate: "2026-07-16", dependencies: [], notes: "Deferred until revenue actions are complete." }
+    ];
+    const team = [
+      ["QS", "Quincy Solano", "Owner / Decision Maker", "Sales, fit calls, closes, invoicing, and overall direction.", true],
+      ["JL", "Jeremy Lum", "Sr. Digital Marketing Manager", "Marketing and content support for current initiatives.", true],
+      ["JO", "Jordan", "Email Systems", "Email infrastructure after the manual motion is proven.", true],
+      ["NI", "Nicole", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["KA", "Kari", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["DE", "Delmore", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["JA", "Jay", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["MA", "Madison", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["GI", "Gio", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["TY", "Tyler", "Team Member", "Role and current focus awaiting dashboard update.", false]
+    ];
+    const risks = [
+      ["Critical / Revenue", "No closed and invoiced deals", "Warm calls occurred, but none converted. The offer is not disproven; the close is the bottleneck.", "Quincy", "Warm follow-up", "critical"],
+      ["High / Integration", "Composio tool reliability", "Gmail and Calendar tools often return 'tool not found,' limiting dependable automation.", "Quincy", "After sales sprint", "medium"],
+      ["Medium / Infrastructure", "Second Hermes gateway disconnected", "The second gateway is not connected to Discord, leaving the planned channel unavailable.", "Quincy", "In progress", "medium"],
+      ["Medium / Capacity", "Inbox backlog remains", "Many emails still need review, increasing cognitive load and the chance of missing a warm opportunity.", "Quincy", "Daily review", "medium"]
+    ];
+    const recommendations = [
+      ["1", "Send three warm follow-ups", "Use a direct close-the-loop message. Ask whether to confirm scope this week or pause the conversation.", "High impact"],
+      ["2", "Prepare the booked fit call", "Review the prospect's site, likely leak points, and prior objections before the call begins.", "High impact"],
+      ["3", "Log every reply verbatim", "Capture the exact hook, objection, and next step so the next batch is based on live evidence.", "Learning"],
+      ["4", "Keep automation parked", "Do not spend the remaining sprint window on Composio, routing, nurture, or content infrastructure.", "Protect focus"]
+    ];
 
-    <div class="cta-variant cta-B">
-      <a class="btn" href="https://calendly.com/cwd/new-meeting">Book a 15-minute fit call</a>
-      <p class="microtrust">Pick a time that works. We will show you exactly what we'd set up.</p>
-    </div>
+    const $ = (selector, scope = document) => scope.querySelector(selector);
+    const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+    const renderIcons = () => { if (window.lucide) window.lucide.createIcons(); };
+    const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
+    const todayString = () => {
+      const today = new Date();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      return `${today.getFullYear()}-${month}-${day}`;
+    };
+    const formatTaskDate = value => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(`${value}T12:00:00`));
+    let tasks = (() => {
+      try {
+        const stored = JSON.parse(localStorage.getItem("singlebrain-tasks"));
+        return Array.isArray(stored) ? stored : seedTasks.map(task => ({ ...task }));
+      } catch {
+        return seedTasks.map(task => ({ ...task }));
+      }
+    })();
 
-    <div class="cta-variant cta-C">
-      <a class="btn" href="https://calendly.com/cwd/new-meeting">Get a free AI audit of your business</a>
-      <p class="microtrust">We map where AI saves you the most time. Free, and yours to keep.</p>
-    </div>
-  </div>
-</section>
+    function persistTasks() {
+      localStorage.setItem("singlebrain-tasks", JSON.stringify(tasks));
+    }
 
-<footer>
-  <div class="wrap">
-    <div class="logo">Clever Wolf<span>.</span> Digital</div>
-    <div>Mililani, Hawaiʻi · Serving Hawaiʻi and the Seattle market</div>
-  </div>
-</footer>
+    function renderTaskList() {
+      $("#taskCount").textContent = `${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`;
+      if (!tasks.length) {
+        $("#taskList").innerHTML = '<div class="task-empty">No tasks in the queue.</div>';
+        return;
+      }
 
+      $("#taskList").innerHTML = tasks.map(task => {
+        const dependencyNames = (task.dependencies || []).map(id => tasks.find(item => item.id === id)?.task).filter(Boolean);
+        const dependencyText = dependencyNames.length ? `${dependencyNames.length} linked` : "None";
+        return `
+          <article class="task-row" data-task-id="${escapeHTML(task.id)}">
+            <div class="task-main"><span class="task-state"></span><div><strong title="${escapeHTML(task.notes)}">${escapeHTML(task.task)}</strong><small>${escapeHTML(task.business)}</small></div></div>
+            <div class="task-cell"><span class="task-label">Category</span>${escapeHTML(task.category)}</div>
+            <div class="task-cell"><span class="task-label">Priority</span><span class="task-priority ${escapeHTML(task.priority.toLowerCase())}">${escapeHTML(task.priority)}</span></div>
+            <div class="task-cell"><span class="task-label">Due</span>${escapeHTML(formatTaskDate(task.dueDate))}</div>
+            <div class="task-cell" title="${escapeHTML(dependencyNames.join(", "))}"><span class="task-label">Dependencies</span>${escapeHTML(dependencyText)}</div>
+          </article>`;
+      }).join("");
+    }
+
+    function selectedDependencyIds() {
+      return $$("#dependencyOptions input:checked").map(input => input.value);
+    }
+
+    function renderDependencyOptions(selected = [], query = "") {
+      const normalizedQuery = query.trim().toLowerCase();
+      const matches = tasks.filter(task => task.task.toLowerCase().includes(normalizedQuery) || task.business.toLowerCase().includes(normalizedQuery));
+      $("#dependencyOptions").innerHTML = matches.length ? matches.map(task => `
+        <label class="dependency-option"><input type="checkbox" value="${escapeHTML(task.id)}" ${selected.includes(task.id) ? "checked" : ""}><span>${escapeHTML(task.task)} / ${escapeHTML(task.business)}</span></label>`).join("") : '<div class="dependency-empty">No matching tasks</div>';
+    }
+
+    function setTaskError(name, message) {
+      const wrapper = $(`[data-field="${name}"]`, $("#quickTaskForm"));
+      const field = $(`[name="${name}"]`, $("#quickTaskForm"));
+      const error = $(`#${name}Error`);
+      wrapper.classList.toggle("invalid", Boolean(message));
+      field.setAttribute("aria-invalid", String(Boolean(message)));
+      field.setAttribute("aria-describedby", `${name}Error`);
+      error.textContent = message;
+    }
+
+    function clearTaskErrors() {
+      ["task", "business", "category", "priority", "dueDate"].forEach(name => setTaskError(name, ""));
+    }
+
+    function validateTaskForm() {
+      const task = $("#taskName").value.trim();
+      const dueDate = $("#taskDueDate").value;
+      clearTaskErrors();
+      let valid = true;
+
+      if (!task) { setTaskError("task", "Task is required."); valid = false; }
+      else if (task.length < 5) { setTaskError("task", "Task must be at least 5 characters."); valid = false; }
+      if (!$("#taskBusiness").value) { setTaskError("business", "Business is required."); valid = false; }
+      if (!$("#taskCategory").value) { setTaskError("category", "Category is required."); valid = false; }
+      if (!$("#taskPriority").value) { setTaskError("priority", "Priority is required."); valid = false; }
+      if (!dueDate) { setTaskError("dueDate", "Due date is required."); valid = false; }
+      else if (dueDate < todayString()) { setTaskError("dueDate", "Due date cannot be in the past."); valid = false; }
+      return valid;
+    }
+
+    let taskModalOpener = null;
+    function openTaskModal(event) {
+      taskModalOpener = event?.currentTarget || null;
+      $("#taskDueDate").min = todayString();
+      renderDependencyOptions();
+      $("#taskModal").classList.remove("hidden");
+      $("#taskModal").setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+      $("#taskName").focus();
+    }
+
+    function closeTaskModal() {
+      $("#taskModal").classList.add("hidden");
+      $("#taskModal").setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+      $("#quickTaskForm").reset();
+      $("#dependencySearch").value = "";
+      clearTaskErrors();
+      renderDependencyOptions();
+      taskModalOpener?.focus();
+    }
+
+    $("#taskBusiness").insertAdjacentHTML("beforeend", businesses.map(business => `<option value="${escapeHTML(business.name)}">${escapeHTML(business.name)}</option>`).join(""));
+    $("#taskDueDate").min = todayString();
+    renderTaskList();
+    renderDependencyOptions();
+
+    $$('[data-open-task]').forEach(button => button.addEventListener("click", openTaskModal));
+    $$('[data-close-task]').forEach(button => button.addEventListener("click", closeTaskModal));
+    $("#taskModal").addEventListener("click", event => { if (event.target === $("#taskModal")) closeTaskModal(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape" && !$("#taskModal").classList.contains("hidden")) closeTaskModal(); });
+    $("#dependencySearch").addEventListener("input", event => renderDependencyOptions(selectedDependencyIds(), event.target.value));
+    $$("#quickTaskForm [name]").forEach(field => {
+      const clear = () => { if (["task", "business", "category", "priority", "dueDate"].includes(field.name)) setTaskError(field.name, ""); };
+      field.addEventListener("input", clear);
+      field.addEventListener("change", clear);
+    });
+    $("#quickTaskForm").addEventListener("submit", event => {
+      event.preventDefault();
+      if (!validateTaskForm()) return;
+      tasks.unshift({
+        id: `task-${Date.now()}`,
+        business: $("#taskBusiness").value,
+        task: $("#taskName").value.trim(),
+        category: $("#taskCategory").value,
+        priority: $("#taskPriority").value,
+        dueDate: $("#taskDueDate").value,
+        dependencies: selectedDependencyIds(),
+        notes: $("#taskNotes").value.trim()
+      });
+      persistTasks();
+      renderTaskList();
+      closeTaskModal();
+      showToast("Task added successfully");
+    });
+
+    $("#businessGrid").innerHTML = businesses.map((b, index) => `
+      <article class="card business-card">
+        <div class="business-top"><div class="business-logo" style="color:${["var(--gold-soft)","var(--cyan)","var(--green)","#d890cb","var(--blue)"][index]}">${b.initials}</div><span class="status ${b.status}">${b.state}</span></div>
+        <h3>${b.name}</h3><p>${b.description}</p>
+        <div class="business-meta"><span>${b.left[0]}<b>${b.left[1]}</b></span><span>${b.right[0]}<b>${b.right[1]}</b></span></div>
+      </article>`).join("");
+
+    $("#projectGrid").innerHTML = projects.map(p => `
+      <article class="card project-card project-item" data-status="${p.status}">
+        <div class="project-top"><span class="status ${p.stateClass || ""}">${p.state}</span><span class="priority">${p.priority}</span></div>
+        <h3>${p.name}</h3><p>${p.description}</p>
+        <div class="project-footer"><div class="owner"><div class="avatar">QS</div>Quincy</div><div class="mini-progress"><label>${p.progress}%</label><div class="progress ${p.priority.includes("Revenue") ? "gold" : ""}"><span style="width:${p.progress}%"></span></div></div></div>
+      </article>`).join("");
+
+    $("#teamGrid").innerHTML = team.map(person => `
+      <article class="card person-card"><div class="avatar">${person[0]}</div><h3>${person[1]}</h3><div class="person-role">${person[2]}</div><div class="focus-box">${person[3]}</div><div class="person-state" style="color:${person[4] ? "var(--green)" : "var(--faint)"}"><span class="pulse" style="background:${person[4] ? "var(--green)" : "var(--faint)"}"></span>${person[4] ? "Active" : "Unassigned"}</div></article>`).join("");
+
+    $("#riskGrid").innerHTML = risks.map(r => `
+      <article class="card risk-card ${r[5]}"><span class="risk-tag" style="color:${r[5] === "critical" ? "var(--red)" : "var(--amber)"}">${r[0]}</span><h3>${r[1]}</h3><p>${r[2]}</p><div class="risk-meta"><span>Owner: ${r[3]}</span><span>Action: ${r[4]}</span></div></article>`).join("");
+
+    $("#recommendationGrid").innerHTML = recommendations.map(r => `
+      <article class="card recommendation-card"><span class="rank">${r[0]}</span><div><h3>${r[1]}</h3><p>${r[2]}</p></div><span class="impact">${r[3]}</span></article>`).join("");
+
+    function showView(id) {
+      $$(".view").forEach(view => view.classList.toggle("active", view.id === id));
+      $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === id));
+      $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
+      $("#sidebar").classList.remove("open");
+      $("#mobileOverlay").classList.add("hidden");
+      history.replaceState(null, "", `#${id}`);
+      window.scrollTo(0, 0);
+      renderIcons();
+    }
+    $$("[data-view]").forEach(button => button.addEventListener("click", () => showView(button.dataset.view)));
+    $$("[data-go]").forEach(button => button.addEventListener("click", () => showView(button.dataset.go)));
+    $("#menuButton").addEventListener("click", () => { $("#sidebar").classList.toggle("open"); $("#mobileOverlay").classList.toggle("hidden"); });
+    $("#mobileOverlay").addEventListener("click", () => { $("#sidebar").classList.remove("open"); $("#mobileOverlay").classList.add("hidden"); });
+
+    $$("[data-filter]").forEach(button => button.addEventListener("click", () => {
+      $$("[data-filter]").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      $$(".project-item").forEach(project => project.classList.toggle("hidden", button.dataset.filter !== "all" && project.dataset.status !== button.dataset.filter));
+    }));
+
+    let toastTimer;
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      $("#toast").textContent = message;
+      $("#toast").classList.add("show");
+      toastTimer = setTimeout(() => $("#toast").classList.remove("show"), 2200);
+    }
+
+    if (localStorage.getItem("singlebrain-auth")) $("#authOverlay").classList.add("hidden");
+    $("#magicButton").addEventListener("click", () => {
+      if (!$("#authEmail").checkValidity()) return showToast("Enter a valid email address.");
+      $("#magicStep").classList.add("hidden");
+      $("#twoFactorStep").classList.remove("hidden");
+      $$("#codeInputs input")[0].focus();
+    });
+    $("#authBack").addEventListener("click", () => { $("#twoFactorStep").classList.add("hidden"); $("#magicStep").classList.remove("hidden"); });
+    $$("#codeInputs input").forEach((input, index, inputs) => {
+      input.addEventListener("input", () => { input.value = input.value.replace(/\D/g, ""); if (input.value && index < inputs.length - 1) inputs[index + 1].focus(); });
+      input.addEventListener("keydown", event => { if (event.key === "Backspace" && !input.value && index > 0) inputs[index - 1].focus(); });
+    });
+    $("#verifyButton").addEventListener("click", () => {
+      const code = $$("#codeInputs input").map(input => input.value).join("");
+      if (code !== "246810") return showToast("Use prototype code 246810.");
+      localStorage.setItem("singlebrain-auth", "true");
+      $("#authOverlay").classList.add("hidden");
+      showToast("Identity verified. Welcome back.");
+    });
+
+    $$(".journal-form").forEach(form => {
+      const kind = form.dataset.kind;
+      $$(".persist", form).forEach(field => {
+        const saved = localStorage.getItem(`journal-${kind}-${field.name}`);
+        if (saved !== null) field.value = saved;
+      });
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        $$(".persist", form).forEach(field => localStorage.setItem(`journal-${kind}-${field.name}`, field.value));
+        $(".save-state", form).textContent = "Saved just now";
+        showToast("Journal entry saved locally.");
+      });
+    });
+
+    function addMessage(text, isUser = true) {
+      const message = document.createElement("div");
+      message.className = `message${isUser ? " user" : ""}`;
+      message.innerHTML = isUser ? '<div class="avatar">QS</div><div class="bubble"></div>' : '<div class="bot-avatar"><i data-lucide="brain-circuit" class="icon-sm"></i></div><div class="bubble"></div>';
+      $(".bubble", message).textContent = text;
+      $("#messages").append(message);
+      $("#messages").scrollTop = $("#messages").scrollHeight;
+      renderIcons();
+    }
+    function respond(question) {
+      let answer = "The sprint rule is simple: choose the action most likely to produce a sent message, booked call, or invoice this week.";
+      if (/follow|draft/i.test(question)) answer = "Draft: Hey [Name], circling back on the lead-gen website we discussed. Based on what you shared, the $2,500 conversion site is the cleanest fit. Should we lock in a 15-minute call this week to confirm scope and next steps?";
+      else if (/block|risk/i.test(question)) answer = "The primary blocker is conversion: zero closed and invoiced deals. Composio reliability and the second Hermes gateway matter, but neither should displace warm follow-ups during this sprint.";
+      else if (/score|metric/i.test(question)) answer = "Sprint scoreboard: 24 warm contacts, 7 replies, 3 fit calls, 0 closes, and $0 collected. Next threshold: one invoiced deal by July 16.";
+      else if (/focus|first|today/i.test(question)) answer = "Send the three warm follow-ups before 11:00 AM. Then prepare for the booked fit call and log each response verbatim.";
+      setTimeout(() => addMessage(answer, false), 450);
+    }
+    $("#chatForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const question = $("#chatText").value.trim();
+      if (!question) return;
+      addMessage(question);
+      $("#chatText").value = "";
+      respond(question);
+    });
+    $$(".suggestion").forEach(button => button.addEventListener("click", () => { addMessage(button.textContent); respond(button.textContent); }));
+
+    const initialView = location.hash.slice(1);
+    if (initialView && document.getElementById(initialView)) showView(initialView);
+    renderIcons();
+  </script>
 </body>
 </html>

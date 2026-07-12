@@ -5,6 +5,40 @@ Format: date — what was decided/changed, why, and any follow-up.
 
 ---
 
+## 2026-07-12 — Single Brain prototype browser QA completed
+
+**Result:** Verified the installed dashboard at desktop and 390px mobile sizes. Mock
+authentication, project filtering, mobile navigation, journal persistence after reload,
+and scripted chat responses all pass. No browser warnings, errors, duplicate IDs,
+navigation mismatches, or viewport overflows were found.
+
+**Accuracy fix:** Added an explicit "Prototype data" label to the sprint scoreboard because
+the outreach, reply, and fit-call counts are placeholders rather than confirmed repo data.
+
+**Follow-up:** Use the local preview for visual review. Live data wiring remains out of scope
+until Quincy explicitly prioritizes it after the current sales sprint.
+
+## 2026-07-12 — Single Brain command center prototype completed
+
+**Source:** Quincy explicitly requested a visual frontend prototype for the Single Brain
+operating system.
+
+**Decision:** Replace the unrelated `website/ai/index.html` marketing page with a zero-build,
+single-file dashboard prototype. Keep the interface anchored to the active sales sprint:
+the five canonical revenue metrics and one highest-leverage next action lead the overview.
+
+**Actions taken:**
+- Built responsive views for Overview, Businesses, Projects, Staff, Blockers,
+  Recommendations, Daily Journal, and Brain Chat.
+- Added mock magic-link + 2FA authentication, project filters, local journal persistence,
+  mobile navigation, and scripted chat responses.
+- Used current repository data as realistic placeholder content; no sends, publishing,
+  spending, or external account actions occurred.
+
+**Follow-up:** Review visual direction and connect live repository data only after Quincy
+chooses to continue. Do not let dashboard iteration displace the current close-and-invoice
+sales sprint.
+
 ## 2026-07-10 — "Single Brain" init prompt: RECONCILE, don't build
 
 **Source:** Quincy pasted a claude.ai chat prompt ("Clever Wolf Digital Single Brain
