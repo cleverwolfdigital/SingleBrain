@@ -708,7 +708,80 @@ def catalog_all(request: Request):
         "staff": db.query("SELECT * FROM staff ORDER BY id"),
         "clients": db.query("SELECT * FROM clients ORDER BY name"),
         "recurring": db.query("SELECT * FROM recurring_tasks ORDER BY id"),
+        "contacts": db.query("SELECT * FROM client_contacts ORDER BY id"),
+        "client_notes": db.query("SELECT * FROM client_notes ORDER BY id DESC"),
     }
+
+
+class ClientNoteIn(BaseModel):
+    client_id: int
+    body: str
+
+
+@app.post("/api/client-notes")
+def add_client_note(n: ClientNoteIn, request: Request):
+    _require_admin(request)
+    body = (n.body or "").strip()
+    if not body:
+        raise HTTPException(422, "Note can't be empty.")
+    if not db.query("SELECT 1 FROM clients WHERE id=?", (n.client_id,)):
+        raise HTTPException(422, "A valid client is required.")
+    author = auth.current_user(request) or "unknown"
+    nid = db.execute(
+        "INSERT INTO client_notes(client_id,author,body) VALUES(?,?,?)",
+        (n.client_id, author, body),
+    )
+    return {"ok": True, "id": nid}
+
+
+@app.delete("/api/client-notes/{nid}")
+def delete_client_note(nid: int, request: Request):
+    _require_admin(request)
+    db.execute("DELETE FROM client_notes WHERE id=?", (nid,))
+    return {"ok": True}
+
+
+class ContactIn(BaseModel):
+    client_id: Optional[int] = None
+    name: Optional[str] = None
+    email: Optional[str] = None
+    title: Optional[str] = None
+    phone: Optional[str] = None
+
+
+@app.post("/api/contacts")
+def create_contact(c: ContactIn, request: Request):
+    _require_admin(request)
+    if not c.client_id or not db.query("SELECT 1 FROM clients WHERE id=?", (c.client_id,)):
+        raise HTTPException(422, "A valid client is required.")
+    if not ((c.name or "").strip() or (c.email or "").strip()):
+        raise HTTPException(422, "Give the contact a name or an email.")
+    cid = db.execute(
+        "INSERT INTO client_contacts(client_id,name,email,title,phone) VALUES(?,?,?,?,?)",
+        (c.client_id, (c.name or "").strip() or None, (c.email or "").strip() or None,
+         (c.title or "").strip() or None, (c.phone or "").strip() or None),
+    )
+    return {"ok": True, "id": cid}
+
+
+@app.put("/api/contacts/{cid}")
+def update_contact(cid: int, c: ContactIn, request: Request):
+    _require_admin(request)
+    if not db.query("SELECT 1 FROM client_contacts WHERE id=?", (cid,)):
+        raise HTTPException(404, "Contact not found.")
+    db.execute(
+        "UPDATE client_contacts SET name=?,email=?,title=?,phone=? WHERE id=?",
+        ((c.name or "").strip() or None, (c.email or "").strip() or None,
+         (c.title or "").strip() or None, (c.phone or "").strip() or None, cid),
+    )
+    return {"ok": True}
+
+
+@app.delete("/api/contacts/{cid}")
+def delete_contact(cid: int, request: Request):
+    _require_admin(request)
+    db.execute("DELETE FROM client_contacts WHERE id=?", (cid,))
+    return {"ok": True}
 
 
 def _clamp_tier(t):
@@ -825,6 +898,7 @@ class StaffIn(BaseModel):
     focus: Optional[str] = None
     status: Optional[str] = "active"
     email: Optional[str] = None
+    notes: Optional[str] = None
 
 
 @app.post("/api/staff")
@@ -833,8 +907,8 @@ def create_staff(s: StaffIn, request: Request):
     if not (s.name or "").strip():
         raise HTTPException(422, "Name is required.")
     sid = db.execute(
-        "INSERT INTO staff(name,role,focus,status,email) VALUES(?,?,?,?,?)",
-        (s.name.strip(), s.role, s.focus, s.status or "active", (s.email or "").strip().lower() or None),
+        "INSERT INTO staff(name,role,focus,status,email,notes) VALUES(?,?,?,?,?,?)",
+        (s.name.strip(), s.role, s.focus, s.status or "active", (s.email or "").strip().lower() or None, s.notes),
     )
     return {"ok": True, "id": sid}
 
@@ -845,8 +919,8 @@ def update_staff(sid: int, s: StaffIn, request: Request):
     if not db.query("SELECT 1 FROM staff WHERE id=?", (sid,)):
         raise HTTPException(404, "Staff member not found.")
     db.execute(
-        "UPDATE staff SET name=?,role=?,focus=?,status=?,email=? WHERE id=?",
-        (s.name.strip(), s.role, s.focus, s.status, (s.email or "").strip().lower() or None, sid),
+        "UPDATE staff SET name=?,role=?,focus=?,status=?,email=?,notes=? WHERE id=?",
+        (s.name.strip(), s.role, s.focus, s.status, (s.email or "").strip().lower() or None, s.notes, sid),
     )
     return {"ok": True}
 
