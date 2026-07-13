@@ -355,6 +355,14 @@
     .sub-group-head { display: flex; align-items: center; gap: 6px; margin-bottom: 11px; color: var(--gold-soft); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
     .sub-group-head .icon-sm { color: var(--faint); }
     .sub-tag { margin-left: 8px; padding: 2px 6px; color: var(--cyan); background: rgba(69,189,196,0.10); border-radius: 4px; font: 700 8px var(--font-body); letter-spacing: 0.5px; text-transform: uppercase; vertical-align: middle; }
+    .sub-accordion { margin: 8px 0 4px; }
+    .sub-acc-head { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; cursor: pointer; color: var(--muted); background: rgba(255,255,255,0.02); border: 1px solid var(--line); border-radius: 7px; font-size: 11px; font-weight: 700; text-align: left; }
+    .sub-acc-head:hover { color: var(--text); border-color: var(--line-strong); }
+    .acc-caret { color: var(--gold-soft); transition: transform 0.2s; }
+    .acc-count { margin-left: auto; padding: 2px 8px; color: var(--gold-soft); background: rgba(208,168,83,0.12); border-radius: 20px; font-size: 9px; }
+    .sub-acc-body { margin-top: 10px; }
+    .sub-count-note { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--faint); font-size: 9px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+    .sub-count-note .icon-sm { color: var(--gold-soft); }
     .task-main { min-width: 0; display: flex; align-items: center; gap: 10px; }
     .task-state { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 4px rgba(74,145,216,0.08); }
     .task-main strong { display: block; overflow: hidden; color: var(--text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
@@ -555,9 +563,26 @@
     .rotation-table th { text-align: left; color: var(--faint); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid var(--line); }
     .rotation-table td { padding: 10px; border-bottom: 1px solid var(--line); color: var(--muted); vertical-align: top; }
     .rotation-table .rot-day { color: var(--gold-soft); font-weight: 600; }
-    .tutorial-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-    .tut-card { position: relative; }
-    .tut-card .tut-num { width: 26px; height: 26px; display: grid; place-items: center; margin-bottom: 10px; border-radius: 7px; background: rgba(208,168,83,0.14); color: var(--gold-soft); font: 700 12px var(--font-display); }
+    .tutorial-grid { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); margin-bottom: 24px; }
+    .tut-section { margin: 6px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--gold); font: 700 11px var(--font-body); letter-spacing: 1.4px; text-transform: uppercase; }
+    .tut-card { position: relative; padding: 22px 24px 24px; }
+    .tut-card .tut-num { width: 28px; height: 28px; display: grid; place-items: center; margin-bottom: 13px; border-radius: 8px; background: rgba(208,168,83,0.14); color: var(--gold-soft); font: 700 13px var(--font-display); }
+    /* Guided tour */
+    #tourBlocker { position: fixed; inset: 0; z-index: 199; }
+    #tourBlocker.dim { background: rgba(3,9,15,0.74); }
+    #tourSpot { position: fixed; z-index: 200; border-radius: 10px; border: 2px solid var(--gold); box-shadow: 0 0 0 9999px rgba(3,9,15,0.74); pointer-events: none; transition: left .28s ease, top .28s ease, width .28s ease, height .28s ease; }
+    #tourPop { position: fixed; z-index: 201; width: min(348px, calc(100vw - 24px)); padding: 17px 19px; background: var(--panel-raised); border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: 0 22px 60px rgba(0,0,0,0.55); transition: left .2s ease, top .2s ease; }
+    #tourBlocker.hidden, #tourSpot.hidden, #tourPop.hidden { display: none; }
+    #tourPop .tour-step { margin-bottom: 6px; color: var(--gold); font: 700 9px var(--font-body); letter-spacing: 1.3px; text-transform: uppercase; }
+    #tourPop h3 { margin: 0 0 7px; font: 700 17px var(--font-display); }
+    #tourPop p { margin: 0 0 15px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .tour-actions { display: flex; align-items: center; gap: 8px; }
+    .tour-actions .spacer { flex: 1; }
+    #tourProgress { color: var(--faint); font-size: 10px; margin-right: 4px; }
+    .tour-btn { padding: 8px 13px; cursor: pointer; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid var(--line-strong); background: transparent; color: var(--text); }
+    .tour-btn.primary { background: var(--gold); color: #0d1923; border-color: transparent; }
+    .tour-btn.primary:hover { background: var(--gold-soft); }
+    .tour-btn.ghost { border: 0; color: var(--muted); }
     .tut-card h3 { margin-bottom: 6px; font-size: 15px; }
     .tut-card p { color: var(--muted); font-size: 13.5px; line-height: 1.6; }
     .tut-card b { color: var(--text); font-weight: 600; }
@@ -774,14 +799,44 @@
     </section>
 
     <section class="view" id="tutorial">
-      <div class="view-header"><div><div class="eyebrow">Getting Started</div><h1>How to Use Single Brain</h1><p>Your command center for every business, project, and decision. Here's the two-minute tour.</p></div></div>
+      <div class="view-header"><div><div class="eyebrow">Getting Started</div><h1>How to Use Single Brain</h1><p>Your command center for every business, project, client, and decision. Read the guide below, or take the guided tour.</p></div><button class="button" id="startTourBtn"><i data-lucide="compass" class="icon-sm"></i>Start interactive tour</button></div>
+
+      <div class="tut-section">Getting in</div>
       <div class="grid tutorial-grid">
-        <article class="card tut-card"><div class="tut-num">1</div><h3>Signing in</h3><p>Go to <b>brain.cleverwolfdigital.com</b>, enter your <b>@cleverwolfdigital.com</b> email, and click the magic link we email you. First time only: scan the QR with an authenticator app (Google or Microsoft Authenticator), then enter the 6-digit code. After that, just the code each login.</p></article>
-        <article class="card tut-card"><div class="tut-num">2</div><h3>Navigating</h3><p>Use the left sidebar. <b>Overview</b> is today's brief. <b>Businesses</b> lists all 29, grouped Tier 1–4 by owner + status. <b>Projects</b> shows active work and the next action. <b>Kimchee #88</b> holds the restaurant launch tasks. <b>Daily Rotation</b> is the weekly cadence. <b>Staff, Blockers, Recommendations</b> cover people, risks, and ranked next moves.</p></article>
-        <article class="card tut-card"><div class="tut-num">3</div><h3>Quick Add a task</h3><p>Click <b>Quick add</b> (top-right, or on the Projects page). Enter the task, pick a business, category, priority, and due date. You can link <b>dependencies</b> to other tasks. Save — it lands in the Action Queue.</p></article>
-        <article class="card tut-card"><div class="tut-num">4</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
-        <article class="card tut-card"><div class="tut-num">5</div><h3>Brain Chat</h3><p><b>Brain Chat</b> is your conversational view — ask about priorities, projects, and decisions across the whole portfolio.</p></article>
-        <article class="card tut-card"><div class="tut-num">6</div><h3>Security &amp; logout</h3><p>Access is limited to <b>@cleverwolfdigital.com</b> accounts with magic link + authenticator (2FA). Click the <b>log-out icon</b> (top-right) when you're done — especially on shared devices.</p></article>
+        <article class="card tut-card"><div class="tut-num">1</div><h3>Signing in</h3><p>Go to <b>brain.cleverwolfdigital.com</b> and enter your email. We send a one-time <b>magic link</b> — click it, then enter the <b>6-digit code</b> from your authenticator app. First time only: scan the QR to set up Google or Microsoft Authenticator (links are on that page for iOS &amp; Android).</p></article>
+        <article class="card tut-card"><div class="tut-num">2</div><h3>Stay signed in</h3><p>On the code screen, leave <b>“Remember this device for 90 days”</b> checked so you're not logging in constantly. Access is limited to <b>@cleverwolfdigital.com</b> accounts (plus any guests an admin invites). Use the <b>log-out icon</b> (top-right) on shared devices.</p></article>
+        <article class="card tut-card"><div class="tut-num">3</div><h3>Make it readable</h3><p>Text too small? Use the <b>A− / A+</b> buttons (top-right) to grow or shrink the whole dashboard — your choice is remembered on this device.</p></article>
+      </div>
+
+      <div class="tut-section">Finding your way</div>
+      <div class="grid tutorial-grid">
+        <article class="card tut-card"><div class="tut-num">4</div><h3>The sidebar</h3><p>Everything lives in the left sidebar. <b>Overview</b> is today's brief. <b>Businesses</b>, <b>Projects</b>, <b>Clients</b>, and <b>Staff</b> are your portfolio. <b>Productivity</b> reports on your time. <b>Daily Journal</b>, <b>CWD Brain Chat</b>, and <b>Daily Rotation</b> support the daily flow. <b>Feedback</b> sends us bugs and ideas.</p></article>
+        <article class="card tut-card"><div class="tut-num">5</div><h3>Pin your favorites</h3><p>Open any business, project, campaign, or client and tap the <b>★ star</b> to pin it to a <b>Pinned</b> section at the top of the sidebar (up to 5). Tap the star again to unpin. Great for the handful of things you touch every day.</p></article>
+        <article class="card tut-card"><div class="tut-num">6</div><h3>Quick tools</h3><p>The <b>Overview</b> page has one-click shortcuts to ChatGPT, Claude, Grok, OpenClaw, and Hermes. The top bar also has a <b>Sync</b> button (⟳) that pushes your latest to the shared brain.</p></article>
+      </div>
+
+      <div class="tut-section">Your portfolio</div>
+      <div class="grid tutorial-grid">
+        <article class="card tut-card"><div class="tut-num">7</div><h3>Businesses &amp; tiers</h3><p><b>Businesses</b> lists the whole portfolio grouped <b>Tier 1–4</b> by priority. Click any card to open its <b>profile</b> — an overview plus its tasks grouped by priority. From the profile you can <b>+ Add task</b>, ★ pin, and (admins) ✎ edit or 🗑 delete.</p></article>
+        <article class="card tut-card"><div class="tut-num">8</div><h3>Sub-businesses</h3><p>Businesses can roll up under a parent. Example: <b>Level Up Corporation</b> shows its own card, and directly beneath it a boxed group of its sub-businesses (Level Up Self, Smarter, Library, The Smarter Podcast) — each a full card you can open.</p></article>
+        <article class="card tut-card"><div class="tut-num">9</div><h3>Projects &amp; campaigns</h3><p><b>Projects</b> shows active work with status, owner, and the next concrete move. Filter by Active / Blocked / Parked. <b>Campaigns</b> (marketing pushes) appear in their own section. Click any card for its execution view.</p></article>
+        <article class="card tut-card"><div class="tut-num">10</div><h3>Clients &amp; retainers</h3><p><b>Clients</b> tracks monthly retainers. Open a client to see its recurring monthly tasks. Admins can add a client, set the retainer, and attach <b>recurring tasks</b> (with a day of month + assignee) that auto-generate a fresh task every month.</p></article>
+      </div>
+
+      <div class="tut-section">Getting work done</div>
+      <div class="grid tutorial-grid">
+        <article class="card tut-card"><div class="tut-num">11</div><h3>Quick Add</h3><p>The <b>Quick add</b> button (top bar) is a menu: <b>Add a Business, Campaign, Project, Employee,</b> or <b>Task</b>. Everyone can add tasks; the catalog items are admin-only. On a task, pick a business, category, priority, due date, estimate, and link <b>dependencies</b>.</p></article>
+        <article class="card tut-card"><div class="tut-num">12</div><h3>Timers &amp; the Action Queue</h3><p>Tasks live in the <b>Action Queue</b> (Projects page). Hit <b>▶ Start</b> to run a live timer, <b>⏸ Pause</b> to bank time, and <b>✓</b> to complete. Each task shows tracked-time / estimate so you can see where the hours go.</p></article>
+        <article class="card tut-card"><div class="tut-num">13</div><h3>Productivity reports</h3><p><b>Productivity</b> rolls up completed work by <b>Day / Week / Month / Quarter / Year</b> — tasks completed, time tracked, estimate accuracy, and breakdowns by business and category. Use ‹ › to move between periods.</p></article>
+        <article class="card tut-card"><div class="tut-num">14</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
+        <article class="card tut-card"><div class="tut-num">15</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
+      </div>
+
+      <div class="tut-section" data-admin-only>Team &amp; admin</div>
+      <div class="grid tutorial-grid" data-admin-only>
+        <article class="card tut-card"><div class="tut-num">16</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
+        <article class="card tut-card"><div class="tut-num">17</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table lets you set who owns each open task. Assignees always see their tasks, even without full business access. You can promote up to <b>2</b> people to Super Admin.</p></article>
+        <article class="card tut-card"><div class="tut-num">18</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
       </div>
     </section>
 
@@ -970,6 +1025,21 @@
         <div class="modal-actions"><button class="button secondary" type="button" data-close-feedback>Cancel</button><button class="button" type="button" id="fbSend"><i data-lucide="send" class="icon-sm"></i>Send feedback</button></div>
       </div>
     </section>
+  </div>
+
+  <div id="tourBlocker" class="hidden"></div>
+  <div id="tourSpot" class="hidden" aria-hidden="true"></div>
+  <div id="tourPop" class="hidden" role="dialog" aria-label="Guided tour">
+    <div class="tour-step">Guided Tour</div>
+    <h3 id="tourTitle">—</h3>
+    <p id="tourBody"></p>
+    <div class="tour-actions">
+      <button class="tour-btn ghost" id="tourSkip" type="button">Skip</button>
+      <span class="spacer"></span>
+      <span id="tourProgress"></span>
+      <button class="tour-btn" id="tourBack" type="button">Back</button>
+      <button class="tour-btn primary" id="tourNext" type="button">Next</button>
+    </div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite">Saved.</div>
@@ -1378,14 +1448,17 @@
       3: ["Tier 3 — Media / Niche Sites", "Systematized"],
       4: ["Tier 4 — Pipeline / Investments", "Monthly review"]
     };
-    function businessCard(b) {
+    const clampTier = b => Math.min(4, Math.max(1, Number(b.tier) || 4));
+    function businessCard(b, subCount) {
       const pinned = isPinned("business", b.name) ? '<i data-lucide="star" class="icon-sm biz-pin"></i>' : "";
       const sub = (b.kind === "subbusiness") ? '<span class="sub-tag">Sub-business</span>' : "";
+      const note = subCount ? `<div class="sub-count-note"><i data-lucide="chevrons-down-up" class="icon-sm"></i>${subCount} sub-business${subCount === 1 ? "" : "es"} below</div>` : "";
       return `
         <article class="card business-card" data-biz-name="${escapeHTML(b.name)}" role="button" tabindex="0" aria-label="Open ${escapeHTML(b.name)}">
           <div class="business-top"><div class="business-logo">${escapeHTML(b.initials)}</div><span class="status ${b.status}">${escapeHTML(b.state)}${pinned}</span></div>
           <h3>${escapeHTML(b.name)}${sub}</h3>
           <div class="business-meta"><span>Owner<b>${escapeHTML(b.owner)}</b></span></div>
+          ${note}
           <div class="card-open-hint"><i data-lucide="list-checks" class="icon-sm"></i>View tasks</div>
         </article>`;
     }
@@ -1393,28 +1466,30 @@
       const visible = visibleBusinesses();
       const kidsByParent = {};
       visible.forEach(b => { if (b.parentId) (kidsByParent[b.parentId] = kidsByParent[b.parentId] || []).push(b); });
-      const html = [1, 2, 3, 4, 9].map(tier => {
-        const tops = visible.filter(b => (b.tier || 9) === tier && !b.parentId);
+      const html = [1, 2, 3, 4].map(tier => {
+        const tops = visible.filter(b => clampTier(b) === tier && !b.parentId);
         if (!tops.length) return "";
-        const withKids = tops.filter(b => (kidsByParent[b.id] || []).length);
-        const flat = tops.filter(b => !(kidsByParent[b.id] || []).length);
-        const groups = withKids.map(parent => {
-          const kids = kidsByParent[parent.id];
-          return `<div class="biz-group">
-            <div class="grid business-grid">${businessCard(parent)}</div>
-            <div class="sub-group">
-              <div class="sub-group-head"><i data-lucide="corner-down-right" class="icon-sm"></i>Sub-businesses of ${escapeHTML(parent.name)}</div>
-              <div class="grid business-grid">${kids.map(businessCard).join("")}</div>
-            </div>
+        const cards = tops.map(b => businessCard(b, (kidsByParent[b.id] || []).length)).join("");
+        const accordions = tops.filter(p => (kidsByParent[p.id] || []).length).map(p => {
+          const kids = kidsByParent[p.id];
+          return `<div class="sub-accordion">
+            <button class="sub-acc-head" type="button" data-acc-toggle="${p.id}"><i data-lucide="chevron-right" class="icon-sm acc-caret"></i><span>Sub-businesses of ${escapeHTML(p.name)}</span><span class="acc-count">${kids.length}</span></button>
+            <div class="sub-acc-body hidden" id="acc-${p.id}"><div class="grid business-grid">${kids.map(k => businessCard(k)).join("")}</div></div>
           </div>`;
         }).join("");
-        const flatGrid = flat.length ? `<div class="grid business-grid">${flat.map(businessCard).join("")}</div>` : "";
         const meta = TIER_META[tier] || ["Other", ""];
-        return `<div class="tier-block"><div class="tier-heading"><h2>${meta[0]}</h2><span>${meta[1]}${meta[1] ? " · " : ""}${tops.length}</span></div>${groups}${flatGrid}</div>`;
+        return `<div class="tier-block"><div class="tier-heading"><h2>${meta[0]}</h2><span>${meta[1]}${meta[1] ? " · " : ""}${tops.length}</span></div><div class="grid business-grid">${cards}</div>${accordions}</div>`;
       }).join("");
       $("#businessGrid").innerHTML = html || '<div class="task-empty">No businesses have been shared with you yet. Ask an admin for access.</div>';
       renderIcons();
     }
+    $("#businessGrid").addEventListener("click", e => {
+      const t = e.target.closest("[data-acc-toggle]");
+      if (!t) return;
+      const body = $("#acc-" + t.dataset.accToggle);
+      const caret = $(".acc-caret", t);
+      if (body) { const open = body.classList.toggle("hidden"); if (caret) caret.style.transform = open ? "" : "rotate(90deg)"; }
+    });
     renderBusinessGrid();
 
     function projectCard(p, verb) {
@@ -1572,7 +1647,7 @@
     const ENTITY_SPECS = {
       business: { title: "Business", ep: "businesses", fields: [
         { k: "name", label: "Name", req: true, full: true },
-        { k: "tier", label: "Tier (1–4)", type: "number" },
+        { k: "tier", label: "Tier", type: "select", opts: [["1", "Tier 1 — Revenue Engines"], ["2", "Tier 2 — Growth Bets"], ["3", "Tier 3 — Media / Niche"], ["4", "Tier 4 — Pipeline"]] },
         { k: "owner", label: "Owner" },
         { k: "state", label: "State (e.g. Active)" },
         { k: "status", label: "Status", type: "select", opts: [["active", "Active (green)"], ["warning", "Starting/Diligence (amber)"], ["parked", "Idea/Parked (grey)"]] },
@@ -1664,7 +1739,10 @@
         payload[f.k] = v;
       }
       Object.assign(payload, spec.fixed || {});
-      if (entityType === "business") payload.parent_id = payload.parent_id ? Number(payload.parent_id) : null;
+      if (entityType === "business") {
+        payload.parent_id = payload.parent_id ? Number(payload.parent_id) : null;
+        payload.tier = payload.tier ? Number(payload.tier) : null;
+      }
       if (entityType === "recurring" && payload.client_id) {
         const c = clients.find(x => String(x.id) === String(payload.client_id));
         payload.client_id = Number(payload.client_id);
@@ -2044,6 +2122,9 @@
           if (avatar) { avatar.textContent = initials; avatar.title = `${email}${ME.is_super_admin ? " · Super Admin" : ""}`; }
         }
         applyAccess();
+        let tourSeen = true;
+        try { tourSeen = !!localStorage.getItem("sb-tour-seen"); } catch (e) {}
+        if (!tourSeen) setTimeout(() => { if (typeof startTour === "function") startTour(); }, 1300);
       } catch (e) { /* keep defaults (full access) */ }
     })();
 
@@ -2143,6 +2224,73 @@
       respond(question);
     });
     $$(".suggestion").forEach(button => button.addEventListener("click", () => { addMessage(button.textContent); respond(button.textContent); }));
+
+    // ---------- Interactive guided tour ----------
+    const TOUR_STEPS = [
+      { title: "Welcome to Single Brain", body: "A quick tour of the essentials — about 60 seconds. Use Next and Back, or Skip anytime.", sel: null },
+      { view: "overview", sel: "#sidebar .nav", title: "Your sidebar", body: "Everything lives here. Overview is today's brief; below are your Businesses, Projects, Clients, Staff, reports, and daily tools." },
+      { view: "overview", sel: "#quickAddBtn", title: "Quick Add", body: "Add a task — or, as an admin, a business, campaign, project, or employee — from this menu, anywhere in the app." },
+      { view: "overview", sel: "#syncBtn", title: "Sync", body: "Push your latest to the shared brain anytime. It also auto-syncs every morning and evening." },
+      { view: "overview", sel: "#fontUp", title: "Text size", body: "Too small? Grow or shrink the whole dashboard with A− and A+. Your choice is remembered." },
+      { view: "businesses", sel: "#businessGrid .business-card", title: "Businesses", body: "Your portfolio by tier. Click any card to open its profile, where you can add tasks, pin it, and (admins) edit it." },
+      { view: "projects", sel: "#projectGrid", title: "Projects & the Action Queue", body: "Active work with next actions. Scroll down for the Action Queue, where you start timers and complete tasks." },
+      { view: "clients", sel: "#clientsGrid", title: "Clients & retainers", body: "Track monthly retainers and the recurring tasks they generate for your team." },
+      { view: "reports", sel: "#reportMetrics", title: "Productivity", body: "See completed work and tracked time by day, week, month, quarter, or year." },
+      { view: "journal", sel: ".journal-grid", title: "Daily Journal", body: "Set your focus each morning; log wins and tomorrow's first move each evening." },
+      { view: "overview", sel: "#cwdChatBtn", title: "CWD Brain Chat", body: "Ask this anything about your portfolio — it reads your live businesses and tasks." },
+      { view: "overview", sel: "#feedbackNav", title: "Feedback", body: "Found a bug or have an idea? Send it straight to the team here." },
+      { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },
+    ];
+    let tourI = 0, tourActive = false;
+    function tourEl() { const s = TOUR_STEPS[tourI]; return s.sel ? document.querySelector(s.sel) : null; }
+    function positionTour() {
+      const pop = $("#tourPop"), spot = $("#tourSpot"), blocker = $("#tourBlocker");
+      const el = tourEl();
+      const popW = Math.min(348, window.innerWidth - 24), popH = pop.offsetHeight || 190;
+      if (el) {
+        const r = el.getBoundingClientRect(), pad = 8;
+        spot.classList.remove("hidden");
+        spot.style.left = (r.left - pad) + "px"; spot.style.top = (r.top - pad) + "px";
+        spot.style.width = (r.width + pad * 2) + "px"; spot.style.height = (r.height + pad * 2) + "px";
+        blocker.classList.remove("dim");
+        let top = r.bottom + 12, left = Math.min(Math.max(12, r.left), window.innerWidth - popW - 12);
+        if (top + popH > window.innerHeight - 12) top = r.top - popH - 12;
+        if (top < 12) top = Math.max(12, (window.innerHeight - popH) / 2);
+        pop.style.left = left + "px"; pop.style.top = top + "px";
+      } else {
+        spot.classList.add("hidden"); blocker.classList.add("dim");
+        pop.style.left = ((window.innerWidth - popW) / 2) + "px";
+        pop.style.top = ((window.innerHeight - popH) / 2) + "px";
+      }
+    }
+    function renderTour() {
+      const step = TOUR_STEPS[tourI];
+      if (step.view) showView(step.view);
+      $("#tourTitle").textContent = step.title;
+      $("#tourBody").textContent = step.body;
+      $("#tourProgress").textContent = (tourI + 1) + " / " + TOUR_STEPS.length;
+      $("#tourBack").style.visibility = tourI === 0 ? "hidden" : "visible";
+      $("#tourNext").textContent = tourI === TOUR_STEPS.length - 1 ? "Done" : "Next";
+      $("#tourPop").classList.remove("hidden");
+      setTimeout(() => {
+        const el = tourEl();
+        if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+        setTimeout(positionTour, 280);
+      }, 70);
+    }
+    function startTour() { tourActive = true; tourI = 0; $("#tourBlocker").classList.remove("hidden"); renderTour(); }
+    function endTour() {
+      tourActive = false;
+      ["#tourBlocker", "#tourSpot", "#tourPop"].forEach(s => $(s).classList.add("hidden"));
+      try { localStorage.setItem("sb-tour-seen", "1"); } catch (e) {}
+    }
+    $("#startTourBtn").addEventListener("click", startTour);
+    $("#tourNext").addEventListener("click", () => { if (tourI >= TOUR_STEPS.length - 1) endTour(); else { tourI++; renderTour(); } });
+    $("#tourBack").addEventListener("click", () => { if (tourI > 0) { tourI--; renderTour(); } });
+    $("#tourSkip").addEventListener("click", endTour);
+    window.addEventListener("resize", () => { if (tourActive) positionTour(); });
+    window.addEventListener("scroll", () => { if (tourActive) positionTour(); }, true);
+    document.addEventListener("keydown", e => { if (tourActive && e.key === "Escape") endTour(); });
 
     const initialView = location.hash.slice(1);
     if (initialView && document.getElementById(initialView)) showView(initialView);

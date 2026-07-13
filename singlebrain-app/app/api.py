@@ -710,6 +710,17 @@ def catalog_all(request: Request):
     }
 
 
+def _clamp_tier(t):
+    """Businesses live in Tier 1–4 only; anything out of range is clamped so a
+    business can never fall into a non-existent tier and vanish from the grid."""
+    if t is None:
+        return None
+    try:
+        return min(4, max(1, int(t)))
+    except (TypeError, ValueError):
+        return None
+
+
 class BusinessIn(BaseModel):
     name: str
     initials: Optional[str] = None
@@ -733,7 +744,7 @@ def create_business(b: BusinessIn, request: Request):
     initials = (b.initials or "").strip() or catalog._initials(name)
     bid = db.execute(
         "INSERT INTO businesses(name,initials,tier,owner,state,status,kind,parent_id,notes) VALUES(?,?,?,?,?,?,?,?,?)",
-        (name, initials, b.tier, b.owner, b.state, b.status or "active", b.kind or "business", b.parent_id, b.notes),
+        (name, initials, _clamp_tier(b.tier), b.owner, b.state, b.status or "active", b.kind or "business", b.parent_id, b.notes),
     )
     return {"ok": True, "id": bid}
 
@@ -748,7 +759,7 @@ def update_business(bid: int, b: BusinessIn, request: Request):
     parent = b.parent_id if b.parent_id != bid else None  # no self-parenting
     db.execute(
         "UPDATE businesses SET name=?,initials=?,tier=?,owner=?,state=?,status=?,kind=?,parent_id=?,notes=? WHERE id=?",
-        (name, initials, b.tier, b.owner, b.state, b.status, b.kind, parent, b.notes, bid),
+        (name, initials, _clamp_tier(b.tier), b.owner, b.state, b.status, b.kind, parent, b.notes, bid),
     )
     return {"ok": True}
 
