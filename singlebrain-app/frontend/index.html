@@ -344,6 +344,15 @@
     .access-opt input { width: 15px; height: 15px; margin: 0; accent-color: var(--blue); }
     .access-opt span { min-width: 0; overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
     .assign-select { padding: 5px 7px; color: var(--text); background: #081521; border: 1px solid var(--line); border-radius: 5px; font-size: 10px; max-width: 190px; }
+    .fb-card { padding: 16px 18px; margin-bottom: 12px; }
+    .fb-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .fb-kind { padding: 2px 8px; border-radius: 4px; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .fb-kind.bug { color: var(--red); background: rgba(234,114,114,0.10); }
+    .fb-kind.suggestion { color: var(--cyan); background: rgba(69,189,196,0.10); }
+    .fb-meta { margin-left: auto; color: var(--faint); font-size: 10px; }
+    .fb-msg { margin: 11px 0 0; color: var(--text); font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+    .fb-note { margin-top: 9px; padding: 8px 11px; background: rgba(255,255,255,0.02); border-left: 2px solid var(--gold); border-radius: 5px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .fb-actions { margin-top: 10px; display: flex; justify-content: flex-end; }
     @media (max-width: 560px) { .access-cols { grid-template-columns: 1fr; } }
     .sub-biz { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
     .sub-biz-label { display: block; margin-bottom: 6px; color: var(--faint); font-size: 8px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
@@ -641,7 +650,7 @@
       <button class="nav-button" data-view="journal"><i data-lucide="notebook-pen" class="icon"></i>Daily Journal</button>
       <button class="nav-button" data-view="chat"><i data-lucide="message-square-text" class="icon"></i>CWD Brain Chat</button>
       <button class="nav-button" data-view="tutorial"><i data-lucide="graduation-cap" class="icon"></i>Tutorial</button>
-      <button class="nav-button" id="feedbackNav"><i data-lucide="message-square-warning" class="icon"></i>Feedback</button>
+      <button class="nav-button" id="feedbackNav" data-view="feedback"><i data-lucide="message-square-warning" class="icon"></i>Feedback</button>
       <button class="nav-button hidden" id="adminNav" data-view="admin"><i data-lucide="shield-check" class="icon"></i>Super Admin</button>
     </nav>
     <div class="sidebar-footer">
@@ -653,9 +662,9 @@
   <main class="main">
     <section class="view active" id="overview">
       <div class="view-header">
-        <div><div class="eyebrow">Sunday / July 12, 2026</div><h1>Good morning, <span id="greetingName">there</span>.</h1><p>Your command brief is focused on one outcome: close and invoice the next deal.</p></div>
+        <div><div class="eyebrow">Command Center</div><h1>Good morning, <span id="greetingName">there</span>.</h1><p>Fresh start — set your focus and start logging outreach.</p></div>
         <div class="snapshot-col">
-          <div class="date-chip"><i data-lucide="calendar-days" class="icon-sm"></i><strong style="color:var(--gold-soft)">Manual snapshot</strong> / Sales sprint / Day 11 of 14</div>
+          <div class="date-chip"><i data-lucide="calendar-days" class="icon-sm"></i><strong style="color:var(--gold-soft)">Manual snapshot</strong> / New sprint</div>
           <div class="tool-shortcuts">
             <a class="tool-shortcut" href="https://chatgpt.com" target="_blank" rel="noopener" title="ChatGPT"><i data-lucide="message-square-text" class="icon-sm"></i><span>ChatGPT</span></a>
             <a class="tool-shortcut" href="https://claude.ai/design" target="_blank" rel="noopener" title="Claude"><i data-lucide="sparkles" class="icon-sm"></i><span>Claude</span></a>
@@ -666,23 +675,23 @@
         </div>
       </div>
       <div class="grid metrics">
-        <article class="card metric"><div class="metric-label">Warm outreach<i data-lucide="send" class="icon-sm"></i></div><div class="metric-value">24</div><div class="metric-note"><strong>+6</strong> this week</div><div class="spark"><i style="height:25%"></i><i style="height:42%"></i><i style="height:34%"></i><i style="height:68%"></i><i style="height:92%"></i></div></article>
-        <article class="card metric"><div class="metric-label">Replies<i data-lucide="reply" class="icon-sm"></i></div><div class="metric-value">7</div><div class="metric-note"><strong>29%</strong> reply rate</div><div class="spark"><i style="height:20%"></i><i style="height:36%"></i><i style="height:54%"></i><i style="height:46%"></i><i style="height:76%"></i></div></article>
-        <article class="card metric"><div class="metric-label">Fit calls<i data-lucide="phone-call" class="icon-sm"></i></div><div class="metric-value">3</div><div class="metric-note">2 completed / 1 booked</div></article>
-        <article class="card metric"><div class="metric-label">Closes<i data-lucide="circle-check-big" class="icon-sm"></i></div><div class="metric-value">0</div><div class="metric-note" style="color:var(--amber)">Target: 1-3 by Jul 16</div></article>
+        <article class="card metric"><div class="metric-label">Warm outreach<i data-lucide="send" class="icon-sm"></i></div><div class="metric-value">0</div><div class="metric-note">New sprint — fresh start</div></article>
+        <article class="card metric"><div class="metric-label">Replies<i data-lucide="reply" class="icon-sm"></i></div><div class="metric-value">0</div><div class="metric-note">0% reply rate</div></article>
+        <article class="card metric"><div class="metric-label">Fit calls<i data-lucide="phone-call" class="icon-sm"></i></div><div class="metric-value">0</div><div class="metric-note">0 completed / 0 booked</div></article>
+        <article class="card metric"><div class="metric-label">Closes<i data-lucide="circle-check-big" class="icon-sm"></i></div><div class="metric-value">0</div><div class="metric-note">Set your target</div></article>
         <article class="card metric"><div class="metric-label">Revenue<i data-lucide="badge-dollar-sign" class="icon-sm"></i></div><div class="metric-value">$0</div><div class="metric-note">Invoiced and collected</div></article>
       </div>
 
       <article class="card command-action">
-        <div class="action-copy"><div class="action-icon"><i data-lucide="crosshair" class="icon-lg"></i></div><div><div class="eyebrow" style="margin-bottom:2px">Highest-leverage action</div><strong>Follow up with the 3 warm prospects from last week</strong><span>Send a direct close-the-loop message before 11:00 AM. No new build work.</span></div></div>
-        <button class="button" data-go="chat"><i data-lucide="wand-sparkles" class="icon-sm"></i>Draft follow-ups</button>
+        <div class="action-copy"><div class="action-icon"><i data-lucide="crosshair" class="icon-lg"></i></div><div><div class="eyebrow" style="margin-bottom:2px">Highest-leverage action</div><strong>Set your focus for the new sprint</strong><span>Decide the one outcome that matters, then start logging outreach and calls.</span></div></div>
+        <button class="button" data-go="chat"><i data-lucide="wand-sparkles" class="icon-sm"></i>Ask Brain Chat</button>
       </article>
 
       <div class="grid dashboard-grid">
         <div class="stack">
           <article class="card">
-            <div class="panel-header"><h2>Active Sales Sprint</h2><span>July 2 - July 16</span></div>
-            <div class="panel-body"><div class="sprint-row"><div class="sprint-title">AI-Built Lead Gen Website<small>Close 1-3 deals / Lead with $2,500</small></div><div class="days-left">4<small>days remaining</small></div></div><div class="progress gold"><span style="width:71%"></span></div></div>
+            <div class="panel-header"><h2>Active Sales Sprint</h2><span>Not started</span></div>
+            <div class="panel-body"><div class="sprint-row"><div class="sprint-title">No active sprint<small>Set your goal and dates to begin</small></div><div class="days-left">—<small>days remaining</small></div></div><div class="progress gold"><span style="width:0%"></span></div></div>
           </article>
           <article class="card">
             <div class="panel-header"><h2>Active Projects</h2><button class="filter" data-go="projects">View all</button></div>
@@ -882,6 +891,11 @@
           <form class="chat-input" id="chatForm"><input class="input" id="chatText" placeholder="Ask about priorities, projects, or decisions..." autocomplete="off"><button class="button blue send-button" aria-label="Send"><i data-lucide="arrow-up" class="icon-sm"></i></button></form>
         </div>
       </div>
+    </section>
+
+    <section class="view" id="feedback">
+      <div class="view-header"><div><div class="eyebrow">Help Desk</div><h1>Feedback</h1><p id="feedbackLead">Report bugs and suggestions, and track their status.</p></div><button class="button" id="openFeedbackBtn"><i data-lucide="plus" class="icon-sm"></i>New feedback</button></div>
+      <div id="feedbackList"></div>
     </section>
   </main>
 
@@ -1781,7 +1795,7 @@
       try {
         const res = await fetch("/api/feedback", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: $("#fbKind").value, message, page: (location.hash || "#overview").slice(1) }) });
         const d = await res.json().catch(() => ({}));
-        if (res.ok) { hideModal("#feedbackModal"); showToast(d.sent ? "Thanks — feedback sent." : "Feedback recorded (email not configured)."); }
+        if (res.ok) { hideModal("#feedbackModal"); showToast("Thanks — feedback logged."); renderFeedback(); }
         else $("#fbError").textContent = d.detail || ("Error " + res.status);
       } catch (e) { $("#fbError").textContent = "Couldn't reach the server."; }
       finally { btn.disabled = false; }
@@ -1799,7 +1813,50 @@
       else if (rec) { const c = clients.find(x => String(x.id) === rec.dataset.clientRecurring); if (c) openEntityEditor("recurring", { client_id: c.id, client_name: c.name, business: c.business }); }
       else if (card) { const c = clients.find(x => String(x.id) === card.dataset.clientOpen); if (c) openClientDetail(c); }
     });
-    $("#feedbackNav").addEventListener("click", openFeedback);
+    $("#openFeedbackBtn").addEventListener("click", openFeedback);
+    const FB_STATUS = { open: ["Open", "warning"], in_progress: ["In Progress", ""], resolved: ["Resolved", ""], wont_fix: ["Won't Fix", "parked"] };
+    async function renderFeedback() {
+      const wrap = $("#feedbackList");
+      $("#feedbackLead").textContent = ME.is_super_admin
+        ? "Every bug and suggestion, with status. Update status and note, then notify the submitter."
+        : "Report bugs and suggestions, and track the status of what you've sent.";
+      let items = [];
+      try { const res = await fetch("/api/feedback", { credentials: "same-origin" }); if (res.ok) items = await res.json(); } catch (e) {}
+      if (!items.length) { wrap.innerHTML = '<div class="task-empty">No feedback yet. Use “New feedback” to send the first one.</div>'; return; }
+      wrap.innerHTML = items.map(t => {
+        const st = FB_STATUS[t.status] || ["Open", "warning"];
+        const kind = t.kind === "suggestion" ? "Suggestion" : "Bug";
+        const statusCtl = ME.is_super_admin
+          ? `<select class="assign-select" data-fb-status="${t.id}">${Object.entries(FB_STATUS).map(([k, v]) => `<option value="${k}" ${t.status === k ? "selected" : ""}>${v[0]}</option>`).join("")}</select>`
+          : `<span class="status ${st[1]}">${escapeHTML(st[0])}</span>`;
+        const noteCtl = ME.is_super_admin
+          ? `<input class="input" data-fb-note="${t.id}" placeholder="Note to the submitter (optional)" value="${escapeHTML(t.admin_note || "")}" style="margin-top:9px">`
+          : (t.admin_note ? `<div class="fb-note"><b>Team:</b> ${escapeHTML(t.admin_note)}</div>` : "");
+        const actions = ME.is_super_admin ? `<div class="fb-actions"><button class="button secondary" data-fb-save="${t.id}"><i data-lucide="send" class="icon-sm"></i>Save &amp; notify</button></div>` : "";
+        const who = ME.is_super_admin ? " · " + escapeHTML(t.email || "unknown") : "";
+        return `<article class="card fb-card">
+          <div class="fb-top"><span class="fb-kind ${t.kind}">${kind}</span>${statusCtl}<span class="fb-meta">#${t.id}${who}</span></div>
+          <p class="fb-msg">${escapeHTML(t.message)}</p>
+          ${noteCtl}${actions}
+        </article>`;
+      }).join("");
+      renderIcons();
+    }
+    $("#feedbackList").addEventListener("click", async e => {
+      const save = e.target.closest("[data-fb-save]");
+      if (!save) return;
+      const id = save.dataset.fbSave;
+      const status = $(`[data-fb-status="${id}"]`) ? $(`[data-fb-status="${id}"]`).value : undefined;
+      const note = $(`[data-fb-note="${id}"]`) ? $(`[data-fb-note="${id}"]`).value : "";
+      save.disabled = true;
+      try {
+        const res = await fetch(`/api/feedback/${id}`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status, admin_note: note, notify: true }) });
+        const d = await res.json().catch(() => ({}));
+        if (res.ok) { showToast(d.notified ? "Updated — submitter notified" : "Updated"); renderFeedback(); }
+        else showToast("Couldn't update: " + (d.detail || res.status));
+      } catch (err) { showToast("Couldn't reach the server."); }
+      finally { save.disabled = false; }
+    });
     $$('[data-close-entity]').forEach(b => b.addEventListener("click", () => hideModal("#entityModal")));
     $$('[data-close-feedback]').forEach(b => b.addEventListener("click", () => hideModal("#feedbackModal")));
     $("#entitySave").addEventListener("click", saveEntity);
@@ -1957,6 +2014,7 @@
       $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === id));
       if (id === "reports") loadReport();
       if (id === "admin") loadAdminUsers().then(renderAdmin);
+      if (id === "feedback") renderFeedback();
       $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
       $("#sidebar").classList.remove("open");
       $("#mobileOverlay").classList.add("hidden");

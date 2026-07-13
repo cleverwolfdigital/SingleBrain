@@ -994,10 +994,20 @@ def toggle_pin(body: PinIn, request: Request):
 FEEDBACK_TO = os.environ.get("SB_FEEDBACK_TO", "").strip() or (sorted(SUPER_ADMINS)[0] if SUPER_ADMINS else "")
 
 
+FEEDBACK_STATUSES = ("open", "in_progress", "resolved", "wont_fix")
+FEEDBACK_LABELS = {"open": "Open", "in_progress": "In Progress", "resolved": "Resolved", "wont_fix": "Won't Fix"}
+
+
 class FeedbackIn(BaseModel):
     kind: str = "bug"     # bug | suggestion
     message: str
     page: Optional[str] = None
+
+
+class FeedbackUpdate(BaseModel):
+    status: Optional[str] = None
+    admin_note: Optional[str] = None
+    notify: Optional[bool] = False
 
 
 @app.post("/api/feedback")
@@ -1006,13 +1016,58 @@ def submit_feedback(body: FeedbackIn, request: Request):
     msg = (body.message or "").strip()
     if len(msg) < 3:
         raise HTTPException(422, "Please add a bit more detail.")
-    kind = "Suggestion" if (body.kind or "").lower().startswith("sugg") else "Bug"
-    if not FEEDBACK_TO:
-        raise HTTPException(503, "Feedback email is not configured.")
-    subject = f"[Single Brain] {kind} from {email}"
-    text = f"{kind} report\nFrom: {email}\nPage: {body.page or '-'}\n\n{msg}"
-    try:
-        sent = auth.send_email(FEEDBACK_TO, subject, text)
-    except Exception as e:
-        raise HTTPException(502, f"Could not send feedback: {e}")
-    return {"ok": True, "sent": bool(sent)}
+    kind = "suggestion" if (body.kind or "").lower().startswith("sugg") else "bug"
+    fid = db.execute(
+        "INSERT INTO feedback(email,kind,message,page,status) VALUES(?,?,?,?,'open')",
+        (email, kind, msg, body.page),
+    )
+    sent = False
+    if FEEDBACK_TO:
+        try:
+            sent = auth.send_email(
+                FEEDBACK_TO, f"[Single Brain] {kind} from {email} (#{fid})",
+                f"{kind} report\nFrom: {email}\nPage: {body.page or '-'}\n\n{msg}",
+            )
+        except Exception:
+            pass
+    return {"ok": True, "id": fid, "sent": bool(sent)}
+
+
+@app.get("/api/feedback")
+def list_feedback(request: Request):
+    email = (auth.current_user(request) or "").strip().lower()
+    if _is_admin(email):
+        return db.query(
+            "SELECT * FROM feedback ORDER BY "
+            "CASE status WHEN 'open' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, id DESC"
+        )
+    return db.query("SELECT * FROM feedback WHERE lower(email)=? ORDER BY id DESC", (email,))
+
+
+@app.put("/api/feedback/{fid}")
+def update_feedback(fid: int, body: FeedbackUpdate, request: Request):
+    _require_admin(request)
+    rows = db.query("SELECT * FROM feedback WHERE id=?", (fid,))
+    if not rows:
+        raise HTTPException(404, "Ticket not found.")
+    t = rows[0]
+    status = body.status if body.status in FEEDBACK_STATUSES else (t.get("status") or "open")
+    note = body.admin_note if body.admin_note is not None else t.get("admin_note")
+    db.execute(
+        "UPDATE feedback SET status=?, admin_note=?, updated_at=datetime('now') WHERE id=?",
+        (status, note, fid),
+    )
+    notified = False
+    if body.notify and t.get("email") and "@" in (t.get("email") or ""):
+        subject = f"[Single Brain] Update on your feedback (#{fid})"
+        text = (
+            f"Your {t.get('kind') or 'feedback'} report has been updated.\n\n"
+            f"Status: {FEEDBACK_LABELS.get(status, status)}\n"
+            + (f"\nNote from the team:\n{note}\n" if note else "")
+            + f"\n— Original message —\n{t.get('message')}"
+        )
+        try:
+            notified = auth.send_email(t["email"], subject, text)
+        except Exception:
+            pass
+    return {"ok": True, "notified": bool(notified)}

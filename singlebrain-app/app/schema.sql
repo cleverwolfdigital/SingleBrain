@@ -60,6 +60,18 @@ CREATE TABLE IF NOT EXISTS clients (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT,                     -- submitter
+  kind TEXT,                      -- bug | suggestion
+  message TEXT NOT NULL,
+  page TEXT,
+  status TEXT DEFAULT 'open',     -- open | in_progress | resolved | wont_fix
+  admin_note TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS recurring_tasks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
