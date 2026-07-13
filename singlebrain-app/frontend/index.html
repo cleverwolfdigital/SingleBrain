@@ -350,6 +350,11 @@
     .sub-chip { padding: 4px 8px; cursor: pointer; color: var(--muted); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 5px; font-size: 10px; }
     .sub-chip:hover { color: var(--text); border-color: var(--line-strong); }
     .biz-pin { margin-left: 5px; color: var(--gold); fill: currentColor; vertical-align: -2px; }
+    .biz-group { margin-bottom: 6px; }
+    .sub-group { margin: 10px 0 4px; padding: 12px 14px; background: rgba(255,255,255,0.015); border: 1px dashed var(--line-strong); border-radius: 8px; }
+    .sub-group-head { display: flex; align-items: center; gap: 6px; margin-bottom: 11px; color: var(--gold-soft); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .sub-group-head .icon-sm { color: var(--faint); }
+    .sub-tag { margin-left: 8px; padding: 2px 6px; color: var(--cyan); background: rgba(69,189,196,0.10); border-radius: 4px; font: 700 8px var(--font-body); letter-spacing: 0.5px; text-transform: uppercase; vertical-align: middle; }
     .task-main { min-width: 0; display: flex; align-items: center; gap: 10px; }
     .task-state { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 4px rgba(74,145,216,0.08); }
     .task-main strong { display: block; overflow: hidden; color: var(--text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
@@ -1373,17 +1378,14 @@
       3: ["Tier 3 — Media / Niche Sites", "Systematized"],
       4: ["Tier 4 — Pipeline / Investments", "Monthly review"]
     };
-    function businessCard(b, kids) {
-      const kidsHtml = (kids && kids.length)
-        ? `<div class="sub-biz"><span class="sub-biz-label">Sub-businesses</span><div class="chip-row">${kids.map(k => `<button class="sub-chip" type="button" data-biz-name="${escapeHTML(k.name)}">${escapeHTML(k.name)}</button>`).join("")}</div></div>`
-        : "";
+    function businessCard(b) {
       const pinned = isPinned("business", b.name) ? '<i data-lucide="star" class="icon-sm biz-pin"></i>' : "";
+      const sub = (b.kind === "subbusiness") ? '<span class="sub-tag">Sub-business</span>' : "";
       return `
         <article class="card business-card" data-biz-name="${escapeHTML(b.name)}" role="button" tabindex="0" aria-label="Open ${escapeHTML(b.name)}">
           <div class="business-top"><div class="business-logo">${escapeHTML(b.initials)}</div><span class="status ${b.status}">${escapeHTML(b.state)}${pinned}</span></div>
-          <h3>${escapeHTML(b.name)}</h3>
+          <h3>${escapeHTML(b.name)}${sub}</h3>
           <div class="business-meta"><span>Owner<b>${escapeHTML(b.owner)}</b></span></div>
-          ${kidsHtml}
           <div class="card-open-hint"><i data-lucide="list-checks" class="icon-sm"></i>View tasks</div>
         </article>`;
     }
@@ -1392,11 +1394,23 @@
       const kidsByParent = {};
       visible.forEach(b => { if (b.parentId) (kidsByParent[b.parentId] = kidsByParent[b.parentId] || []).push(b); });
       const html = [1, 2, 3, 4, 9].map(tier => {
-        const items = visible.filter(b => (b.tier || 9) === tier && !b.parentId);
-        if (!items.length) return "";
-        const cards = items.map(b => businessCard(b, kidsByParent[b.id])).join("");
+        const tops = visible.filter(b => (b.tier || 9) === tier && !b.parentId);
+        if (!tops.length) return "";
+        const withKids = tops.filter(b => (kidsByParent[b.id] || []).length);
+        const flat = tops.filter(b => !(kidsByParent[b.id] || []).length);
+        const groups = withKids.map(parent => {
+          const kids = kidsByParent[parent.id];
+          return `<div class="biz-group">
+            <div class="grid business-grid">${businessCard(parent)}</div>
+            <div class="sub-group">
+              <div class="sub-group-head"><i data-lucide="corner-down-right" class="icon-sm"></i>Sub-businesses of ${escapeHTML(parent.name)}</div>
+              <div class="grid business-grid">${kids.map(businessCard).join("")}</div>
+            </div>
+          </div>`;
+        }).join("");
+        const flatGrid = flat.length ? `<div class="grid business-grid">${flat.map(businessCard).join("")}</div>` : "";
         const meta = TIER_META[tier] || ["Other", ""];
-        return `<div class="tier-block"><div class="tier-heading"><h2>${meta[0]}</h2><span>${meta[1]}${meta[1] ? " · " : ""}${items.length}</span></div><div class="grid business-grid">${cards}</div></div>`;
+        return `<div class="tier-block"><div class="tier-heading"><h2>${meta[0]}</h2><span>${meta[1]}${meta[1] ? " · " : ""}${tops.length}</span></div>${groups}${flatGrid}</div>`;
       }).join("");
       $("#businessGrid").innerHTML = html || '<div class="task-empty">No businesses have been shared with you yet. Ask an admin for access.</div>';
       renderIcons();
