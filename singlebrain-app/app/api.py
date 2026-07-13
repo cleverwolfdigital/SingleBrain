@@ -236,6 +236,7 @@ class TaskIn(BaseModel):
     notes: Optional[str] = None
     estimate_min: Optional[int] = None
     assignee: Optional[str] = None
+    client: Optional[str] = None
     dependencies: List[int] = Field(default_factory=list)
 
 
@@ -260,9 +261,9 @@ def create_task(t: TaskIn, request: Request):
     else:
         assignee = (current or "").strip().lower() or None
     tid = db.execute(
-        "INSERT INTO tasks(business,name,category,priority,due,notes,status,estimate_min,actual_sec,assignee) "
-        "VALUES(?,?,?,?,?,?,'open',?,0,?)",
-        (t.business, name, t.category, t.priority, t.due, t.notes, est, assignee),
+        "INSERT INTO tasks(business,name,category,priority,due,notes,status,estimate_min,actual_sec,assignee,client) "
+        "VALUES(?,?,?,?,?,?,'open',?,0,?,?)",
+        (t.business, name, t.category, t.priority, t.due, t.notes, est, assignee, (t.client or "").strip() or None),
     )
     for dep in t.dependencies:
         db.execute("INSERT OR IGNORE INTO task_dependencies(task_id,depends_on) VALUES(?,?)", (tid, dep))
@@ -865,6 +866,7 @@ class ClientIn(BaseModel):
     status: Optional[str] = "active"
     contact_name: Optional[str] = None
     contact_email: Optional[str] = None
+    assignee: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -874,10 +876,10 @@ def create_client(c: ClientIn, request: Request):
     if not (c.name or "").strip():
         raise HTTPException(422, "Name is required.")
     cid = db.execute(
-        "INSERT INTO clients(name,business,retainer_amount,cadence,status,contact_name,contact_email,notes) "
-        "VALUES(?,?,?,?,?,?,?,?)",
+        "INSERT INTO clients(name,business,retainer_amount,cadence,status,contact_name,contact_email,assignee,notes) "
+        "VALUES(?,?,?,?,?,?,?,?,?)",
         (c.name.strip(), c.business, c.retainer_amount, c.cadence or "monthly", c.status or "active",
-         c.contact_name, c.contact_email, c.notes),
+         c.contact_name, c.contact_email, (c.assignee or "").strip().lower() or None, c.notes),
     )
     return {"ok": True, "id": cid}
 
@@ -888,8 +890,9 @@ def update_client(cid: int, c: ClientIn, request: Request):
     if not db.query("SELECT 1 FROM clients WHERE id=?", (cid,)):
         raise HTTPException(404, "Client not found.")
     db.execute(
-        "UPDATE clients SET name=?,business=?,retainer_amount=?,cadence=?,status=?,contact_name=?,contact_email=?,notes=? WHERE id=?",
-        (c.name.strip(), c.business, c.retainer_amount, c.cadence, c.status, c.contact_name, c.contact_email, c.notes, cid),
+        "UPDATE clients SET name=?,business=?,retainer_amount=?,cadence=?,status=?,contact_name=?,contact_email=?,assignee=?,notes=? WHERE id=?",
+        (c.name.strip(), c.business, c.retainer_amount, c.cadence, c.status, c.contact_name, c.contact_email,
+         (c.assignee or "").strip().lower() or None, c.notes, cid),
     )
     return {"ok": True}
 

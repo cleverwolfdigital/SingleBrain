@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS clients (
   status TEXT DEFAULT 'active',
   contact_name TEXT,
   contact_email TEXT,
+  assignee TEXT,
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );

@@ -636,6 +636,7 @@
     <div class="nav-label">Command</div>
     <nav class="nav">
       <button class="nav-button active" data-view="overview"><i data-lucide="layout-dashboard" class="icon"></i>Overview</button>
+      <button class="nav-button" data-view="mytasks"><i data-lucide="square-check" class="icon"></i>My Tasks</button>
       <button class="nav-button" data-view="businesses"><i data-lucide="building-2" class="icon"></i>Businesses</button>
       <button class="nav-button" data-view="projects"><i data-lucide="folder-kanban" class="icon"></i>Projects</button>
       <button class="nav-button" data-view="clients"><i data-lucide="handshake" class="icon"></i>Clients</button>
@@ -720,6 +721,11 @@
       </div>
     </section>
 
+    <section class="view" id="mytasks">
+      <div class="view-header"><div><div class="eyebrow">Assigned to you</div><h1>My Tasks</h1><p>Everything assigned to you, across all businesses and clients. Start a timer or mark complete right here.</p></div><div style="display:flex;align-items:center;gap:12px"><span class="task-count" id="myTaskCount">0 open</span><button class="button" data-open-task><i data-lucide="plus" class="icon-sm"></i>Quick add task</button></div></div>
+      <div class="task-list" id="myTaskList" aria-live="polite"></div>
+    </section>
+
     <section class="view" id="businesses">
       <div class="view-header"><div><div class="eyebrow">Portfolio</div><h1>Businesses</h1><p>Your portfolio across four tiers — by owner and status. Click a card to open its profile.</p></div><button class="button hidden" data-admin-only data-add-entity="business"><i data-lucide="plus" class="icon-sm"></i>Add business</button></div>
       <div id="businessGrid"></div>
@@ -746,6 +752,15 @@
 
     <section class="view" id="clients">
       <div class="view-header"><div><div class="eyebrow">Retainers</div><h1>Clients</h1><p>Monthly retainers and the recurring work they generate — assignable to your team.</p></div><button class="button hidden" data-admin-only data-add-entity="client"><i data-lucide="plus" class="icon-sm"></i>Add client</button></div>
+      <div class="report-controls" style="margin-bottom:14px">
+        <div class="period-tabs">
+          <button class="filter active" data-client-filter="all">All</button>
+          <button class="filter" data-client-filter="active">Active</button>
+          <button class="filter" data-client-filter="paused">Paused</button>
+          <button class="filter" data-client-filter="churned">Churned</button>
+        </div>
+        <input class="input" id="clientSearch" placeholder="Search clients…" autocomplete="off" style="max-width:240px">
+      </div>
       <div class="grid" id="clientsGrid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
     </section>
 
@@ -914,8 +929,14 @@
           </div>
           <div class="field" data-field="business">
             <label for="taskBusiness">Business <span class="required-mark">*</span></label>
-            <select class="input" id="taskBusiness" name="business" required><option value="">Select business</option></select>
+            <input class="input" id="taskBusiness" name="business" list="businessOptions" placeholder="Type to search…" autocomplete="off" required>
+            <datalist id="businessOptions"></datalist>
             <span class="field-error" id="businessError" role="alert"></span>
+          </div>
+          <div class="field" data-field="client">
+            <label for="taskClient">Client</label>
+            <select class="input" id="taskClient" name="client"><option value="">None</option></select>
+            <span class="field-error"></span>
           </div>
           <div class="field" data-field="category">
             <label for="taskCategory">Category <span class="required-mark">*</span></label>
@@ -1202,6 +1223,13 @@
       } catch (e) { /* ignore */ }
     }
     const isPinned = (kind, ref) => pins.some(p => p.kind === kind && p.ref === ref);
+    // Everyone assignable = all staff with an email, plus any registered app users (guests).
+    function assignableUsers() {
+      const byEmail = {};
+      (staffList || []).forEach(s => { const e = (s.email || "").toLowerCase(); if (e) byEmail[e] = { email: e, name: s.name || emailName(e) }; });
+      (adminUsers || []).forEach(u => { const e = (u.email || "").toLowerCase(); if (e && !byEmail[e]) byEmail[e] = { email: e, name: u.name || emailName(e) }; });
+      return Object.values(byEmail).sort((a, b) => a.name.localeCompare(b.name));
+    }
     const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
     const todayString = () => {
       const today = new Date();
@@ -1233,48 +1261,61 @@
         if (res.ok) { tasks = (await res.json()).map(mapTask); }
       } catch (e) { /* keep whatever is loaded */ }
       renderTaskList();
+      renderMyTasks();
       renderDependencyOptions();
     }
     function persistTasks() { /* tasks persist to the repo via the API now */ }
 
     let taskTickTimer = null;
-    function renderTaskList() {
-      const openCount = tasks.filter(t => t.status !== "done").length;
-      $("#taskCount").textContent = `${openCount} open · ${tasks.length} total`;
-      if (!tasks.length) {
-        $("#taskList").innerHTML = '<div class="task-empty">No tasks in the queue.</div>';
-        return;
-      }
+    function sortTasks(arr) {
       const rank = t => t.status === "done" ? 2 : (t.running ? 0 : 1);
-      const sorted = [...tasks].sort((a, b) => {
+      return [...arr].sort((a, b) => {
         const ra = rank(a), rb = rank(b);
         if (ra !== rb) return ra - rb;
         return (PRIO_RANK[a.priority] ?? 3) - (PRIO_RANK[b.priority] ?? 3);
       });
-      $("#taskList").innerHTML = sorted.map(task => {
-        const done = task.status === "done";
-        const est = task.estimateMin ? `${task.estimateMin}m` : "—";
-        const dueTxt = task.dueDate ? formatTaskDate(task.dueDate) : "—";
-        const timerAttrs = task.running ? ` data-base="${task.actualSec}" data-start="${Date.now()}"` : "";
-        const timerCls = task.running ? "task-timer running" : "task-timer";
-        const actions = done
-          ? `<span class="task-done-badge"><i data-lucide="circle-check-big" class="icon-sm"></i>Done</span><button class="task-btn" data-act="reopen" aria-label="Reopen task" title="Reopen"><i data-lucide="rotate-ccw" class="icon-sm"></i></button>`
-          : `<button class="task-btn ${task.running ? "running" : "start"}" data-act="${task.running ? "pause" : "start"}" aria-label="${task.running ? "Pause timer" : "Start timer"}" title="${task.running ? "Pause timer" : "Start timer"}"><i data-lucide="${task.running ? "pause" : "play"}" class="icon-sm"></i></button><button class="task-btn complete" data-act="complete" aria-label="Mark complete" title="Mark complete"><i data-lucide="check" class="icon-sm"></i></button>`;
-        return `
-          <article class="task-row ${done ? "is-done" : ""} ${task.running ? "is-running" : ""}" data-task-id="${escapeHTML(task.id)}">
-            <div class="task-main"><span class="task-state"></span><div><strong title="${escapeHTML(task.notes)}">${escapeHTML(task.task)}</strong><small>${escapeHTML(task.business)}${task.category ? " · " + escapeHTML(task.category) : ""}${task.assignee ? ' · <span class="task-assignee">@' + escapeHTML(emailName(task.assignee)) + "</span>" : ""}</small></div></div>
-            <div class="task-cell task-col-priority"><span class="task-label">Priority</span><span class="task-priority ${escapeHTML(task.priority.toLowerCase())}">${escapeHTML(task.priority)}</span></div>
-            <div class="task-cell task-col-due"><span class="task-label">Due</span>${escapeHTML(dueTxt)}</div>
-            <div class="task-cell task-time"><span class="task-label">Time</span><span class="${timerCls}"${timerAttrs}>${fmtClock(task.actualSec)}</span> <span class="task-est">/ ${escapeHTML(est)}</span></div>
-            <div class="task-actions">${actions}</div>
-          </article>`;
-      }).join("");
+    }
+    function taskRowHTML(task) {
+      const done = task.status === "done";
+      const est = task.estimateMin ? `${task.estimateMin}m` : "—";
+      const dueTxt = task.dueDate ? formatTaskDate(task.dueDate) : "—";
+      const timerAttrs = task.running ? ` data-base="${task.actualSec}" data-start="${Date.now()}"` : "";
+      const timerCls = task.running ? "task-timer running" : "task-timer";
+      const meta = [task.business, task.category, task.client ? "◆ " + task.client : "", task.assignee ? '<span class="task-assignee">@' + escapeHTML(emailName(task.assignee)) + "</span>" : ""].filter(Boolean);
+      const actions = done
+        ? `<span class="task-done-badge"><i data-lucide="circle-check-big" class="icon-sm"></i>Done</span><button class="task-btn" data-act="reopen" aria-label="Reopen task" title="Reopen"><i data-lucide="rotate-ccw" class="icon-sm"></i></button>`
+        : `<button class="task-btn ${task.running ? "running" : "start"}" data-act="${task.running ? "pause" : "start"}" aria-label="${task.running ? "Pause timer" : "Start timer"}" title="${task.running ? "Pause timer" : "Start timer"}"><i data-lucide="${task.running ? "pause" : "play"}" class="icon-sm"></i></button><button class="task-btn complete" data-act="complete" aria-label="Mark complete" title="Mark complete"><i data-lucide="check" class="icon-sm"></i></button>`;
+      return `
+        <article class="task-row ${done ? "is-done" : ""} ${task.running ? "is-running" : ""}" data-task-id="${escapeHTML(task.id)}">
+          <div class="task-main"><span class="task-state"></span><div><strong title="${escapeHTML(task.notes)}">${escapeHTML(task.task)}</strong><small>${meta.map(m => m.startsWith("<") ? m : escapeHTML(m)).join(" · ")}</small></div></div>
+          <div class="task-cell task-col-priority"><span class="task-label">Priority</span><span class="task-priority ${escapeHTML(task.priority.toLowerCase())}">${escapeHTML(task.priority)}</span></div>
+          <div class="task-cell task-col-due"><span class="task-label">Due</span>${escapeHTML(dueTxt)}</div>
+          <div class="task-cell task-time"><span class="task-label">Time</span><span class="${timerCls}"${timerAttrs}>${fmtClock(task.actualSec)}</span> <span class="task-est">/ ${escapeHTML(est)}</span></div>
+          <div class="task-actions">${actions}</div>
+        </article>`;
+    }
+    function renderTaskList() {
+      const openCount = tasks.filter(t => t.status !== "done").length;
+      $("#taskCount").textContent = `${openCount} open · ${tasks.length} total`;
+      $("#taskList").innerHTML = tasks.length ? sortTasks(tasks).map(taskRowHTML).join("") : '<div class="task-empty">No tasks in the queue.</div>';
+      renderIcons();
+      startTaskTicker();
+    }
+    function renderMyTasks() {
+      const list = $("#myTaskList");
+      if (!list) return;
+      const me = (ME.email || "").toLowerCase();
+      const mine = tasks.filter(t => (t.assignee || "").toLowerCase() === me);
+      const open = mine.filter(t => t.status !== "done").length;
+      const label = $("#myTaskCount");
+      if (label) label.textContent = `${open} open · ${mine.length} total`;
+      list.innerHTML = mine.length ? sortTasks(mine).map(taskRowHTML).join("") : '<div class="task-empty">Nothing is assigned to you right now. Tasks an admin assigns to you show up here.</div>';
       renderIcons();
       startTaskTicker();
     }
     function startTaskTicker() {
       if (taskTickTimer) { clearInterval(taskTickTimer); taskTickTimer = null; }
-      const running = $$("#taskList .task-timer.running");
+      const running = $$(".task-list .task-timer.running");
       if (!running.length) return;
       taskTickTimer = setInterval(() => {
         running.forEach(el => {
@@ -1318,7 +1359,9 @@
 
       if (!task) { setTaskError("task", "Task is required."); valid = false; }
       else if (task.length < 5) { setTaskError("task", "Task must be at least 5 characters."); valid = false; }
-      if (!$("#taskBusiness").value) { setTaskError("business", "Business is required."); valid = false; }
+      const bizVal = $("#taskBusiness").value.trim();
+      if (!bizVal) { setTaskError("business", "Business is required."); valid = false; }
+      else if (!businesses.some(b => b.name === bizVal)) { setTaskError("business", "Pick a business from the list."); valid = false; }
       if (!$("#taskCategory").value) { setTaskError("category", "Category is required."); valid = false; }
       if (!$("#taskPriority").value) { setTaskError("priority", "Priority is required."); valid = false; }
       if (!dueDate) { setTaskError("dueDate", "Due date is required."); valid = false; }
@@ -1332,13 +1375,14 @@
       $("#taskDueDate").min = todayString();
       renderDependencyOptions();
       refreshAssigneeField();
+      renderTaskClientDropdown();
       $("#taskModal").classList.remove("hidden");
       $("#taskModal").setAttribute("aria-hidden", "false");
       document.body.classList.add("modal-open");
       $("#taskName").focus();
     }
-    // Open Quick Add pre-filled with a business (from a business/project detail view).
-    function openTaskModalFor(business) {
+    // Open Quick Add pre-filled with a business (and optionally a client) from a detail view.
+    function openTaskModalFor(business, client) {
       closeDetail();
       taskModalOpener = null;
       $("#quickTaskForm").reset();
@@ -1346,9 +1390,9 @@
       $("#taskDueDate").min = todayString();
       renderDependencyOptions();
       refreshAssigneeField();
-      if (business && [...$("#taskBusiness").options].some(o => o.value === business)) {
-        $("#taskBusiness").value = business;
-      }
+      renderTaskClientDropdown();
+      if (business) $("#taskBusiness").value = business;
+      if (client) $("#taskClient").value = client;
       $("#taskModal").classList.remove("hidden");
       $("#taskModal").setAttribute("aria-hidden", "false");
       document.body.classList.add("modal-open");
@@ -1376,13 +1420,17 @@
     }
 
     function renderBusinessDropdown() {
-      const sel = $("#taskBusiness");
-      const current = sel.value;
-      sel.querySelectorAll("option[data-biz]").forEach(o => o.remove());
-      sel.insertAdjacentHTML("beforeend", visibleBusinesses().map(business => `<option data-biz value="${escapeHTML(business.name)}">${escapeHTML(business.name)}</option>`).join(""));
-      if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+      $("#businessOptions").innerHTML = visibleBusinesses().map(b => `<option value="${escapeHTML(b.name)}"></option>`).join("");
+    }
+    function renderTaskClientDropdown() {
+      const sel = $("#taskClient");
+      if (!sel) return;
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">None</option>' + (clients || []).map(c => `<option value="${escapeHTML(c.name)}">${escapeHTML(c.name)}</option>`).join("");
+      if (cur) sel.value = cur;
     }
     renderBusinessDropdown();
+    renderTaskClientDropdown();
     $("#taskDueDate").min = todayString();
     loadTasks();
 
@@ -1412,6 +1460,7 @@
         notes: $("#taskNotes").value.trim(),
         estimate_min: Number.isFinite(estimateMin) && estimateMin > 0 ? estimateMin : null,
         assignee: ME.is_super_admin ? ($("#taskAssignee").value || null) : null,
+        client: $("#taskClient").value || null,
         dependencies: selectedDependencyIds().map(Number).filter(n => !isNaN(n))
       };
       try {
@@ -1431,8 +1480,8 @@
       }
     });
 
-    // Timer controls in the Action Queue (start / pause / complete / reopen).
-    $("#taskList").addEventListener("click", async event => {
+    // Timer controls (start / pause / complete / reopen) — shared by the Action Queue and My Tasks.
+    async function handleTaskAction(event) {
       const button = event.target.closest("[data-act]");
       if (!button) return;
       const row = button.closest("[data-task-id]");
@@ -1454,7 +1503,9 @@
         showToast("Couldn't reach the server: " + e.message);
         button.disabled = false;
       }
-    });
+    }
+    $("#taskList").addEventListener("click", handleTaskAction);
+    $("#myTaskList").addEventListener("click", handleTaskAction);
 
     const TIER_META = {
       1: ["Tier 1 — Revenue Engines", "Daily attention"],
@@ -1628,21 +1679,40 @@
     }
 
     // ---------- Clients ----------
+    let clientFilter = "all", clientQuery = "";
+    function assigneeName(email) {
+      if (!email) return "";
+      const u = assignableUsers().find(x => x.email === email.toLowerCase());
+      return u ? u.name : emailName(email);
+    }
     function renderClientsView() {
       const grid = $("#clientsGrid");
       if (!grid) return;
       if (!clients.length) { grid.innerHTML = `<div class="task-empty">No clients yet.${ME.is_super_admin ? " Add one to start tracking retainers." : ""}</div>`; return; }
-      grid.innerHTML = clients.map(c => {
+      let list = clients.slice();
+      if (clientFilter !== "all") list = list.filter(c => (c.status || "active") === clientFilter);
+      const q = clientQuery.trim().toLowerCase();
+      if (q) list = list.filter(c => (c.name || "").toLowerCase().includes(q) || (c.business || "").toLowerCase().includes(q) || (c.contact_name || "").toLowerCase().includes(q) || assigneeName(c.assignee).toLowerCase().includes(q));
+      if (!list.length) { grid.innerHTML = '<div class="task-empty">No clients match this filter.</div>'; return; }
+      grid.innerHTML = list.map(c => {
         const rec = recurring.filter(r => String(r.client_id) === String(c.id));
         const amt = c.retainer_amount ? "$" + Number(c.retainer_amount).toLocaleString() : "—";
+        const owner = c.assignee ? " · " + escapeHTML(assigneeName(c.assignee)) : "";
         const actions = ME.is_super_admin ? `<span class="admin-user-actions"><button class="task-btn" data-client-recurring="${c.id}" aria-label="Add recurring task" title="Add recurring task"><i data-lucide="repeat" class="icon-sm"></i></button><button class="task-btn" data-client-edit="${c.id}" aria-label="Edit" title="Edit"><i data-lucide="pencil" class="icon-sm"></i></button></span>` : "";
-        return `<article class="card admin-user-card"><div class="admin-user-top" data-client-open="${c.id}" role="button" tabindex="0" style="cursor:pointer;flex:1"><div><h3>${escapeHTML(c.name)}</h3><small>${escapeHTML(c.business || "—")}</small></div><span class="role-badge staff">${escapeHTML(c.status || "active")}</span></div>
+        return `<article class="card admin-user-card"><div class="admin-user-top" data-client-open="${c.id}" role="button" tabindex="0" style="cursor:pointer;flex:1"><div><h3>${escapeHTML(c.name)}</h3><small>${escapeHTML(c.business || "—")}${owner}</small></div><span class="role-badge staff">${escapeHTML(c.status || "active")}</span></div>
           <div class="admin-user-meta"><span>${amt} / ${escapeHTML(c.cadence || "monthly")} · ${rec.length} recurring</span>${actions}</div></article>`;
       }).join("");
       renderIcons();
     }
+    $$('[data-client-filter]').forEach(b => b.addEventListener("click", () => {
+      $$('[data-client-filter]').forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      clientFilter = b.dataset.clientFilter;
+      renderClientsView();
+    }));
+    $("#clientSearch").addEventListener("input", e => { clientQuery = e.target.value; renderClientsView(); });
     function openClientDetail(c) {
-      const rows = [["Business", c.business], ["Retainer", c.retainer_amount ? "$" + Number(c.retainer_amount).toLocaleString() + " / " + (c.cadence || "monthly") : "—"], ["Status", c.status], ["Contact", c.contact_name], ["Email", c.contact_email]];
+      const rows = [["Business", c.business], ["Assigned to", assigneeName(c.assignee)], ["Retainer", c.retainer_amount ? "$" + Number(c.retainer_amount).toLocaleString() + " / " + (c.cadence || "monthly") : "—"], ["Status", c.status], ["Contact", c.contact_name], ["Email", c.contact_email]];
       const rec = recurring.filter(r => String(r.client_id) === String(c.id));
       const recCard = `<article class="card"><div class="kim-group-head"><h3>Recurring monthly tasks</h3><span>${rec.length}</span></div>${rec.length ? `<ul class="kim-list">${rec.map(r => `<li><i data-lucide="repeat" class="icon-sm"></i><span class="kim-name">${escapeHTML(r.name)}</span><span class="kim-meta"><span class="task-priority ${(r.priority || "").toLowerCase()}">${escapeHTML(r.priority || "")}</span><span class="kim-due">day ${r.day_of_month || 1}${r.assignee ? " · @" + escapeHTML(emailName(r.assignee)) : ""}</span></span></li>`).join("")}</ul>` : '<div class="dependency-empty" style="padding:16px 4px">No recurring tasks yet.</div>'}</article>`;
       const mine = tasks.filter(t => (t.client || "") === c.name);
@@ -1655,7 +1725,7 @@
       if (type === "business-select") return `<option value="">— None —</option>` + businesses.map(b => `<option value="${escapeHTML(b.name)}" ${b.name === current ? "selected" : ""}>${escapeHTML(b.name)}</option>`).join("");
       if (type === "parent-select") return `<option value="">— None (top level) —</option>` + businesses.map(b => `<option value="${b.id}" ${String(b.id) === String(current) ? "selected" : ""}>${escapeHTML(b.name)}</option>`).join("");
       if (type === "client-select") return `<option value="">— None —</option>` + clients.map(c => `<option value="${c.id}" ${String(c.id) === String(current) ? "selected" : ""}>${escapeHTML(c.name)}</option>`).join("");
-      if (type === "assignee-select") return `<option value="">Unassigned</option>` + adminUsers.map(u => `<option value="${escapeHTML(u.email)}" ${u.email === current ? "selected" : ""}>${escapeHTML(u.name || emailName(u.email))}</option>`).join("");
+      if (type === "assignee-select") return `<option value="">Unassigned</option>` + assignableUsers().map(u => `<option value="${escapeHTML(u.email)}" ${u.email === current ? "selected" : ""}>${escapeHTML(u.name)}</option>`).join("");
       return "";
     }
     const ENTITY_SPECS = {
@@ -1698,11 +1768,12 @@
       client: { title: "Client", ep: "clients", fields: [
         { k: "name", label: "Name", req: true, full: true },
         { k: "business", label: "Serviced by (business)", type: "business-select" },
+        { k: "assignee", label: "Assigned to (team)", type: "assignee-select" },
         { k: "retainer_amount", label: "Monthly retainer ($)", type: "number" },
         { k: "status", label: "Status", type: "select", opts: [["active", "Active"], ["paused", "Paused"], ["churned", "Churned"]] },
-        { k: "contact_name", label: "Contact name" },
-        { k: "contact_email", label: "Contact email" },
-        { k: "notes", label: "Notes", type: "textarea", full: true },
+        { k: "contact_name", label: "Primary contact name" },
+        { k: "contact_email", label: "Primary contact email" },
+        { k: "notes", label: "Notes (extra contacts, etc.)", type: "textarea", full: true },
       ] },
       recurring: { title: "Recurring monthly task", ep: "recurring", fields: [
         { k: "name", label: "Task name", req: true, full: true },
@@ -1740,7 +1811,7 @@
     }
     async function reloadCatalogAndRender() {
       await loadCatalog();
-      renderBusinessGrid(); renderProjectGrid(); renderCampaignGrid(); renderTeam(); renderClientsView(); renderBusinessDropdown(); renderPins();
+      renderBusinessGrid(); renderProjectGrid(); renderCampaignGrid(); renderTeam(); renderClientsView(); renderBusinessDropdown(); renderTaskClientDropdown(); renderPins();
       renderIcons();
     }
     async function saveEntity() {
@@ -1885,7 +1956,7 @@
       field.classList.remove("hidden");
       const sel = $("#taskAssignee");
       const cur = sel.value;
-      sel.innerHTML = '<option value="">Unassigned</option>' + adminUsers.map(u => `<option value="${escapeHTML(u.email)}">${escapeHTML(u.name || emailName(u.email))}</option>`).join("");
+      sel.innerHTML = '<option value="">Unassigned</option>' + assignableUsers().map(u => `<option value="${escapeHTML(u.email)}">${escapeHTML(u.name)}</option>`).join("");
       if (cur) sel.value = cur;
     }
     function renderAdminUsers() {
@@ -1912,7 +1983,7 @@
     function renderAdminTaskTable() {
       const open = tasks.filter(t => t.status !== "done");
       if (!open.length) { $("#adminTaskTable").innerHTML = '<div class="task-empty" style="margin:14px">No open tasks to assign.</div>'; return; }
-      const opts = sel => '<option value="">Unassigned</option>' + adminUsers.map(u => `<option value="${escapeHTML(u.email)}" ${sel === u.email ? "selected" : ""}>${escapeHTML(u.name || emailName(u.email))}</option>`).join("");
+      const opts = sel => '<option value="">Unassigned</option>' + assignableUsers().map(u => `<option value="${escapeHTML(u.email)}" ${sel === u.email ? "selected" : ""}>${escapeHTML(u.name)}</option>`).join("");
       $("#adminTaskTable").innerHTML = `<table class="table"><thead><tr><th>Task</th><th>Business</th><th>Priority</th><th>Assignee</th></tr></thead><tbody>${open.map(t => `<tr><td class="item-name">${escapeHTML(t.task)}</td><td>${escapeHTML(t.business || "—")}</td><td><span class="task-priority ${escapeHTML(t.priority.toLowerCase())}">${escapeHTML(t.priority)}</span></td><td><select class="assign-select" data-assign="${escapeHTML(t.id)}">${opts(t.assignee)}</select></td></tr>`).join("")}</tbody></table>`;
     }
     function renderAdmin() { renderAdminUsers(); renderAdminTaskTable(); }
@@ -2015,6 +2086,7 @@
       if (id === "reports") loadReport();
       if (id === "admin") loadAdminUsers().then(renderAdmin);
       if (id === "feedback") renderFeedback();
+      if (id === "mytasks") renderMyTasks();
       $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
       $("#sidebar").classList.remove("open");
       $("#mobileOverlay").classList.add("hidden");
@@ -2126,7 +2198,7 @@
     bindCardOpen("businessGrid", name => businesses.find(b => b.name === name), openBusinessDetail, "data-biz-name");
     bindCardOpen("projectGrid", name => projects.find(p => p.name === name), openProjectDetail, "data-proj-name");
     $$('[data-close-detail]').forEach(button => button.addEventListener("click", closeDetail));
-    $("#detailAddTask").addEventListener("click", () => openTaskModalFor(detailBusiness));
+    $("#detailAddTask").addEventListener("click", () => openTaskModalFor(detailBusiness, detailPin && detailPin.kind === "client" ? detailPin.ref : null));
     $("#detailModal").addEventListener("click", event => { if (event.target === $("#detailModal")) closeDetail(); });
     document.addEventListener("keydown", event => { if (event.key === "Escape" && !$("#detailModal").classList.contains("hidden")) closeDetail(); });
 
@@ -2149,6 +2221,7 @@
       renderTeam();
       renderClientsView();
       renderBusinessDropdown();
+      renderTaskClientDropdown();
       renderPins();
       if (ME.is_super_admin) loadAdminUsers().then(refreshAssigneeField);
       else refreshAssigneeField();

@@ -62,15 +62,15 @@ PROJECTS = [
 # (name, role, focus, status, email)
 STAFF = [
     ("Quincy Solano", "Owner / Decision Maker", "Sales, fit calls, closes, invoicing, and overall direction.", "active", "quincy@cleverwolfdigital.com"),
-    ("Jeremy Lum", "Sr. Digital Marketing Manager", "Marketing and content support for current initiatives.", "active", ""),
-    ("Jordan", "Email Systems", "Email infrastructure after the manual motion is proven.", "active", ""),
-    ("Nicole", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", ""),
-    ("Kari", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", ""),
-    ("Delmore", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", ""),
-    ("Jay", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", ""),
-    ("Madison", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", ""),
-    ("Gio", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", ""),
-    ("Tyler", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", ""),
+    ("Jeremy Lum", "Sr. Digital Marketing Manager", "Marketing and content support for current initiatives.", "active", "jeremy@cleverwolfdigital.com"),
+    ("Jordan", "Email Systems", "Email infrastructure after the manual motion is proven.", "active", "jordan@cleverwolfdigital.com"),
+    ("Nicole", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", "nicole@cleverwolfdigital.com"),
+    ("Kari", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", "kari@cleverwolfdigital.com"),
+    ("Delmore", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", "delmore@cleverwolfdigital.com"),
+    ("Jay", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", "jay@cleverwolfdigital.com"),
+    ("Madison", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", "madison@cleverwolfdigital.com"),
+    ("Gio", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", "gio@cleverwolfdigital.com"),
+    ("Tyler", "Team Member", "Role and current focus awaiting dashboard update.", "unassigned", "tyler@cleverwolfdigital.com"),
 ]
 
 

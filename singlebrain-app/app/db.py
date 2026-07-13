@@ -47,6 +47,9 @@ _COLUMN_MIGRATIONS = {
     "staff": {
         "email": "TEXT",
     },
+    "clients": {
+        "assignee": "TEXT",   # staff email who owns the client relationship
+    },
 }
 
 
