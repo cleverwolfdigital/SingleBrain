@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07121d">
+  <title>Single Brain | Command Center</title>
+  <meta name="description" content="Single Brain command center for businesses, projects, staff, risks, and daily decisions.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Schibsted+Grotesk:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #07121d;
+      --sidebar: #091724;
+      --panel: #0d1d2b;
+      --panel-raised: #112537;
+      --panel-hover: #142b3f;
+      --line: rgba(185, 210, 232, 0.10);
+      --line-strong: rgba(185, 210, 232, 0.18);
+      --text: #edf4fa;
+      --muted: #91a9bc;
+      --faint: #5f788c;
+      --gold: #d0a853;
+      --gold-soft: #edcb80;
+      --blue: #4a91d8;
+      --cyan: #45bdc4;
+      --green: #42c98d;
+      --amber: #e4ad52;
+      --red: #ea7272;
+      --sidebar-width: 228px;
+      --topbar-height: 64px;
+      --radius: 7px;
+      --font-display: "Schibsted Grotesk", sans-serif;
+      --font-body: "Hanken Grotesk", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(89, 143, 187, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(89, 143, 187, 0.025) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(to bottom, #000, transparent 85%);
+    }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    .hidden { display: none !important; }
+    .icon { width: 18px; height: 18px; stroke-width: 1.8; }
+    .icon-sm { width: 15px; height: 15px; stroke-width: 1.9; }
+    .icon-lg { width: 22px; height: 22px; stroke-width: 1.7; }
+
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 50;
+      height: var(--topbar-height);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      background: rgba(7, 18, 29, 0.91);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand {
+      width: calc(var(--sidebar-width) - 1px);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font: 800 16px var(--font-display);
+      white-space: nowrap;
+    }
+    .brand small {
+      display: block;
+      margin-top: 2px;
+      color: var(--faint);
+      font: 700 8px var(--font-body);
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      flex: none;
+      display: grid;
+      place-items: center;
+      color: var(--gold-soft);
+      background: rgba(208, 168, 83, 0.08);
+      border: 1px solid rgba(208, 168, 83, 0.28);
+      clip-path: polygon(50% 0, 91% 22%, 91% 74%, 50% 100%, 9% 74%, 9% 22%);
+    }
+    .top-context {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .breadcrumb { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
+    .breadcrumb strong { color: var(--text); font-weight: 600; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .system-state { display: flex; align-items: center; gap: 7px; padding-right: 8px; color: var(--muted); font-size: 11px; }
+    .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(66, 201, 141, 0.10); }
+    .icon-button {
+      width: 35px;
+      height: 35px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .icon-button:hover { color: var(--text); background: var(--panel-raised); border-color: var(--line-strong); }
+    .avatar {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      border-radius: 50%;
+      color: #dceaf5;
+      background: #1a3951;
+      border: 1px solid var(--line-strong);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .sidebar {
+      position: fixed;
+      z-index: 40;
+      top: var(--topbar-height);
+      bottom: 0;
+      left: 0;
+      width: var(--sidebar-width);
+      display: flex;
+      flex-direction: column;
+      padding: 17px 12px;
+      background: rgba(9, 23, 36, 0.96);
+      border-right: 1px solid var(--line);
+    }
+    .nav-label { padding: 7px 10px; color: var(--faint); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+    .nav { display: grid; gap: 3px; }
+    .nav-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      border-left: 2px solid transparent;
+      border-radius: 5px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .nav-button:hover { color: var(--text); background: rgba(255,255,255,0.025); }
+    .nav-button.active { padding-left: 10px; color: #e4f1fc; background: rgba(74, 145, 216, 0.11); border-left-color: var(--blue); }
+    .nav-badge { margin-left: auto; padding: 1px 6px; color: #f1a0a0; background: rgba(234,114,114,0.12); border-radius: 9px; font-size: 9px; }
+    .sidebar-footer { margin-top: auto; padding: 14px 9px 2px; border-top: 1px solid var(--line); }
+    .sync-state { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; }
+    .sidebar-footer p { margin: 8px 0 0; color: var(--faint); font-size: 9px; line-height: 1.5; }
+
+    .main { min-height: 100vh; margin-left: var(--sidebar-width); padding-top: var(--topbar-height); }
+    .view { display: none; max-width: 1520px; margin: auto; padding: 23px 25px 40px; animation: reveal 180ms ease-out; }
+    .view.active { display: block; }
+    @keyframes reveal { from { opacity: 0.25; transform: translateY(3px); } }
+    .view-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+    .eyebrow { margin-bottom: 5px; color: var(--gold); font-size: 9px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; }
+    .view-header h1 { margin: 0; font: 700 24px var(--font-display); letter-spacing: 0; }
+    .view-header p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .date-chip { display: flex; align-items: center; gap: 7px; padding: 7px 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 5px; font-size: 11px; }
+    .grid { display: grid; gap: 13px; }
+    .card { position: relative; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .card:hover { border-color: rgba(185, 210, 232, 0.14); }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; min-height: 43px; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+    .panel-header h2 { margin: 0; font: 600 13px var(--font-display); }
+    .panel-header span { color: var(--faint); font-size: 10px; }
+    .panel-body { padding: 14px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: #0d1923;
+      background: var(--gold);
+      border: 0;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .button:hover { background: var(--gold-soft); }
+    .button.secondary { color: var(--text); background: transparent; border: 1px solid var(--line-strong); }
+    .button.secondary:hover { background: var(--panel-raised); }
+    .button.blue { color: #fff; background: var(--blue); }
+    .top-quick-add { height: 35px; white-space: nowrap; }
+
+    .metrics { grid-template-columns: repeat(5, 1fr); margin-bottom: 13px; }
+    .metric { min-height: 116px; padding: 15px; }
+    .metric-label { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
+    .metric-value { margin: 13px 0 5px; font: 700 28px var(--font-display); }
+    .metric-note { color: var(--faint); font-size: 10px; }
+    .metric-note strong { color: var(--green); }
+    .spark { position: absolute; right: 13px; bottom: 14px; height: 25px; display: flex; align-items: flex-end; gap: 3px; }
+    .spark i { width: 3px; border-radius: 2px; background: rgba(74, 145, 216, 0.38); }
+    .spark i:last-child { background: var(--gold); }
+    .command-action { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 18px; margin-bottom: 13px; padding: 14px 16px; background: #111f2b; border-color: rgba(208, 168, 83, 0.28); }
+    .action-copy { display: flex; align-items: center; gap: 12px; }
+    .action-icon { width: 38px; height: 38px; display: grid; place-items: center; flex: none; color: var(--gold-soft); background: rgba(208, 168, 83, 0.10); border-radius: 6px; }
+    .action-copy strong { display: block; font: 600 14px var(--font-display); }
+    .action-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .dashboard-grid { grid-template-columns: minmax(0, 1.65fr) minmax(285px, 0.8fr); }
+    .stack { display: grid; gap: 13px; align-content: start; }
+    .sprint-row { display: flex; align-items: center; justify-content: space-between; gap: 13px; margin-bottom: 12px; }
+    .sprint-title { font-weight: 600; font-size: 12px; }
+    .sprint-title small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 400; }
+    .days-left { color: var(--gold-soft); font: 700 19px var(--font-display); text-align: right; }
+    .days-left small { display: block; color: var(--faint); font: 700 8px var(--font-body); letter-spacing: 1px; text-transform: uppercase; }
+    .progress { height: 5px; overflow: hidden; background: #07131e; border-radius: 3px; }
+    .progress span { display: block; height: 100%; background: var(--blue); border-radius: 3px; }
+    .progress.gold span { background: var(--gold); }
+    .table-wrap { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th { padding: 0 8px 9px; color: var(--faint); font-size: 8px; font-weight: 700; letter-spacing: 0.9px; text-align: left; text-transform: uppercase; }
+    .table td { padding: 10px 8px; border-top: 1px solid var(--line); font-size: 11px; white-space: nowrap; }
+    .table tr:hover td { background: rgba(255,255,255,0.012); }
+    .item-name { color: var(--text); font-weight: 600; }
+    .item-name small { display: block; margin-top: 2px; color: var(--faint); font-size: 9px; font-weight: 400; }
+    .status { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .status.warning::before { background: var(--amber); }
+    .status.blocked::before { background: var(--red); }
+    .status.parked::before { background: var(--faint); }
+    .risk-row { display: grid; grid-template-columns: auto 1fr; gap: 9px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .risk-row:last-child { border: 0; }
+    .risk-icon { width: 28px; height: 28px; display: grid; place-items: center; color: var(--red); background: rgba(234,114,114,0.09); border-radius: 5px; }
+    .risk-row strong, .recommendation strong { display: block; font-size: 11px; }
+    .risk-row p, .recommendation p { margin: 2px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .risk-tag { color: var(--red); font-size: 8px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
+    .recommendation { display: flex; gap: 9px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .recommendation:last-child { border: 0; }
+    .rank { width: 21px; height: 21px; display: grid; place-items: center; flex: none; color: var(--gold-soft); border: 1px solid rgba(208,168,83,0.28); border-radius: 50%; font: 700 9px var(--font-display); }
+
+    .business-grid { grid-template-columns: repeat(3, 1fr); }
+    .business-card { min-height: 192px; padding: 17px; }
+    .business-top { display: flex; align-items: center; justify-content: space-between; }
+    .business-logo { width: 38px; height: 38px; display: grid; place-items: center; color: var(--gold-soft); background: #18354d; border: 1px solid var(--line); border-radius: 6px; font: 700 12px var(--font-display); }
+    .business-card h3 { margin: 14px 0 4px; font: 600 14px var(--font-display); }
+    .business-card > p { min-height: 31px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .business-meta { display: flex; justify-content: space-between; margin-top: 13px; padding-top: 11px; color: var(--faint); border-top: 1px solid var(--line); font-size: 9px; }
+    .business-meta b { display: block; margin-top: 3px; color: var(--text); font-size: 10px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .filter { padding: 6px 9px; cursor: pointer; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 4px; font-size: 10px; }
+    .filter.active, .filter:hover { color: var(--text); background: var(--panel-raised); border-color: var(--line-strong); }
+    .project-grid { grid-template-columns: repeat(2, 1fr); }
+    .project-card { padding: 16px; }
+    .project-top, .project-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .priority { padding: 3px 6px; color: var(--amber); background: rgba(228,173,82,0.09); border-radius: 4px; font-size: 8px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+    .project-card h3 { margin: 12px 0 4px; font: 600 13px var(--font-display); }
+    .project-card > p { min-height: 31px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .project-footer { margin-top: 13px; }
+    .owner { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 9px; }
+    .owner .avatar { width: 23px; height: 23px; font-size: 8px; }
+    .mini-progress { width: 84px; }
+    .mini-progress label { display: block; margin-bottom: 4px; color: var(--faint); font-size: 8px; text-align: right; }
+    .task-board { margin-top: 20px; }
+    .task-board-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
+    .task-board-header h2 { margin: 0; font: 600 15px var(--font-display); }
+    .task-board-header p { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+    .task-count { color: var(--faint); font-size: 9px; letter-spacing: 0.7px; text-transform: uppercase; }
+    .task-list { display: grid; gap: 7px; }
+    .task-row { display: grid; grid-template-columns: minmax(170px, 1.7fr) 88px 96px 136px auto; gap: 14px; align-items: center; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+    .task-row:hover { background: var(--panel-raised); border-color: var(--line-strong); }
+    .task-row.is-running { border-color: rgba(228,173,82,0.4); background: rgba(228,173,82,0.05); }
+    .task-row.is-done { opacity: 0.6; }
+    .task-row.is-done .task-main strong { text-decoration: line-through; color: var(--muted); }
+    .task-time .task-timer { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
+    .task-time .task-timer.running { color: var(--amber); }
+    .task-time .task-est { color: var(--faint); }
+    .task-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+    .task-btn { width: 31px; height: 31px; display: grid; place-items: center; padding: 0; cursor: pointer; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 6px; }
+    .task-btn:hover { color: var(--text); background: var(--panel-raised); border-color: var(--line-strong); }
+    .task-btn.start { color: var(--green); border-color: rgba(66,201,141,0.32); }
+    .task-btn.running { color: #1a1204; background: var(--amber); border-color: transparent; }
+    .task-btn.complete { color: #0d1923; background: var(--gold); border-color: transparent; }
+    .task-btn.complete:hover { background: var(--gold-soft); }
+    .task-btn:disabled { opacity: 0.5; cursor: default; }
+    .task-done-badge { display: inline-flex; align-items: center; gap: 5px; color: var(--green); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .report-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .period-tabs, .period-nav { display: flex; align-items: center; gap: 6px; }
+    .period-nav strong { min-width: 190px; text-align: center; font: 600 12px var(--font-display); color: var(--gold-soft); }
+    .task-main { min-width: 0; display: flex; align-items: center; gap: 10px; }
+    .task-state { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 4px rgba(74,145,216,0.08); }
+    .task-main strong { display: block; overflow: hidden; color: var(--text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .task-main small { display: block; margin-top: 2px; color: var(--faint); font-size: 9px; }
+    .task-cell { min-width: 0; color: var(--muted); font-size: 10px; }
+    .task-label { display: block; margin-bottom: 2px; color: var(--faint); font-size: 7px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
+    .task-priority { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+    .task-priority::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--faint); }
+    .task-priority.high { color: var(--red); }
+    .task-priority.high::before { background: var(--red); }
+    .task-priority.medium { color: var(--amber); }
+    .task-priority.medium::before { background: var(--amber); }
+    .task-priority.low { color: var(--green); }
+    .task-priority.low::before { background: var(--green); }
+    .task-empty { padding: 30px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 6px; text-align: center; font-size: 11px; }
+    .team-grid { grid-template-columns: repeat(4, 1fr); }
+    .person-card { min-height: 184px; padding: 16px; text-align: center; }
+    .person-card .avatar { width: 46px; height: 46px; margin: 0 auto 9px; font-size: 13px; }
+    .person-card h3 { margin: 0; font: 600 12px var(--font-display); }
+    .person-role { margin: 3px 0 10px; color: var(--muted); font-size: 9px; }
+    .focus-box { min-height: 42px; padding: 7px; color: var(--muted); background: rgba(255,255,255,0.022); border-radius: 4px; font-size: 9px; line-height: 1.45; text-align: left; }
+    .person-state { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 9px; color: var(--green); font-size: 8px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+    .risk-grid, .recommendation-grid, .journal-grid { grid-template-columns: repeat(2, 1fr); }
+    .risk-card { padding: 16px; border-left: 2px solid var(--red); }
+    .risk-card.medium { border-left-color: var(--amber); }
+    .risk-card h3 { margin: 4px 0; font: 600 13px var(--font-display); }
+    .risk-card p { margin: 0 0 12px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .risk-meta { display: flex; justify-content: space-between; color: var(--faint); font-size: 9px; }
+    .recommendation-card { display: grid; grid-template-columns: auto 1fr auto; gap: 11px; align-items: start; padding: 16px; }
+    .recommendation-card h3 { margin: 1px 0 4px; font: 600 13px var(--font-display); }
+    .recommendation-card p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .impact { padding: 3px 6px; color: var(--green); background: rgba(66,201,141,0.08); border-radius: 4px; font-size: 8px; font-weight: 700; text-transform: uppercase; }
+
+    .journal-card { padding: 17px; }
+    .journal-card h2 { margin: 0; font: 600 14px var(--font-display); }
+    .journal-hint { margin: 4px 0 13px; color: var(--muted); font-size: 10px; }
+    .field { margin-bottom: 11px; }
+    .field label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+    .input, .textarea { width: 100%; padding: 9px 10px; outline: 0; color: var(--text); background: #081521; border: 1px solid var(--line); border-radius: 5px; }
+    .input:focus, .textarea:focus { border-color: rgba(74,145,216,0.65); box-shadow: 0 0 0 3px rgba(74,145,216,0.08); }
+    .textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+    select.input { color-scheme: dark; }
+    select.input option { color: var(--text); background: var(--panel); }
+    input[type="date"] { color-scheme: dark; }
+    .required-mark { color: var(--red); }
+    .field-error { min-height: 13px; display: block; margin-top: 4px; color: #f19a9a; font-size: 9px; line-height: 1.3; }
+    .field.invalid .input, .field.invalid .textarea { border-color: rgba(234,114,114,0.72); box-shadow: 0 0 0 3px rgba(234,114,114,0.07); }
+    .journal-actions { display: flex; align-items: center; justify-content: space-between; }
+    .save-state { color: var(--faint); font-size: 9px; }
+
+    .chat-shell { height: calc(100vh - 139px); min-height: 480px; display: grid; grid-template-columns: 250px 1fr; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .chat-sidebar { padding: 13px; border-right: 1px solid var(--line); }
+    .new-chat { width: 100%; }
+    .thread { margin-top: 7px; padding: 9px; cursor: pointer; color: var(--muted); border-radius: 5px; font-size: 10px; }
+    .thread.active { color: var(--text); background: var(--panel-raised); }
+    .thread span { display: block; margin-top: 2px; color: var(--faint); font-size: 8px; }
+    .chat-main { min-width: 0; display: flex; flex-direction: column; }
+    .messages { flex: 1; overflow-y: auto; padding: 24px max(22px, 7vw); }
+    .message { max-width: 760px; display: flex; gap: 10px; margin-bottom: 18px; }
+    .message.user { margin-left: auto; flex-direction: row-reverse; }
+    .bot-avatar { width: 29px; height: 29px; display: grid; place-items: center; flex: none; color: var(--gold-soft); background: rgba(208,168,83,0.11); border-radius: 5px; }
+    .bubble { padding: 10px 12px; color: #d9e6f0; background: var(--panel-raised); border: 1px solid var(--line); border-radius: 6px; font-size: 11px; line-height: 1.55; }
+    .bubble strong { color: var(--gold-soft); }
+    .message.user .bubble { background: rgba(74,145,216,0.13); border-color: rgba(74,145,216,0.23); }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; }
+    .suggestion { padding: 5px 8px; cursor: pointer; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 4px; font-size: 9px; }
+    .chat-input { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
+    .chat-input .input { flex: 1; }
+    .send-button { width: 38px; padding: 0; }
+
+    .auth-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(3,9,15,0.90); backdrop-filter: blur(18px); }
+    .auth-card { width: min(410px, 100%); padding: 27px; background: #0d1d2b; border: 1px solid var(--line-strong); border-radius: 9px; box-shadow: 0 24px 90px rgba(0,0,0,0.5); }
+    .auth-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .auth-brand strong { font: 700 14px var(--font-display); }
+    .auth-brand small { display: block; margin-top: 2px; color: var(--faint); font-size: 8px; letter-spacing: 1.4px; }
+    .auth-card h1 { margin: 0; font: 700 22px var(--font-display); }
+    .auth-lead { margin: 7px 0 19px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .auth-card > .button { width: 100%; padding: 10px; }
+    .secure { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 15px; color: var(--faint); font-size: 9px; }
+    .back-button { padding: 0; margin-bottom: 12px; cursor: pointer; color: var(--muted); background: transparent; border: 0; font-size: 10px; }
+    .code-inputs { display: flex; gap: 6px; margin: 17px 0; }
+    .code-inputs input { width: calc((100% - 30px) / 6); height: 44px; padding: 0; font-size: 17px; text-align: center; }
+    .toast { position: fixed; z-index: 120; right: 17px; bottom: 17px; padding: 10px 13px; color: var(--text); background: #142b3f; border: 1px solid var(--line-strong); border-left: 3px solid var(--green); border-radius: 5px; box-shadow: 0 12px 30px rgba(0,0,0,0.35); font-size: 10px; opacity: 0; transform: translateY(70px); transition: 200ms; }
+    .toast.show { opacity: 1; transform: none; }
+    body.modal-open { overflow: hidden; }
+    .modal-overlay { position: fixed; z-index: 90; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(3,9,15,0.78); backdrop-filter: blur(12px); }
+    .task-modal { width: min(700px, 100%); max-height: calc(100vh - 36px); overflow-y: auto; background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; box-shadow: 0 25px 90px rgba(0,0,0,0.55); }
+    .modal-header { position: sticky; z-index: 2; top: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 17px 18px 14px; background: rgba(13,29,43,0.97); border-bottom: 1px solid var(--line); }
+    .modal-header h2 { margin: 0; font: 700 18px var(--font-display); }
+    .modal-header p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .modal-close { flex: none; }
+    .task-form { padding: 17px 18px 18px; }
+    .task-form .textarea { min-height: 64px; }
+    .task-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+    .field-full { grid-column: 1 / -1; }
+    .dependency-picker { overflow: hidden; background: #081521; border: 1px solid var(--line); border-radius: 5px; }
+    .dependency-picker:focus-within { border-color: rgba(74,145,216,0.65); box-shadow: 0 0 0 3px rgba(74,145,216,0.08); }
+    .dependency-search { width: 100%; padding: 8px 10px; outline: 0; color: var(--text); background: transparent; border: 0; border-bottom: 1px solid var(--line); }
+    .dependency-options { max-height: 82px; overflow-y: auto; padding: 4px; }
+    .dependency-option { display: flex; align-items: center; gap: 8px; padding: 7px; cursor: pointer; border-radius: 4px; }
+    .dependency-option:hover { background: rgba(255,255,255,0.03); }
+    .dependency-option input { width: 14px; height: 14px; margin: 0; accent-color: var(--blue); }
+    .dependency-option span { min-width: 0; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .dependency-empty { padding: 12px 8px; color: var(--faint); font-size: 9px; text-align: center; }
+    .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+    .detail-modal { width: min(1000px, 100%); }
+    .detail-body { padding: 16px 18px 20px; }
+    .kim-name { min-width: 0; overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
+    .kim-meta { margin-left: auto; display: flex; align-items: center; gap: 10px; flex: none; }
+    .kim-due { color: var(--faint); font-size: 9px; white-space: nowrap; }
+    .kim-list li.done .kim-name { color: var(--faint); text-decoration: line-through; }
+    .business-card, .project-card { cursor: pointer; }
+    .business-card:hover, .project-card:hover { border-color: var(--line-strong); background: var(--panel-raised); }
+    .card-open-hint { display: flex; align-items: center; gap: 5px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--faint); font-size: 9px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+    .business-card:hover .card-open-hint, .project-card:hover .card-open-hint { color: var(--gold-soft); }
+    .mobile-menu { display: none; }
+    .mobile-overlay { display: none; }
+
+    @media (max-width: 1100px) {
+      .metrics { grid-template-columns: repeat(3, 1fr); }
+      .business-grid { grid-template-columns: repeat(2, 1fr); }
+      .team-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 820px) {
+      :root { --sidebar-width: 0px; }
+      .topbar { padding: 0 13px; }
+      .brand { width: auto; }
+      .brand small, .breadcrumb { display: none; }
+      .top-context { justify-content: flex-end; }
+      .mobile-menu { display: grid; margin-right: 9px; }
+      .sidebar { width: 228px; transform: translateX(-100%); transition: transform 180ms ease; }
+      .sidebar.open { transform: none; }
+      .mobile-overlay { position: fixed; z-index: 30; inset: var(--topbar-height) 0 0; display: block; background: rgba(0,0,0,0.52); }
+      .view { padding: 18px 13px 34px; }
+      .dashboard-grid, .journal-grid, .risk-grid, .recommendation-grid { grid-template-columns: 1fr; }
+      .project-grid { grid-template-columns: 1fr; }
+      .task-row { grid-template-columns: minmax(0, 1.5fr) 92px 128px auto; }
+      .task-col-priority { display: none; }
+      .team-grid { grid-template-columns: repeat(2, 1fr); }
+      .command-action { grid-template-columns: 1fr; }
+      .command-action .button { width: 100%; }
+      .chat-shell { grid-template-columns: 1fr; }
+      .chat-sidebar { display: none; }
+      /* Prevent iOS auto-zoom on focus: inputs must render >= 16px on mobile */
+      input, textarea, select, .input, .textarea, #cwdChatInput { font-size: 16px; }
+    }
+    @media (max-width: 560px) {
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .metric:last-child { grid-column: 1 / -1; }
+      .business-grid, .team-grid { grid-template-columns: 1fr; }
+      .top-quick-add { width: 35px; padding: 0; }
+      .top-quick-add span { display: none; }
+      .task-board-header { align-items: flex-start; }
+      .task-row { grid-template-columns: 1fr auto; gap: 8px 12px; }
+      .task-main { grid-column: 1 / -1; }
+      .task-col-due { display: none; }
+      .task-time { justify-self: start; }
+      .task-actions { justify-self: end; }
+      .period-nav strong { min-width: 130px; }
+      .report-controls { justify-content: flex-start; }
+      .task-form-grid { grid-template-columns: 1fr; }
+      .field-full { grid-column: auto; }
+      .modal-overlay { align-items: end; padding: 8px; }
+      .task-modal { max-height: calc(100vh - 16px); max-height: 90dvh; }
+      .modal-header { padding: 15px; }
+      .modal-close { width: 42px; height: 42px; display: grid; place-items: center; }
+      .task-form { padding: 15px; }
+      .system-state, .date-chip { display: none; }
+      .table th:nth-child(3), .table td:nth-child(3) { display: none; }
+      .messages { padding: 18px 11px; }
+      .view-header h1 { font-size: 21px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+    .tier-block { margin-bottom: 26px; }
+    .tier-heading { display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+    .tier-heading h2 { font-size: 15px; }
+    .tier-heading span { color: var(--faint); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    .kim-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    .kim-row { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 12px; }
+    .kim-row:first-of-type { border-top: 0; }
+    .kim-row > span { color: var(--faint); white-space: nowrap; }
+    .kim-row b { color: var(--text); text-align: right; font-weight: 500; }
+    .kim-group-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .kim-group-head span { color: var(--faint); font-size: 10px; }
+    .kim-list { list-style: none; margin: 0; padding: 0; }
+    .kim-list li { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+    .kim-list li .icon-sm { color: var(--faint); flex: none; }
+    .kim-tbd { margin-left: auto; color: var(--faint); font-size: 9px; letter-spacing: .1em; }
+    .rotation-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .rotation-table th { text-align: left; color: var(--faint); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+    .rotation-table td { padding: 10px; border-bottom: 1px solid var(--line); color: var(--muted); vertical-align: top; }
+    .rotation-table .rot-day { color: var(--gold-soft); font-weight: 600; }
+    .tutorial-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+    .tut-card { position: relative; }
+    .tut-card .tut-num { width: 26px; height: 26px; display: grid; place-items: center; margin-bottom: 10px; border-radius: 7px; background: rgba(208,168,83,0.14); color: var(--gold-soft); font: 700 12px var(--font-display); }
+    .tut-card h3 { margin-bottom: 6px; }
+    .tut-card p { color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .tut-card b { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <!-- Authentication is enforced server-side (magic link + TOTP 2FA) before this
+       page is served. No in-page login. -->
+
+  <header class="topbar">
+    <button class="icon-button mobile-menu" id="menuButton" aria-label="Open navigation"><i data-lucide="menu" class="icon"></i></button>
+    <div class="brand"><div class="brand-mark"><i data-lucide="brain-circuit" class="icon"></i></div><div>Single Brain<small>Command Center</small></div></div>
+    <div class="top-context">
+      <div class="breadcrumb"><span>SingleBrain</span><i data-lucide="chevron-right" class="icon-sm"></i><strong id="breadcrumbName">Overview</strong></div>
+      <div class="top-actions">
+        <div class="system-state"><span class="pulse"></span>Systems nominal</div>
+        <button class="button top-quick-add" data-open-task aria-label="Global quick add task"><i data-lucide="plus" class="icon-sm"></i><span>Quick add</span></button>
+        <button class="icon-button" aria-label="Search"><i data-lucide="search" class="icon"></i></button>
+        <button class="icon-button" aria-label="Notifications"><i data-lucide="bell" class="icon"></i></button>
+        <div class="avatar" id="userAvatar" title="Signed in">QS</div>
+        <a class="icon-button" id="logoutButton" href="/logout" aria-label="Log out" title="Log out"><i data-lucide="log-out" class="icon"></i></a>
+      </div>
+    </div>
+  </header>
+  <div class="mobile-overlay hidden" id="mobileOverlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="nav-label">Command</div>
+    <nav class="nav">
+      <button class="nav-button active" data-view="overview"><i data-lucide="layout-dashboard" class="icon"></i>Overview</button>
+      <button class="nav-button" data-view="businesses"><i data-lucide="building-2" class="icon"></i>Businesses</button>
+      <button class="nav-button" data-view="projects"><i data-lucide="folder-kanban" class="icon"></i>Projects</button>
+      <button class="nav-button" data-view="kimchee"><i data-lucide="utensils" class="icon"></i>Kimchee #88</button>
+      <button class="nav-button" data-view="staff"><i data-lucide="users" class="icon"></i>Staff</button>
+      <button class="nav-button" data-view="blockers"><i data-lucide="triangle-alert" class="icon"></i>Blockers<span class="nav-badge">3</span></button>
+      <button class="nav-button" data-view="recommendations"><i data-lucide="route" class="icon"></i>Recommendations</button>
+      <button class="nav-button" data-view="rotation"><i data-lucide="calendar-clock" class="icon"></i>Daily Rotation</button>
+      <button class="nav-button" data-view="reports"><i data-lucide="bar-chart-3" class="icon"></i>Productivity</button>
+    </nav>
+    <div class="nav-label" style="margin-top:15px">Intelligence</div>
+    <nav class="nav">
+      <button class="nav-button" data-view="journal"><i data-lucide="notebook-pen" class="icon"></i>Daily Journal</button>
+      <button class="nav-button" data-view="chat"><i data-lucide="message-square-text" class="icon"></i>CWD Brain Chat</button>
+      <button class="nav-button" data-view="tutorial"><i data-lucide="graduation-cap" class="icon"></i>Tutorial</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sync-state"><i data-lucide="git-branch" class="icon-sm"></i><span class="pulse"></span>Synced to repository</div>
+      <p>Source of truth<br>SingleBrain / main</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="view active" id="overview">
+      <div class="view-header">
+        <div><div class="eyebrow">Sunday / July 12, 2026</div><h1>Good morning, <span id="greetingName">there</span>.</h1><p>Your command brief is focused on one outcome: close and invoice the next deal.</p></div>
+        <div class="date-chip"><i data-lucide="calendar-days" class="icon-sm"></i><strong style="color:var(--gold-soft)">Manual snapshot</strong> / Sales sprint / Day 11 of 14</div>
+      </div>
+      <div class="grid metrics">
+        <article class="card metric"><div class="metric-label">Warm outreach<i data-lucide="send" class="icon-sm"></i></div><div class="metric-value">24</div><div class="metric-note"><strong>+6</strong> this week</div><div class="spark"><i style="height:25%"></i><i style="height:42%"></i><i style="height:34%"></i><i style="height:68%"></i><i style="height:92%"></i></div></article>
+        <article class="card metric"><div class="metric-label">Replies<i data-lucide="reply" class="icon-sm"></i></div><div class="metric-value">7</div><div class="metric-note"><strong>29%</strong> reply rate</div><div class="spark"><i style="height:20%"></i><i style="height:36%"></i><i style="height:54%"></i><i style="height:46%"></i><i style="height:76%"></i></div></article>
+        <article class="card metric"><div class="metric-label">Fit calls<i data-lucide="phone-call" class="icon-sm"></i></div><div class="metric-value">3</div><div class="metric-note">2 completed / 1 booked</div></article>
+        <article class="card metric"><div class="metric-label">Closes<i data-lucide="circle-check-big" class="icon-sm"></i></div><div class="metric-value">0</div><div class="metric-note" style="color:var(--amber)">Target: 1-3 by Jul 16</div></article>
+        <article class="card metric"><div class="metric-label">Revenue<i data-lucide="badge-dollar-sign" class="icon-sm"></i></div><div class="metric-value">$0</div><div class="metric-note">Invoiced and collected</div></article>
+      </div>
+
+      <article class="card command-action">
+        <div class="action-copy"><div class="action-icon"><i data-lucide="crosshair" class="icon-lg"></i></div><div><div class="eyebrow" style="margin-bottom:2px">Highest-leverage action</div><strong>Follow up with the 3 warm prospects from last week</strong><span>Send a direct close-the-loop message before 11:00 AM. No new build work.</span></div></div>
+        <button class="button" data-go="chat"><i data-lucide="wand-sparkles" class="icon-sm"></i>Draft follow-ups</button>
+      </article>
+
+      <div class="grid dashboard-grid">
+        <div class="stack">
+          <article class="card">
+            <div class="panel-header"><h2>Active Sales Sprint</h2><span>July 2 - July 16</span></div>
+            <div class="panel-body"><div class="sprint-row"><div class="sprint-title">AI-Built Lead Gen Website<small>Close 1-3 deals / Lead with $2,500</small></div><div class="days-left">4<small>days remaining</small></div></div><div class="progress gold"><span style="width:71%"></span></div></div>
+          </article>
+          <article class="card">
+            <div class="panel-header"><h2>Active Projects</h2><button class="filter" data-go="projects">View all</button></div>
+            <div class="panel-body table-wrap">
+              <table class="table"><thead><tr><th>Project</th><th>Status</th><th>Owner</th><th>Next action</th></tr></thead><tbody>
+                <tr><td class="item-name">Sales Sprint<small>Clever Wolf Digital</small></td><td><span class="status">Active</span></td><td>Quincy</td><td>Warm follow-ups</td></tr>
+                <tr><td class="item-name">Email Cleanup<small>Personal</small></td><td><span class="status warning">In progress</span></td><td>Quincy</td><td>Daily review</td></tr>
+                <tr><td class="item-name">Composio Integration<small>CWD</small></td><td><span class="status warning">Partial</span></td><td>Quincy</td><td>Improve tools</td></tr>
+                <tr><td class="item-name">Hermes Gateway<small>CWD</small></td><td><span class="status blocked">Blocked</span></td><td>Quincy</td><td>Discord connection</td></tr>
+              </tbody></table>
+            </div>
+          </article>
+        </div>
+        <div class="stack">
+          <article class="card"><div class="panel-header"><h2>Blockers & Risks</h2><button class="filter" data-go="blockers">Review</button></div><div class="panel-body">
+            <div class="risk-row"><div class="risk-icon"><i data-lucide="target" class="icon-sm"></i></div><div><span class="risk-tag">Critical</span><strong>Zero closed and invoiced</strong><p>Conversations happened; conversion remains the constraint.</p></div></div>
+            <div class="risk-row"><div class="risk-icon"><i data-lucide="plug-zap" class="icon-sm"></i></div><div><span class="risk-tag">Operational</span><strong>Composio reliability</strong><p>Direct calls frequently return "tool not found."</p></div></div>
+            <div class="risk-row"><div class="risk-icon"><i data-lucide="radio" class="icon-sm"></i></div><div><span class="risk-tag">Blocked</span><strong>Second Hermes gateway</strong><p>Discord connection is not yet complete.</p></div></div>
+          </div></article>
+          <article class="card"><div class="panel-header"><h2>Recommended Next Actions</h2><span>By revenue impact</span></div><div class="panel-body">
+            <div class="recommendation"><span class="rank">1</span><div><strong>Send three warm follow-ups</strong><p>Ask directly for the next step or close the loop.</p></div></div>
+            <div class="recommendation"><span class="rank">2</span><div><strong>Prepare the next fit call</strong><p>Use live objection notes from prior calls.</p></div></div>
+            <div class="recommendation"><span class="rank">3</span><div><strong>Log reply outcomes</strong><p>Capture the exact hook that earns a response.</p></div></div>
+          </div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="businesses">
+      <div class="view-header"><div><div class="eyebrow">Portfolio</div><h1>Businesses</h1><p>29 businesses across four tiers — by owner and status.</p></div></div>
+      <div id="businessGrid"></div>
+    </section>
+
+    <section class="view" id="projects">
+      <div class="view-header"><div><div class="eyebrow">Execution</div><h1>Projects</h1><p>Status, priority, ownership, blockers, and the next concrete move.</p></div><button class="button" data-open-task aria-label="Quick add task from projects"><i data-lucide="plus" class="icon-sm"></i>Quick add task</button></div>
+      <div class="filters"><button class="filter active" data-filter="all">All projects</button><button class="filter" data-filter="active">Active</button><button class="filter" data-filter="blocked">Blocked</button><button class="filter" data-filter="parked">Parked</button></div>
+      <div class="grid project-grid" id="projectGrid"></div>
+      <section class="task-board" aria-labelledby="taskQueueTitle">
+        <div class="task-board-header"><div><div class="eyebrow">Action Queue</div><h2 id="taskQueueTitle">Tasks</h2><p>Start a timer, complete tasks, and track time — synced to your repo.</p></div><span class="task-count" id="taskCount">0 tasks</span></div>
+        <div class="task-list" id="taskList" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section class="view" id="staff">
+      <div class="view-header"><div><div class="eyebrow">People</div><h1>Staff & Team</h1><p>Ownership and current focus across the operating system.</p></div></div>
+      <div class="grid team-grid" id="teamGrid"></div>
+    </section>
+
+    <section class="view" id="blockers">
+      <div class="view-header"><div><div class="eyebrow">Attention Required</div><h1>Blockers & Risks</h1><p>Constraints that threaten revenue, execution, or system reliability.</p></div></div>
+      <div class="grid risk-grid" id="riskGrid"></div>
+    </section>
+
+    <section class="view" id="recommendations">
+      <div class="view-header"><div><div class="eyebrow">Decision Support</div><h1>Recommendations</h1><p>Ranked actions based on immediacy, revenue impact, and current constraints.</p></div><div class="date-chip"><i data-lucide="sparkles" class="icon-sm"></i>Generated from current focus</div></div>
+      <div class="grid recommendation-grid" id="recommendationGrid"></div>
+    </section>
+
+    <section class="view" id="kimchee">
+      <div class="view-header"><div><div class="eyebrow">Project Spotlight</div><h1>Kimchee #88</h1><p>Fast-casual Korean / local fusion restaurant — Kapolei, Hawai‘i. Target: Feb / Apr 2027.</p></div><span class="status warning">Planning</span></div>
+      <div class="grid kim-grid" id="kimGrid"></div>
+    </section>
+
+    <section class="view" id="rotation">
+      <div class="view-header"><div><div class="eyebrow">Operating Rhythm</div><h1>Daily Rotation</h1><p>Weekly cadence across Tier 2 growth bets and Tier 3 media sites.</p></div></div>
+      <div class="card"><table class="rotation-table"><thead><tr><th>Day</th><th>Tier 2 Focus</th><th>Tier 3 Review Batch</th></tr></thead><tbody id="rotationBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="reports">
+      <div class="view-header"><div><div class="eyebrow">Productivity</div><h1>Reports</h1><p>Completed work, tracked time, and estimate accuracy — day, week, month, quarter, or year.</p></div></div>
+      <div class="report-controls">
+        <div class="period-tabs">
+          <button class="filter active" data-period="day">Day</button>
+          <button class="filter" data-period="week">Week</button>
+          <button class="filter" data-period="month">Month</button>
+          <button class="filter" data-period="quarter">Quarter</button>
+          <button class="filter" data-period="year">Year</button>
+        </div>
+        <div class="period-nav">
+          <button class="icon-button" id="reportPrev" aria-label="Previous period"><i data-lucide="chevron-left" class="icon"></i></button>
+          <strong id="reportLabel">—</strong>
+          <button class="icon-button" id="reportNext" aria-label="Next period"><i data-lucide="chevron-right" class="icon"></i></button>
+          <button class="filter" id="reportToday">Now</button>
+        </div>
+      </div>
+      <div class="grid metrics" id="reportMetrics"></div>
+      <div class="grid dashboard-grid">
+        <div class="stack">
+          <article class="card"><div class="panel-header"><h2>Completed this period</h2><span id="reportCompletedCount"></span></div><div class="panel-body table-wrap" id="reportRecent"></div></article>
+        </div>
+        <div class="stack">
+          <article class="card"><div class="panel-header"><h2>By Business</h2><span>Tracked time</span></div><div class="panel-body table-wrap" id="reportByBusiness"></div></article>
+          <article class="card"><div class="panel-header"><h2>By Category</h2><span>Tracked time</span></div><div class="panel-body table-wrap" id="reportByCategory"></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="tutorial">
+      <div class="view-header"><div><div class="eyebrow">Getting Started</div><h1>How to Use Single Brain</h1><p>Your command center for every business, project, and decision. Here's the two-minute tour.</p></div></div>
+      <div class="grid tutorial-grid">
+        <article class="card tut-card"><div class="tut-num">1</div><h3>Signing in</h3><p>Go to <b>brain.cleverwolfdigital.com</b>, enter your <b>@cleverwolfdigital.com</b> email, and click the magic link we email you. First time only: scan the QR with an authenticator app (Google or Microsoft Authenticator), then enter the 6-digit code. After that, just the code each login.</p></article>
+        <article class="card tut-card"><div class="tut-num">2</div><h3>Navigating</h3><p>Use the left sidebar. <b>Overview</b> is today's brief. <b>Businesses</b> lists all 29, grouped Tier 1–4 by owner + status. <b>Projects</b> shows active work and the next action. <b>Kimchee #88</b> holds the restaurant launch tasks. <b>Daily Rotation</b> is the weekly cadence. <b>Staff, Blockers, Recommendations</b> cover people, risks, and ranked next moves.</p></article>
+        <article class="card tut-card"><div class="tut-num">3</div><h3>Quick Add a task</h3><p>Click <b>Quick add</b> (top-right, or on the Projects page). Enter the task, pick a business, category, priority, and due date. You can link <b>dependencies</b> to other tasks. Save — it lands in the Action Queue.</p></article>
+        <article class="card tut-card"><div class="tut-num">4</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
+        <article class="card tut-card"><div class="tut-num">5</div><h3>Brain Chat</h3><p><b>Brain Chat</b> is your conversational view — ask about priorities, projects, and decisions across the whole portfolio.</p></article>
+        <article class="card tut-card"><div class="tut-num">6</div><h3>Security &amp; logout</h3><p>Access is limited to <b>@cleverwolfdigital.com</b> accounts with magic link + authenticator (2FA). Click the <b>log-out icon</b> (top-right) when you're done — especially on shared devices.</p></article>
+      </div>
+    </section>
+
+    <section class="view" id="journal">
+      <div class="view-header"><div><div class="eyebrow">Daily Protocol</div><h1>Journal</h1><p>Morning intention and end-of-day reflection. Saved on this device.</p></div><div class="date-chip"><i data-lucide="calendar" class="icon-sm"></i>July 12, 2026</div></div>
+      <div class="grid journal-grid">
+        <form class="card journal-card journal-form" data-kind="morning">
+          <h2>Morning Brief</h2><p class="journal-hint">Choose one focus. Keep the day pointed at revenue.</p>
+          <div class="field"><label>Primary outcome</label><input class="input persist" name="outcome" value="Send 3 warm follow-ups and book the next fit call"></div>
+          <div class="field"><label>Top three priorities</label><textarea class="textarea persist" name="priorities">1. Follow up with warm prospects
+2. Prepare for the booked fit call
+3. Log every response and objection</textarea></div>
+          <div class="field"><label>What could block me?</label><textarea class="textarea persist" name="blocker" placeholder="Name the likely constraint before it shows up."></textarea></div>
+          <div class="journal-actions"><span class="save-state">Not yet saved</span><button class="button" type="submit"><i data-lucide="save" class="icon-sm"></i>Save morning</button></div>
+        </form>
+        <form class="card journal-card journal-form" data-kind="evening">
+          <h2>End-of-Day Review</h2><p class="journal-hint">Capture outcomes, decisions, and tomorrow's first move.</p>
+          <div class="field"><label>What moved forward?</label><textarea class="textarea persist" name="wins" placeholder="Messages sent, replies, calls, closes..."></textarea></div>
+          <div class="field"><label>Decisions and lessons</label><textarea class="textarea persist" name="lessons" placeholder="What did the market tell you today?"></textarea></div>
+          <div class="field"><label>Tomorrow's first action</label><input class="input persist" name="tomorrow" placeholder="The first concrete action for tomorrow."></div>
+          <div class="journal-actions"><span class="save-state">Not yet saved</span><button class="button" type="submit"><i data-lucide="save" class="icon-sm"></i>Save review</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="view" id="chat">
+      <div class="view-header"><div><div class="eyebrow">Conversational Intelligence</div><h1>Brain Chat</h1></div></div>
+      <div class="chat-shell">
+        <aside class="chat-sidebar">
+          <button class="button secondary new-chat"><i data-lucide="plus" class="icon-sm"></i>New conversation</button>
+          <div class="nav-label" style="margin-top:12px">Recent</div>
+          <div class="thread active">Sales sprint brief<span>Today / 8:42 AM</span></div>
+          <div class="thread">Warm prospect follow-ups<span>Yesterday</span></div>
+          <div class="thread">Weekly review<span>Friday</span></div>
+        </aside>
+        <div class="chat-main">
+          <div class="messages" id="messages">
+            <div class="message"><div class="bot-avatar"><i data-lucide="brain-circuit" class="icon-sm"></i></div><div class="bubble"><strong>Morning brief</strong><br>Your constraint is still the close, not infrastructure. The highest-leverage move is to send a direct follow-up to the three warm prospects from last week.</div></div>
+            <div class="message user"><div class="avatar">QS</div><div class="bubble">What should I focus on first today?</div></div>
+            <div class="message"><div class="bot-avatar"><i data-lucide="brain-circuit" class="icon-sm"></i></div><div class="bubble"><strong>Send the three follow-ups before 11:00 AM.</strong><br>Do not work on Composio or the Hermes gateway until those messages are sent. That is the action most likely to create a booked call or invoice inside the sprint window.</div></div>
+          </div>
+          <div class="suggestions"><button class="suggestion">Draft the 3 follow-ups</button><button class="suggestion">Summarize blockers</button><button class="suggestion">Show sprint scoreboard</button></div>
+          <form class="chat-input" id="chatForm"><input class="input" id="chatText" placeholder="Ask about priorities, projects, or decisions..." autocomplete="off"><button class="button blue send-button" aria-label="Send"><i data-lucide="arrow-up" class="icon-sm"></i></button></form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay hidden" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle" aria-hidden="true">
+    <section class="task-modal">
+      <header class="modal-header">
+        <div><div class="eyebrow">Command Input</div><h2 id="taskModalTitle">Quick Add Task</h2><p>Local task entry / stored on this device</p></div>
+        <button class="icon-button modal-close" type="button" data-close-task aria-label="Close quick add task" title="Close"><i data-lucide="x" class="icon"></i></button>
+      </header>
+      <form class="task-form" id="quickTaskForm" novalidate>
+        <div class="task-form-grid">
+          <div class="field field-full" data-field="task">
+            <label for="taskName">Task <span class="required-mark">*</span></label>
+            <input class="input" id="taskName" name="task" minlength="5" maxlength="120" autocomplete="off" required>
+            <span class="field-error" id="taskError" role="alert"></span>
+          </div>
+          <div class="field" data-field="business">
+            <label for="taskBusiness">Business <span class="required-mark">*</span></label>
+            <select class="input" id="taskBusiness" name="business" required><option value="">Select business</option></select>
+            <span class="field-error" id="businessError" role="alert"></span>
+          </div>
+          <div class="field" data-field="category">
+            <label for="taskCategory">Category <span class="required-mark">*</span></label>
+            <select class="input" id="taskCategory" name="category" required>
+              <option value="">Select category</option><option>Legal</option><option>Operations</option><option>Marketing</option><option>Tech</option><option>Staffing</option><option>Finance</option><option>Other</option>
+            </select>
+            <span class="field-error" id="categoryError" role="alert"></span>
+          </div>
+          <div class="field" data-field="priority">
+            <label for="taskPriority">Priority <span class="required-mark">*</span></label>
+            <select class="input" id="taskPriority" name="priority" required><option value="">Select priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+            <span class="field-error" id="priorityError" role="alert"></span>
+          </div>
+          <div class="field" data-field="dueDate">
+            <label for="taskDueDate">Due Date <span class="required-mark">*</span></label>
+            <input class="input" id="taskDueDate" name="dueDate" type="date" required>
+            <span class="field-error" id="dueDateError" role="alert"></span>
+          </div>
+          <div class="field" data-field="estimate">
+            <label for="taskEstimate">Est. time (min)</label>
+            <input class="input" id="taskEstimate" name="estimate" type="number" min="0" max="10000" step="5" inputmode="numeric" placeholder="e.g. 30">
+            <span class="field-error"></span>
+          </div>
+          <div class="field field-full">
+            <label for="dependencySearch">Dependencies</label>
+            <div class="dependency-picker">
+              <input class="dependency-search" id="dependencySearch" type="search" placeholder="Search existing tasks" autocomplete="off">
+              <div class="dependency-options" id="dependencyOptions"></div>
+            </div>
+            <span class="field-error"></span>
+          </div>
+          <div class="field field-full">
+            <label for="taskNotes">Notes</label>
+            <textarea class="textarea" id="taskNotes" name="notes" maxlength="1000"></textarea>
+            <span class="field-error"></span>
+          </div>
+        </div>
+        <div class="modal-actions"><button class="button secondary" type="button" id="clearTaskForm"><i data-lucide="eraser" class="icon-sm"></i>Clear</button><button class="button" type="submit"><i data-lucide="save" class="icon-sm"></i>Save task</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-overlay hidden" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle" aria-hidden="true">
+    <section class="task-modal detail-modal">
+      <header class="modal-header">
+        <div><div class="eyebrow" id="detailEyebrow">Detail</div><h2 id="detailTitle">—</h2><p id="detailSub"></p></div>
+        <button class="icon-button modal-close" type="button" data-close-detail aria-label="Close detail" title="Close"><i data-lucide="x" class="icon"></i></button>
+      </header>
+      <div class="detail-body"><div class="grid kim-grid" id="detailGrid"></div></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">Saved.</div>
+
+  <script>
+    const businesses = [
+      { initials: "CW", name: "Clever Wolf Digital", tier: 1, owner: "Quincy", state: "Active", status: "active" },
+      { initials: "CA", name: "CleverWolf.ai", tier: 1, owner: "Quincy", state: "Active", status: "active" },
+      { initials: "TM", name: "Titan Medical Transportation", tier: 1, owner: "Quincy + Peter (50/50)", state: "Active", status: "active" },
+      { initials: "KC", name: "Kapwa Coffee Bar", tier: 1, owner: "—", state: "Active", status: "active" },
+      { initials: "VH", name: "Vending / HVAC", tier: 1, owner: "Quincy", state: "Active", status: "active" },
+      { initials: "KM", name: "Kapuna Meals", tier: 2, owner: "—", state: "Starting", status: "warning" },
+      { initials: "OH", name: "Opala Hoa", tier: 2, owner: "—", state: "Starting", status: "warning" },
+      { initials: "SF", name: "Shaka's Food Truck", tier: 2, owner: "—", state: "Active", status: "active" },
+      { initials: "GK", name: "Ghost Kitchen Hawaii", tier: 2, owner: "—", state: "Starting", status: "warning" },
+      { initials: "IL", name: "Island Laundromat Co.", tier: 2, owner: "—", state: "Diligence", status: "warning" },
+      { initials: "LS", name: "Level Up Self", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "LM", name: "Level Up Smarter", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "LL", name: "Level Up Library", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "SP", name: "The Smarter Podcast", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "OC", name: "The Ongoing Conversation", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "TH", name: "Let's Try Hawaii", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "P8", name: "Pop808Hawaii", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "FM", name: "Fort Madison Monthly", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "FS", name: "Feedback Seattle", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "SA", name: "Spooky Action", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "AR", name: "Aries", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "GB", name: "Guns A Blazin'", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "HS", name: "Hawaii SEO", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "SH", name: "Shopify Hawaii", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "SY", name: "Spotify Hawaii", tier: 3, owner: "—", state: "Active", status: "active" },
+      { initials: "IP", name: "Island Parking Services", tier: 4, owner: "—", state: "Idea", status: "parked" },
+      { initials: "PS", name: "Privatized Storage Units", tier: 4, owner: "—", state: "Idea", status: "parked" },
+      { initials: "BB", name: "Bing Bros", tier: 4, owner: "—", state: "Idea", status: "parked" },
+      { initials: "SD", name: "Salmon Distribution", tier: 4, owner: "—", state: "Idea", status: "parked" }
+    ];
+    const projects = [
+      { name: "Email Cleanup (Inbox)", business: "Personal / CWD", state: "In Progress", badge: "warning", status: "active", next: "Continue daily review", due: "—" },
+      { name: "Composio Integration", business: "CWD", state: "Partial", badge: "warning", status: "active", next: "Improve Gmail/Calendar tools", due: "—" },
+      { name: "Hermes Bot (2nd Gateway)", business: "CWD", state: "In Progress", badge: "warning", status: "active", next: "Finish Discord connection", due: "—" },
+      { name: "ScrapeGraphAI Research", business: "CWD", state: "Not Started", badge: "parked", status: "parked", next: "Define first target", due: "—" },
+      { name: "July 15 Meetings (Koko Head + Rise)", business: "Let's Try Hawaii", state: "Scheduled", badge: "", status: "active", next: "Confirm with Gio and Jay", due: "Jul 15" },
+      { name: "Kimchee #88 Restaurant Launch", business: "Kimchee #88", state: "Planning", badge: "warning", status: "active", next: "Legal setup + brand development", due: "Feb/Apr 2027" },
+      { name: "Titan Medical Transportation", business: "Titan Medical", state: "Active", badge: "", status: "active", next: "Ongoing operations", due: "—" },
+      { name: "Vending / HVAC Operations", business: "Vending / HVAC", state: "Active", badge: "", status: "active", next: "Financial tracking & vendor management", due: "—" },
+      { name: "Kapwa Coffee Bar Operations", business: "Kapwa Coffee Bar", state: "Active", badge: "", status: "active", next: "Margin optimization", due: "—" }
+    ];
+    const kimchee = {
+      overview: [
+        ["Concept", "Modern Korean-inspired fast-casual — kimchi-driven bowls, Korean comfort food, Hawai‘i fusion. Leverages 20+ yrs of Kimchee #7 recognition (Meat Jun, Kalbi, Korean BBQ)."],
+        ["Location", "Kapolei, Hawai‘i"],
+        ["Model", "Fast Casual Korean / Local Fusion — dine-in, takeout, delivery"],
+        ["Target launch", "February 2027 or April 2027"],
+        ["Stage", "Planning"]
+      ],
+      groups: [
+        { name: "Legal", tasks: ["Register EIN", "File Articles of Organization (breg.hawaii.gov)", "Obtain State Tax ID (hitax.hawaii.org)", "Open business bank account", "Secure health permits + restaurant licenses"] },
+        { name: "Branding", tasks: ["Design logo and brand identity", "Build website", "Design and print business cards", "Create menu concept and pricing", "Set up social media (Instagram, TikTok, Facebook)"] },
+        { name: "Operations", tasks: ["Secure location/lease in Kapolei (1,500–2,000 sqft)", "Finalize restaurant layout and design", "Contract suppliers (local farms, Korean wholesalers)", "Set up POS and technology systems", "Hire and train initial staff (7–8)"] },
+        { name: "Pre-Opening", tasks: ["Launch marketing + grand opening campaign", "Execute soft opening", "Full public launch"] }
+      ]
+    };
+    const rotation = [
+      ["Mon", "Kapuna Meals", "Level Up (Self / Smarter / Library)"],
+      ["Tue", "Opala Hoa", "Smarter Podcast + Ongoing Conversation"],
+      ["Wed", "Shaka's Food Truck", "Let's Try Hawaii + Pop808Hawaii"],
+      ["Thu", "Ghost Kitchen Hawaii", "Fort Madison Monthly + Feedback Seattle + Spooky Action"],
+      ["Fri", "Island Laundromat (diligence)", "Aries + Guns A Blazin'"],
+      ["Sat", "—", "Hawaii SEO + Shopify Hawaii + Spotify Hawaii"],
+      ["Sun", "Weekly review + Tier 4 (monthly weeks)", "—"]
+    ];
+    const seedTasks = [
+      { id: "task-warm-followups", business: "Clever Wolf Digital", task: "Send three warm follow-ups", category: "Marketing", priority: "High", dueDate: "2026-07-13", dependencies: [], notes: "Close the loop with last week's warm prospects." },
+      { id: "task-fit-call", business: "Clever Wolf Digital", task: "Prepare for the booked fit call", category: "Operations", priority: "High", dueDate: "2026-07-14", dependencies: ["task-warm-followups"], notes: "Review the prospect site and prior objections." },
+      { id: "task-inbox", business: "Personal Operations", task: "Review priority inbox messages", category: "Operations", priority: "Medium", dueDate: "2026-07-14", dependencies: [], notes: "Keep the review focused on warm opportunities." },
+      { id: "task-hermes-gateway", business: "Clever Wolf Digital", task: "Connect the second Hermes gateway", category: "Tech", priority: "Low", dueDate: "2026-07-16", dependencies: [], notes: "Deferred until revenue actions are complete." }
+    ];
+    const team = [
+      ["QS", "Quincy Solano", "Owner / Decision Maker", "Sales, fit calls, closes, invoicing, and overall direction.", true],
+      ["JL", "Jeremy Lum", "Sr. Digital Marketing Manager", "Marketing and content support for current initiatives.", true],
+      ["JO", "Jordan", "Email Systems", "Email infrastructure after the manual motion is proven.", true],
+      ["NI", "Nicole", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["KA", "Kari", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["DE", "Delmore", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["JA", "Jay", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["MA", "Madison", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["GI", "Gio", "Team Member", "Role and current focus awaiting dashboard update.", false],
+      ["TY", "Tyler", "Team Member", "Role and current focus awaiting dashboard update.", false]
+    ];
+    const risks = [
+      ["Critical / Revenue", "No closed and invoiced deals", "Warm calls occurred, but none converted. The offer is not disproven; the close is the bottleneck.", "Quincy", "Warm follow-up", "critical"],
+      ["High / Integration", "Composio tool reliability", "Gmail and Calendar tools often return 'tool not found,' limiting dependable automation.", "Quincy", "After sales sprint", "medium"],
+      ["Medium / Infrastructure", "Second Hermes gateway disconnected", "The second gateway is not connected to Discord, leaving the planned channel unavailable.", "Quincy", "In progress", "medium"],
+      ["Medium / Capacity", "Inbox backlog remains", "Many emails still need review, increasing cognitive load and the chance of missing a warm opportunity.", "Quincy", "Daily review", "medium"]
+    ];
+    const recommendations = [
+      ["1", "Send three warm follow-ups", "Use a direct close-the-loop message. Ask whether to confirm scope this week or pause the conversation.", "High impact"],
+      ["2", "Prepare the booked fit call", "Review the prospect's site, likely leak points, and prior objections before the call begins.", "High impact"],
+      ["3", "Log every reply verbatim", "Capture the exact hook, objection, and next step so the next batch is based on live evidence.", "Learning"],
+      ["4", "Keep automation parked", "Do not spend the remaining sprint window on Composio, routing, nurture, or content infrastructure.", "Protect focus"]
+    ];
+
+    const $ = (selector, scope = document) => scope.querySelector(selector);
+    const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+    const renderIcons = () => { if (window.lucide) window.lucide.createIcons(); };
+    const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
+    const todayString = () => {
+      const today = new Date();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      return `${today.getFullYear()}-${month}-${day}`;
+    };
+    const formatTaskDate = value => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(`${value}T12:00:00`));
+    const PRIO_RANK = { High: 0, Medium: 1, Low: 2 };
+    function fmtClock(sec) {
+      sec = Math.max(0, Math.round(sec));
+      const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+      const pad = n => String(n).padStart(2, "0");
+      return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+    }
+    function fmtDurShort(sec) {
+      sec = Math.max(0, Math.round(sec));
+      if (!sec) return "0m";
+      const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
+      return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
+    }
+    let tasks = [];
+    function mapTask(t) {
+      return { id: String(t.id), task: t.name || "", business: t.business || "", category: t.category || "", priority: t.priority || "Medium", dueDate: t.due || "", notes: t.notes || "", dependencies: (t.dependencies || []).map(String), status: t.status || "open", estimateMin: t.estimate_min || null, actualSec: t.actual_sec_effective != null ? t.actual_sec_effective : (t.actual_sec || 0), running: !!t.running };
+    }
+    async function loadTasks() {
+      try {
+        const res = await fetch("/api/tasks", { credentials: "same-origin" });
+        if (res.ok) { tasks = (await res.json()).map(mapTask); }
+      } catch (e) { /* keep whatever is loaded */ }
+      renderTaskList();
+      renderDependencyOptions();
+    }
+    function persistTasks() { /* tasks persist to the repo via the API now */ }
+
+    let taskTickTimer = null;
+    function renderTaskList() {
+      const openCount = tasks.filter(t => t.status !== "done").length;
+      $("#taskCount").textContent = `${openCount} open · ${tasks.length} total`;
+      if (!tasks.length) {
+        $("#taskList").innerHTML = '<div class="task-empty">No tasks in the queue.</div>';
+        return;
+      }
+      const rank = t => t.status === "done" ? 2 : (t.running ? 0 : 1);
+      const sorted = [...tasks].sort((a, b) => {
+        const ra = rank(a), rb = rank(b);
+        if (ra !== rb) return ra - rb;
+        return (PRIO_RANK[a.priority] ?? 3) - (PRIO_RANK[b.priority] ?? 3);
+      });
+      $("#taskList").innerHTML = sorted.map(task => {
+        const done = task.status === "done";
+        const est = task.estimateMin ? `${task.estimateMin}m` : "—";
+        const dueTxt = task.dueDate ? formatTaskDate(task.dueDate) : "—";
+        const timerAttrs = task.running ? ` data-base="${task.actualSec}" data-start="${Date.now()}"` : "";
+        const timerCls = task.running ? "task-timer running" : "task-timer";
+        const actions = done
+          ? `<span class="task-done-badge"><i data-lucide="circle-check-big" class="icon-sm"></i>Done</span><button class="task-btn" data-act="reopen" aria-label="Reopen task" title="Reopen"><i data-lucide="rotate-ccw" class="icon-sm"></i></button>`
+          : `<button class="task-btn ${task.running ? "running" : "start"}" data-act="${task.running ? "pause" : "start"}" aria-label="${task.running ? "Pause timer" : "Start timer"}" title="${task.running ? "Pause timer" : "Start timer"}"><i data-lucide="${task.running ? "pause" : "play"}" class="icon-sm"></i></button><button class="task-btn complete" data-act="complete" aria-label="Mark complete" title="Mark complete"><i data-lucide="check" class="icon-sm"></i></button>`;
+        return `
+          <article class="task-row ${done ? "is-done" : ""} ${task.running ? "is-running" : ""}" data-task-id="${escapeHTML(task.id)}">
+            <div class="task-main"><span class="task-state"></span><div><strong title="${escapeHTML(task.notes)}">${escapeHTML(task.task)}</strong><small>${escapeHTML(task.business)}${task.category ? " · " + escapeHTML(task.category) : ""}</small></div></div>
+            <div class="task-cell task-col-priority"><span class="task-label">Priority</span><span class="task-priority ${escapeHTML(task.priority.toLowerCase())}">${escapeHTML(task.priority)}</span></div>
+            <div class="task-cell task-col-due"><span class="task-label">Due</span>${escapeHTML(dueTxt)}</div>
+            <div class="task-cell task-time"><span class="task-label">Time</span><span class="${timerCls}"${timerAttrs}>${fmtClock(task.actualSec)}</span> <span class="task-est">/ ${escapeHTML(est)}</span></div>
+            <div class="task-actions">${actions}</div>
+          </article>`;
+      }).join("");
+      renderIcons();
+      startTaskTicker();
+    }
+    function startTaskTicker() {
+      if (taskTickTimer) { clearInterval(taskTickTimer); taskTickTimer = null; }
+      const running = $$("#taskList .task-timer.running");
+      if (!running.length) return;
+      taskTickTimer = setInterval(() => {
+        running.forEach(el => {
+          const base = Number(el.dataset.base || 0);
+          const start = Number(el.dataset.start || Date.now());
+          el.textContent = fmtClock(base + (Date.now() - start) / 1000);
+        });
+      }, 1000);
+    }
+
+    function selectedDependencyIds() {
+      return $$("#dependencyOptions input:checked").map(input => input.value);
+    }
+
+    function renderDependencyOptions(selected = [], query = "") {
+      const normalizedQuery = query.trim().toLowerCase();
+      const matches = tasks.filter(task => task.task.toLowerCase().includes(normalizedQuery) || task.business.toLowerCase().includes(normalizedQuery));
+      $("#dependencyOptions").innerHTML = matches.length ? matches.map(task => `
+        <label class="dependency-option"><input type="checkbox" value="${escapeHTML(task.id)}" ${selected.includes(task.id) ? "checked" : ""}><span>${escapeHTML(task.task)} / ${escapeHTML(task.business)}</span></label>`).join("") : '<div class="dependency-empty">No matching tasks</div>';
+    }
+
+    function setTaskError(name, message) {
+      const wrapper = $(`[data-field="${name}"]`, $("#quickTaskForm"));
+      const field = $(`[name="${name}"]`, $("#quickTaskForm"));
+      const error = $(`#${name}Error`);
+      wrapper.classList.toggle("invalid", Boolean(message));
+      field.setAttribute("aria-invalid", String(Boolean(message)));
+      field.setAttribute("aria-describedby", `${name}Error`);
+      error.textContent = message;
+    }
+
+    function clearTaskErrors() {
+      ["task", "business", "category", "priority", "dueDate"].forEach(name => setTaskError(name, ""));
+    }
+
+    function validateTaskForm() {
+      const task = $("#taskName").value.trim();
+      const dueDate = $("#taskDueDate").value;
+      clearTaskErrors();
+      let valid = true;
+
+      if (!task) { setTaskError("task", "Task is required."); valid = false; }
+      else if (task.length < 5) { setTaskError("task", "Task must be at least 5 characters."); valid = false; }
+      if (!$("#taskBusiness").value) { setTaskError("business", "Business is required."); valid = false; }
+      if (!$("#taskCategory").value) { setTaskError("category", "Category is required."); valid = false; }
+      if (!$("#taskPriority").value) { setTaskError("priority", "Priority is required."); valid = false; }
+      if (!dueDate) { setTaskError("dueDate", "Due date is required."); valid = false; }
+      else if (dueDate < todayString()) { setTaskError("dueDate", "Due date cannot be in the past."); valid = false; }
+      return valid;
+    }
+
+    let taskModalOpener = null;
+    function openTaskModal(event) {
+      taskModalOpener = event?.currentTarget || null;
+      $("#taskDueDate").min = todayString();
+      renderDependencyOptions();
+      $("#taskModal").classList.remove("hidden");
+      $("#taskModal").setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+      $("#taskName").focus();
+    }
+
+    function closeTaskModal() {
+      $("#taskModal").classList.add("hidden");
+      $("#taskModal").setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+      $("#quickTaskForm").reset();
+      $("#dependencySearch").value = "";
+      clearTaskErrors();
+      renderDependencyOptions();
+      taskModalOpener?.focus();
+    }
+
+    function clearTaskForm() {
+      $("#quickTaskForm").reset();
+      $("#dependencySearch").value = "";
+      clearTaskErrors();
+      renderDependencyOptions();
+      $("#taskDueDate").min = todayString();
+      $("#taskName").focus();
+    }
+
+    $("#taskBusiness").insertAdjacentHTML("beforeend", businesses.map(business => `<option value="${escapeHTML(business.name)}">${escapeHTML(business.name)}</option>`).join(""));
+    $("#taskDueDate").min = todayString();
+    loadTasks();
+
+    $$('[data-open-task]').forEach(button => button.addEventListener("click", openTaskModal));
+    $$('[data-close-task]').forEach(button => button.addEventListener("click", closeTaskModal));
+    $("#clearTaskForm").addEventListener("click", clearTaskForm);
+    $("#taskModal").addEventListener("click", event => { if (event.target === $("#taskModal")) closeTaskModal(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape" && !$("#taskModal").classList.contains("hidden")) closeTaskModal(); });
+    $("#dependencySearch").addEventListener("input", event => renderDependencyOptions(selectedDependencyIds(), event.target.value));
+    $$("#quickTaskForm [name]").forEach(field => {
+      const clear = () => { if (["task", "business", "category", "priority", "dueDate"].includes(field.name)) setTaskError(field.name, ""); };
+      field.addEventListener("input", clear);
+      field.addEventListener("change", clear);
+    });
+    $("#quickTaskForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!validateTaskForm()) return;
+      const submitBtn = $("#quickTaskForm button[type=submit]");
+      if (submitBtn) submitBtn.disabled = true;
+      const estimateMin = parseInt($("#taskEstimate").value, 10);
+      const payload = {
+        name: $("#taskName").value.trim(),
+        business: $("#taskBusiness").value,
+        category: $("#taskCategory").value,
+        priority: $("#taskPriority").value,
+        due: $("#taskDueDate").value,
+        notes: $("#taskNotes").value.trim(),
+        estimate_min: Number.isFinite(estimateMin) && estimateMin > 0 ? estimateMin : null,
+        dependencies: selectedDependencyIds().map(Number).filter(n => !isNaN(n))
+      };
+      try {
+        const res = await fetch("/api/tasks", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          await loadTasks();
+          closeTaskModal();
+          showToast(data.pushed ? "Task saved to the repo (synced to GitHub)" : "Task saved (repo sync pending)");
+        } else {
+          showToast("Couldn't save: " + (data.detail || res.status));
+        }
+      } catch (e) {
+        showToast("Couldn't reach the server: " + e.message);
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+
+    // Timer controls in the Action Queue (start / pause / complete / reopen).
+    $("#taskList").addEventListener("click", async event => {
+      const button = event.target.closest("[data-act]");
+      if (!button) return;
+      const row = button.closest("[data-task-id]");
+      const id = row?.dataset.taskId;
+      const act = button.dataset.act;
+      if (!id) return;
+      button.disabled = true;
+      try {
+        const res = await fetch(`/api/tasks/${id}/${act}`, { method: "POST", credentials: "same-origin" });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          await loadTasks();
+          if (act === "complete") showToast(data.pushed ? "Completed — synced to repo" : "Task completed");
+        } else {
+          showToast("Couldn't update: " + (data.detail || res.status));
+          button.disabled = false;
+        }
+      } catch (e) {
+        showToast("Couldn't reach the server: " + e.message);
+        button.disabled = false;
+      }
+    });
+
+    const TIER_META = {
+      1: ["Tier 1 — Revenue Engines", "Daily attention"],
+      2: ["Tier 2 — Growth Bets", "Weekly rotation"],
+      3: ["Tier 3 — Media / Niche Sites", "Systematized"],
+      4: ["Tier 4 — Pipeline / Investments", "Monthly review"]
+    };
+    $("#businessGrid").innerHTML = [1, 2, 3, 4].map(tier => {
+      const items = businesses.filter(b => b.tier === tier);
+      const cards = items.map(b => `
+        <article class="card business-card" data-biz-name="${escapeHTML(b.name)}" role="button" tabindex="0" aria-label="Open ${escapeHTML(b.name)} tasks">
+          <div class="business-top"><div class="business-logo">${b.initials}</div><span class="status ${b.status}">${b.state}</span></div>
+          <h3>${escapeHTML(b.name)}</h3>
+          <div class="business-meta"><span>Owner<b>${escapeHTML(b.owner)}</b></span></div>
+          <div class="card-open-hint"><i data-lucide="list-checks" class="icon-sm"></i>View tasks</div>
+        </article>`).join("");
+      return `<div class="tier-block"><div class="tier-heading"><h2>${TIER_META[tier][0]}</h2><span>${TIER_META[tier][1]} · ${items.length}</span></div><div class="grid business-grid">${cards}</div></div>`;
+    }).join("");
+
+    $("#projectGrid").innerHTML = projects.map(p => `
+      <article class="card project-card project-item" data-status="${p.status}" data-proj-name="${escapeHTML(p.name)}" role="button" tabindex="0" aria-label="Open ${escapeHTML(p.name)} execution">
+        <div class="project-top"><span class="status ${p.badge}">${p.state}</span><span class="priority">${escapeHTML(p.due)}</span></div>
+        <h3>${escapeHTML(p.name)}</h3><p>${escapeHTML(p.business)}</p>
+        <div class="project-footer"><div class="owner"><i data-lucide="corner-down-right" class="icon-sm"></i>${escapeHTML(p.next)}</div></div>
+        <div class="card-open-hint"><i data-lucide="layout-list" class="icon-sm"></i>View execution</div>
+      </article>`).join("");
+
+    $("#kimGrid").innerHTML =
+      `<article class="card"><h3 style="margin-bottom:12px">Overview</h3>${kimchee.overview.map(([k, v]) => `<div class="kim-row"><span>${escapeHTML(k)}</span><b>${escapeHTML(v)}</b></div>`).join("")}</article>` +
+      kimchee.groups.map(g => `
+        <article class="card"><div class="kim-group-head"><h3>${escapeHTML(g.name)}</h3><span>${g.tasks.length} tasks</span></div>
+        <ul class="kim-list">${g.tasks.map(t => `<li><i data-lucide="square" class="icon-sm"></i>${escapeHTML(t)}<span class="kim-tbd">TBD</span></li>`).join("")}</ul></article>`).join("");
+
+    $("#rotationBody").innerHTML = rotation.map(r => `<tr><td class="rot-day">${escapeHTML(r[0])}</td><td>${escapeHTML(r[1])}</td><td>${escapeHTML(r[2])}</td></tr>`).join("");
+
+    $("#teamGrid").innerHTML = team.map(person => `
+      <article class="card person-card"><div class="avatar">${person[0]}</div><h3>${person[1]}</h3><div class="person-role">${person[2]}</div><div class="focus-box">${person[3]}</div><div class="person-state" style="color:${person[4] ? "var(--green)" : "var(--faint)"}"><span class="pulse" style="background:${person[4] ? "var(--green)" : "var(--faint)"}"></span>${person[4] ? "Active" : "Unassigned"}</div></article>`).join("");
+
+    $("#riskGrid").innerHTML = risks.map(r => `
+      <article class="card risk-card ${r[5]}"><span class="risk-tag" style="color:${r[5] === "critical" ? "var(--red)" : "var(--amber)"}">${r[0]}</span><h3>${r[1]}</h3><p>${r[2]}</p><div class="risk-meta"><span>Owner: ${r[3]}</span><span>Action: ${r[4]}</span></div></article>`).join("");
+
+    $("#recommendationGrid").innerHTML = recommendations.map(r => `
+      <article class="card recommendation-card"><span class="rank">${r[0]}</span><div><h3>${r[1]}</h3><p>${r[2]}</p></div><span class="impact">${r[3]}</span></article>`).join("");
+
+    // ---------- Productivity reports ----------
+    let reportPeriod = "day", reportOffset = 0, reportLoading = false;
+    function metricCard(label, value, note) {
+      return `<article class="card metric"><div class="metric-label">${escapeHTML(label)}</div><div class="metric-value">${escapeHTML(String(value))}</div><div class="metric-note">${escapeHTML(note)}</div></article>`;
+    }
+    function breakdownTable(rows) {
+      if (!rows || !rows.length) return '<div class="task-empty" style="padding:22px">No completed tasks in this period.</div>';
+      return `<table class="table"><thead><tr><th>Name</th><th>Done</th><th>Tracked</th><th>Est</th></tr></thead><tbody>${rows.map(r => `<tr><td class="item-name">${escapeHTML(r.name)}</td><td>${r.count}</td><td>${escapeHTML(fmtDurShort(r.actual_sec))}</td><td>${r.estimate_min ? escapeHTML(fmtDurShort(r.estimate_min * 60)) : "—"}</td></tr>`).join("")}</tbody></table>`;
+    }
+    function recentTable(rows) {
+      if (!rows || !rows.length) return '<div class="task-empty" style="padding:22px">Nothing completed in this period yet. Complete a task to see it here.</div>';
+      return `<table class="table"><thead><tr><th>Task</th><th>Business</th><th>Priority</th><th>Tracked</th><th>Est</th></tr></thead><tbody>${rows.map(r => `<tr><td class="item-name">${escapeHTML(r.name)}</td><td>${escapeHTML(r.business || "—")}</td><td><span class="task-priority ${escapeHTML((r.priority || "").toLowerCase())}">${escapeHTML(r.priority || "—")}</span></td><td>${escapeHTML(fmtDurShort(r.actual_sec))}</td><td>${r.estimate_min ? escapeHTML(fmtDurShort(r.estimate_min * 60)) : "—"}</td></tr>`).join("")}</tbody></table>`;
+    }
+    async function loadReport() {
+      if (reportLoading) return;
+      reportLoading = true;
+      try {
+        const res = await fetch(`/api/reports?period=${reportPeriod}&offset=${reportOffset}`, { credentials: "same-origin" });
+        if (!res.ok) { $("#reportLabel").textContent = "Couldn't load report"; return; }
+        const r = await res.json();
+        $("#reportLabel").textContent = r.label;
+        const estSec = (r.estimate_min || 0) * 60;
+        const accuracy = estSec > 0 ? Math.round((r.actual_sec / estSec) * 100) : null;
+        $("#reportMetrics").innerHTML = [
+          metricCard("Completed", r.completed, `${r.tracked_count} with tracked time`),
+          metricCard("Time tracked", fmtDurShort(r.actual_sec), "actual work logged"),
+          metricCard("Estimated", r.estimate_min ? fmtDurShort(estSec) : "—", "planned for completed"),
+          metricCard("Actual vs est", accuracy != null ? `${accuracy}%` : "—", accuracy != null ? (accuracy <= 100 ? "at or under estimate" : "over estimate") : "no estimates set"),
+          metricCard("In progress", r.active_count, `${r.open_count} open total`)
+        ].join("");
+        $("#reportByBusiness").innerHTML = breakdownTable(r.by_business);
+        $("#reportByCategory").innerHTML = breakdownTable(r.by_category);
+        $("#reportRecent").innerHTML = recentTable(r.recent);
+        $("#reportCompletedCount").textContent = `${r.completed} ${r.completed === 1 ? "task" : "tasks"}`;
+        renderIcons();
+      } catch (e) {
+        $("#reportLabel").textContent = "Couldn't reach the server";
+      } finally {
+        reportLoading = false;
+      }
+    }
+    $$('[data-period]').forEach(button => button.addEventListener("click", () => {
+      $$('[data-period]').forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      reportPeriod = button.dataset.period;
+      reportOffset = 0;
+      loadReport();
+    }));
+    $("#reportPrev").addEventListener("click", () => { reportOffset -= 1; loadReport(); });
+    $("#reportNext").addEventListener("click", () => { reportOffset += 1; loadReport(); });
+    $("#reportToday").addEventListener("click", () => { reportOffset = 0; loadReport(); });
+
+    function showView(id) {
+      $$(".view").forEach(view => view.classList.toggle("active", view.id === id));
+      $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === id));
+      if (id === "reports") loadReport();
+      $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
+      $("#sidebar").classList.remove("open");
+      $("#mobileOverlay").classList.add("hidden");
+      history.replaceState(null, "", `#${id}`);
+      window.scrollTo(0, 0);
+      renderIcons();
+    }
+    $$("[data-view]").forEach(button => button.addEventListener("click", () => showView(button.dataset.view)));
+    $$("[data-go]").forEach(button => button.addEventListener("click", () => showView(button.dataset.go)));
+    $("#menuButton").addEventListener("click", () => { $("#sidebar").classList.toggle("open"); $("#mobileOverlay").classList.toggle("hidden"); });
+    $("#mobileOverlay").addEventListener("click", () => { $("#sidebar").classList.remove("open"); $("#mobileOverlay").classList.add("hidden"); });
+
+    $$("[data-filter]").forEach(button => button.addEventListener("click", () => {
+      $$("[data-filter]").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      $$(".project-item").forEach(project => project.classList.toggle("hidden", button.dataset.filter !== "all" && project.dataset.status !== button.dataset.filter));
+    }));
+
+    // ---------- Kimchee-style detail view (businesses + projects) ----------
+    const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
+    function tasksForBusiness(name) {
+      return tasks.filter(t => (t.business || "").trim().toLowerCase() === (name || "").trim().toLowerCase());
+    }
+    function taskLi(t) {
+      const priority = t.priority || "—";
+      const cls = priority.toLowerCase();
+      const due = t.dueDate ? formatTaskDate(t.dueDate) : "—";
+      return `<li${t.notes ? ` title="${escapeHTML(t.notes)}"` : ""}><i data-lucide="square" class="icon-sm"></i><span class="kim-name">${escapeHTML(t.task)}</span><span class="kim-meta"><span class="task-priority ${escapeHTML(cls)}">${escapeHTML(priority)}</span><span class="kim-due">${escapeHTML(due)}</span></span></li>`;
+    }
+    function overviewCard(rows) {
+      return `<article class="card"><h3 style="margin-bottom:12px">Overview</h3>${rows.filter(([, v]) => v && v !== "—").map(([k, v]) => `<div class="kim-row"><span>${escapeHTML(k)}</span><b>${escapeHTML(v)}</b></div>`).join("")}</article>`;
+    }
+    function groupCard(title, groupTasks, emptyMsg) {
+      const body = groupTasks.length
+        ? `<ul class="kim-list">${groupTasks.map(taskLi).join("")}</ul>`
+        : `<div class="dependency-empty" style="padding:16px 4px">${escapeHTML(emptyMsg || "No tasks")}</div>`;
+      return `<article class="card"><div class="kim-group-head"><h3>${escapeHTML(title)}</h3><span>${groupTasks.length} ${groupTasks.length === 1 ? "task" : "tasks"}</span></div>${body}</article>`;
+    }
+    function showDetail(eyebrow, title, sub, gridHTML) {
+      $("#detailEyebrow").textContent = eyebrow;
+      $("#detailTitle").textContent = title;
+      $("#detailSub").textContent = sub;
+      $("#detailGrid").innerHTML = gridHTML;
+      $("#detailModal").classList.remove("hidden");
+      $("#detailModal").setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+      $("#detailGrid").scrollTop = 0;
+      renderIcons();
+    }
+    function closeDetail() {
+      $("#detailModal").classList.add("hidden");
+      $("#detailModal").setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    }
+    function openBusinessDetail(b) {
+      const mine = tasksForBusiness(b.name);
+      const byPriority = p => mine.filter(t => (t.priority || "") === p).sort((a, z) => (a.dueDate || "").localeCompare(z.dueDate || ""));
+      const rows = [["Tier", TIER_META[b.tier] ? TIER_META[b.tier][0] : `Tier ${b.tier}`], ["Owner", b.owner], ["Status", b.state], ["Open tasks", String(mine.length)]];
+      const groups = [groupCard("High Priority", byPriority("High"), "No high-priority tasks — you're clear here.")];
+      if (byPriority("Medium").length) groups.push(groupCard("Medium Priority", byPriority("Medium")));
+      if (byPriority("Low").length) groups.push(groupCard("Low Priority", byPriority("Low")));
+      showDetail(`Business · ${TIER_META[b.tier] ? TIER_META[b.tier][0] : "Tier " + b.tier}`, b.name, `${b.owner} · ${b.state}`, overviewCard(rows) + groups.join(""));
+    }
+    function openProjectDetail(p) {
+      const rows = [["Business", p.business], ["Status", p.state], ["Next action", p.next], ["Due", p.due]];
+      let groupsHTML;
+      if (/kimchee/i.test(p.name)) {
+        groupsHTML = kimchee.groups.map(g => `<article class="card"><div class="kim-group-head"><h3>${escapeHTML(g.name)}</h3><span>${g.tasks.length} tasks</span></div><ul class="kim-list">${g.tasks.map(t => `<li><i data-lucide="square" class="icon-sm"></i><span class="kim-name">${escapeHTML(t)}</span><span class="kim-tbd">TBD</span></li>`).join("")}</ul></article>`).join("");
+      } else {
+        const mine = tasksForBusiness(p.business).sort((a, z) => (PRIORITY_RANK[a.priority] ?? 3) - (PRIORITY_RANK[z.priority] ?? 3));
+        const cats = [...new Set(mine.map(t => t.category || "Other"))];
+        groupsHTML = cats.length
+          ? cats.map(c => groupCard(c, mine.filter(t => (t.category || "Other") === c))).join("")
+          : groupCard("Tasks", [], "No tasks yet — use Quick add to create the first one.");
+      }
+      showDetail("Project · Execution", p.name, `${p.business} · ${p.state}`, overviewCard(rows) + groupsHTML);
+    }
+    function bindCardOpen(gridId, findFn, openFn, attr) {
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+      const handle = target => {
+        const card = target.closest("[" + attr + "]");
+        if (!card) return;
+        const item = findFn(card.getAttribute(attr));
+        if (item) openFn(item);
+      };
+      grid.addEventListener("click", e => handle(e.target));
+      grid.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handle(e.target); } });
+    }
+    bindCardOpen("businessGrid", name => businesses.find(b => b.name === name), openBusinessDetail, "data-biz-name");
+    bindCardOpen("projectGrid", name => projects.find(p => p.name === name), openProjectDetail, "data-proj-name");
+    $$('[data-close-detail]').forEach(button => button.addEventListener("click", closeDetail));
+    $("#detailModal").addEventListener("click", event => { if (event.target === $("#detailModal")) closeDetail(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape" && !$("#detailModal").classList.contains("hidden")) closeDetail(); });
+
+    let toastTimer;
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      $("#toast").textContent = message;
+      $("#toast").classList.add("show");
+      toastTimer = setTimeout(() => $("#toast").classList.remove("show"), 2200);
+    }
+
+    // Auth is enforced server-side (magic link + TOTP). Personalize the header
+    // from the signed-in session; the httpOnly cookie is read via /api/me.
+    (async () => {
+      try {
+        const res = await fetch("/api/me", { credentials: "same-origin" });
+        if (!res.ok) return;
+        const me = await res.json();
+        const email = me.email || "";
+        const name = email ? email.split("@")[0] : "";
+        if (!name) return;
+        const parts = name.split(/[\s._-]+/).filter(Boolean);
+        const first = parts[0] || name;
+        const greeting = document.getElementById("greetingName");
+        if (greeting) greeting.textContent = first.charAt(0).toUpperCase() + first.slice(1);
+        const initials = (parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase();
+        const avatar = document.getElementById("userAvatar");
+        if (avatar) { avatar.textContent = initials; avatar.title = email; }
+      } catch (e) { /* keep defaults */ }
+    })();
+
+    $$(".journal-form").forEach(form => {
+      const kind = form.dataset.kind;
+      $$(".persist", form).forEach(field => {
+        const saved = localStorage.getItem(`journal-${kind}-${field.name}`);
+        if (saved !== null) field.value = saved;
+      });
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        $$(".persist", form).forEach(field => localStorage.setItem(`journal-${kind}-${field.name}`, field.value));
+        $(".save-state", form).textContent = "Saved just now";
+        showToast("Journal entry saved locally.");
+      });
+    });
+
+    function addMessage(text, isUser = true) {
+      const message = document.createElement("div");
+      message.className = `message${isUser ? " user" : ""}`;
+      message.innerHTML = isUser ? '<div class="avatar">QS</div><div class="bubble"></div>' : '<div class="bot-avatar"><i data-lucide="brain-circuit" class="icon-sm"></i></div><div class="bubble"></div>';
+      $(".bubble", message).textContent = text;
+      $("#messages").append(message);
+      $("#messages").scrollTop = $("#messages").scrollHeight;
+      renderIcons();
+    }
+    let brainChatHistory = [];
+    async function respond(question) {
+      brainChatHistory.push({ role: "user", content: question });
+      const typing = document.createElement("div");
+      typing.className = "message";
+      typing.innerHTML = '<div class="bot-avatar"><i data-lucide="brain-circuit" class="icon-sm"></i></div><div class="bubble">…</div>';
+      $("#messages").append(typing);
+      $("#messages").scrollTop = $("#messages").scrollHeight;
+      renderIcons();
+      try {
+        const res = await fetch("/api/chat", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: question, history: brainChatHistory.slice(-8) }) });
+        const data = await res.json();
+        typing.remove();
+        if (res.ok) { addMessage(data.reply || "…", false); brainChatHistory.push({ role: "assistant", content: data.reply }); }
+        else { addMessage("Chat error: " + (data.detail || res.status), false); }
+      } catch (e) { typing.remove(); addMessage("Couldn't reach Grok: " + e.message, false); }
+    }
+    $("#chatForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const question = $("#chatText").value.trim();
+      if (!question) return;
+      addMessage(question);
+      $("#chatText").value = "";
+      respond(question);
+    });
+    $$(".suggestion").forEach(button => button.addEventListener("click", () => { addMessage(button.textContent); respond(button.textContent); }));
+
+    const initialView = location.hash.slice(1);
+    if (initialView && document.getElementById(initialView)) showView(initialView);
+    renderIcons();
+  </script>
+
+  <!-- CWD Brain Chat — floating Grok widget -->
+  <style>
+    #cwdChatBtn{position:fixed;right:20px;bottom:20px;z-index:130;width:56px;height:56px;border-radius:50%;
+      border:1px solid var(--line-strong);background:linear-gradient(160deg,#13253c,#0c1b28);cursor:pointer;
+      display:grid;place-items:center;box-shadow:0 14px 34px rgba(0,0,0,.45);transition:transform .15s}
+    #cwdChatBtn:hover{transform:translateY(-2px) scale(1.04)}
+    #cwdChatPanel{position:fixed;right:20px;bottom:86px;z-index:131;width:min(384px,calc(100vw - 32px));
+      height:min(544px,calc(100vh - 132px));background:var(--panel);border:1px solid var(--line-strong);
+      border-radius:12px;box-shadow:0 22px 60px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden}
+    #cwdChatPanel.open{display:flex}
+    #cwdChatHead{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--panel-raised)}
+    #cwdChatHead b{font-family:var(--font-display);font-size:13px}
+    #cwdChatHead .cwd-sub{color:var(--faint);font-size:9.5px}
+    #cwdChatClose{background:none;border:0;color:var(--muted);cursor:pointer;font-size:20px;line-height:1}
+    #cwdChatBody{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px}
+    .cwd-msg{max-width:86%;padding:8px 11px;border-radius:10px;font-size:12.5px;line-height:1.46;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+    .cwd-msg.user{align-self:flex-end;background:var(--blue);color:#04121f}
+    .cwd-msg.bot{align-self:flex-start;background:var(--panel-raised);border:1px solid var(--line)}
+    #cwdChatForm{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+    #cwdChatInput{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line-strong);border-radius:8px;color:var(--text);padding:9px 11px;font-family:var(--font-body);font-size:12.5px}
+    #cwdChatSend{background:var(--gold);color:#1a1204;border:0;border-radius:8px;padding:0 15px;cursor:pointer;font-weight:600;font-family:var(--font-display)}
+    @media (max-width:560px){
+      #cwdChatPanel{right:8px;left:8px;top:8px;bottom:8px;width:auto;height:auto}
+      #cwdChatBtn{right:14px;bottom:14px}
+      #cwdChatInput{font-size:16px}
+    }
+  </style>
+  <button id="cwdChatBtn" aria-label="Open CWD Brain Chat" title="CWD Brain Chat">
+    <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true">
+      <path d="M13 7 L23 25 L15 21 Z" fill="#20406a"/>
+      <path d="M51 7 L41 25 L49 21 Z" fill="#20406a"/>
+      <path d="M32 11 L53 26 L47 46 L32 58 L17 46 L11 26 Z" fill="#4a91d8"/>
+      <path d="M32 32 L28 46 L32 52 L36 46 Z" fill="#9fccf0"/>
+      <rect x="20" y="30" width="9" height="4.5" rx="1.2" transform="rotate(-11 24.5 32)" fill="#d0a853"/>
+      <rect x="35" y="30" width="9" height="4.5" rx="1.2" transform="rotate(11 39.5 32)" fill="#d0a853"/>
+    </svg>
+  </button>
+  <section id="cwdChatPanel" aria-label="CWD Brain Chat">
+    <div id="cwdChatHead">
+      <div><b>CWD Brain Chat</b><div class="cwd-sub">Grok · sees your live portfolio</div></div>
+      <button id="cwdChatClose" aria-label="Close chat">&times;</button>
+    </div>
+    <div id="cwdChatBody"><div class="cwd-msg bot">Hey Quincy — ask me anything about your portfolio, or tell me what to add. What's up?</div></div>
+    <form id="cwdChatForm">
+      <input id="cwdChatInput" autocomplete="off" placeholder="Ask Grok…" />
+      <button id="cwdChatSend" type="submit">Send</button>
+    </form>
+  </section>
+  <script>
+    (function () {
+      var hist = [];
+      var btn = document.getElementById('cwdChatBtn'),
+          panel = document.getElementById('cwdChatPanel'),
+          body = document.getElementById('cwdChatBody'),
+          form = document.getElementById('cwdChatForm'),
+          input = document.getElementById('cwdChatInput');
+      function add(text, who) {
+        var d = document.createElement('div');
+        d.className = 'cwd-msg ' + who;
+        d.textContent = text;
+        body.appendChild(d);
+        body.scrollTop = body.scrollHeight;
+        return d;
+      }
+      btn.addEventListener('click', function () {
+        panel.classList.toggle('open');
+        if (panel.classList.contains('open')) input.focus();
+      });
+      document.getElementById('cwdChatClose').addEventListener('click', function () {
+        panel.classList.remove('open');
+      });
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var q = input.value.trim();
+        if (!q) return;
+        add(q, 'user'); hist.push({ role: 'user', content: q }); input.value = '';
+        var thinking = add('…', 'bot');
+        try {
+          var res = await fetch('/api/chat', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: q, history: hist.slice(-8) }) });
+          var data = await res.json();
+          thinking.remove();
+          if (res.ok) { add(data.reply || '…', 'bot'); hist.push({ role: 'assistant', content: data.reply }); }
+          else { add('Error: ' + (data.detail || res.status), 'bot'); }
+        } catch (err) { thinking.remove(); add("Couldn't reach Grok: " + err.message, 'bot'); }
+      });
+    })();
+  </script>
+</body>
+</html>

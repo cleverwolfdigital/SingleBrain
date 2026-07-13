@@ -1,0 +1,16 @@
+# Secrets & runtime state — NEVER commit
+.env
+.env.*
+!.env.example
+
+# Local database + WAL sidecars (live data lives only on the VPS)
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.bak
