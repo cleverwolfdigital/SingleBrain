@@ -1782,7 +1782,8 @@
       const bizs = $$("#accessBiz input:checked").map(i => i.value);
       const projs = $$("#accessProj input:checked").map(i => i.value);
       try {
-        await fetch("/api/admin/users", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: accessEmail, name: u.name || null, role }) });
+        const roleRes = await fetch("/api/admin/users", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: accessEmail, name: u.name || null, role }) });
+        if (!roleRes.ok) { const rd = await roleRes.json().catch(() => ({})); showToast(rd.detail || "Couldn't update role."); return; }
         const res = await fetch(`/api/admin/users/${encodeURIComponent(accessEmail)}/access`, { method: "PUT", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businesses: bizs, projects: projs }) });
         if (res.ok) { showToast("Access updated"); closeAccessModal(); await loadAdminUsers(); renderAdmin(); refreshAssigneeField(); }
         else { const d = await res.json().catch(() => ({})); showToast("Couldn't save: " + (d.detail || res.status)); }

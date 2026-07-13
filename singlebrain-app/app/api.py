@@ -35,6 +35,8 @@ SUPER_ADMINS = {
     for e in os.environ.get("SB_SUPER_ADMINS", "quincy@cleverwolfdigital.com").split(",")
     if e.strip()
 }
+# How many additional people (beyond the configured owner) may be Super Admin.
+MAX_PROMOTED_SUPER_ADMINS = int(os.environ.get("SB_MAX_PROMOTED_ADMINS", "2") or "2")
 
 
 def _ensure_app_user(email, name=None):
@@ -647,6 +649,16 @@ def admin_add_user(body: AppUserIn, request: Request):
         role = "super_admin"
     else:
         role = "staff"
+    # Cap the number of *promoted* Super Admins (the configured owner is exempt).
+    if role == "super_admin" and email not in SUPER_ADMINS:
+        others = [r["email"] for r in db.query("SELECT email FROM app_users WHERE role='super_admin'")
+                  if r["email"] not in SUPER_ADMINS and r["email"] != email]
+        if len(others) >= MAX_PROMOTED_SUPER_ADMINS:
+            raise HTTPException(
+                409,
+                f"You can have at most {MAX_PROMOTED_SUPER_ADMINS} Super Admins beyond the owner. "
+                "Demote one first.",
+            )
     name = (body.name or "").strip() or None
     if db.query("SELECT email FROM app_users WHERE email=?", (email,)):
         db.execute("UPDATE app_users SET name=?, role=? WHERE email=?", (name, role, email))
