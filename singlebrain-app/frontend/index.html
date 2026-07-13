@@ -219,6 +219,12 @@
     .button.secondary:hover { background: var(--panel-raised); }
     .button.blue { color: #fff; background: var(--blue); }
     .top-quick-add { height: 35px; white-space: nowrap; }
+    .quick-add-wrap { position: relative; }
+    .qa-caret { margin-left: -1px; }
+    .quick-add-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 60; min-width: 200px; padding: 5px; background: var(--panel-raised); border: 1px solid var(--line-strong); border-radius: 8px; box-shadow: 0 14px 34px rgba(0,0,0,0.45); display: grid; gap: 2px; }
+    .qa-item { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 10px; cursor: pointer; color: var(--text); background: transparent; border: 0; border-radius: 5px; font-size: 12px; font-weight: 600; text-align: left; }
+    .qa-item:hover { background: var(--panel-hover); }
+    .qa-item .icon-sm { color: var(--gold-soft); }
 
     .metrics { grid-template-columns: repeat(5, 1fr); margin-bottom: 13px; }
     .metric { min-height: 116px; padding: 15px; }
@@ -495,7 +501,7 @@
       .metric:last-child { grid-column: 1 / -1; }
       .business-grid, .team-grid { grid-template-columns: 1fr; }
       .top-quick-add { width: 35px; padding: 0; }
-      .top-quick-add span { display: none; }
+      .top-quick-add span, .qa-caret { display: none; }
       .task-board-header { align-items: flex-start; }
       .task-row { grid-template-columns: 1fr auto; gap: 8px 12px; }
       .task-main { grid-column: 1 / -1; }
@@ -563,7 +569,16 @@
       <div class="breadcrumb"><span>SingleBrain</span><i data-lucide="chevron-right" class="icon-sm"></i><strong id="breadcrumbName">Overview</strong></div>
       <div class="top-actions">
         <div class="system-state"><span class="pulse"></span>Systems nominal</div>
-        <button class="button top-quick-add" data-open-task aria-label="Global quick add task"><i data-lucide="plus" class="icon-sm"></i><span>Quick add</span></button>
+        <div class="quick-add-wrap">
+          <button class="button top-quick-add" id="quickAddBtn" aria-haspopup="true" aria-expanded="false" aria-label="Quick add"><i data-lucide="plus" class="icon-sm"></i><span>Quick add</span><i data-lucide="chevron-down" class="icon-sm qa-caret"></i></button>
+          <div class="quick-add-menu hidden" id="quickAddMenu" role="menu">
+            <button class="qa-item hidden" data-admin-only role="menuitem" data-qa="business"><i data-lucide="building-2" class="icon-sm"></i>Add a Business</button>
+            <button class="qa-item hidden" data-admin-only role="menuitem" data-qa="campaign"><i data-lucide="megaphone" class="icon-sm"></i>Add a Campaign</button>
+            <button class="qa-item hidden" data-admin-only role="menuitem" data-qa="project"><i data-lucide="folder-kanban" class="icon-sm"></i>Add a Project</button>
+            <button class="qa-item hidden" data-admin-only role="menuitem" data-qa="staff"><i data-lucide="user-plus" class="icon-sm"></i>Add an Employee</button>
+            <button class="qa-item" role="menuitem" data-qa="task"><i data-lucide="square-check" class="icon-sm"></i>Add a Task</button>
+          </div>
+        </div>
         <button class="icon-button" id="fontDown" aria-label="Smaller text" title="Smaller text" style="font:700 12px var(--font-display)">A-</button>
         <button class="icon-button" id="fontUp" aria-label="Larger text" title="Larger text" style="font:700 15px var(--font-display)">A+</button>
         <button class="icon-button" id="syncBtn" aria-label="Sync to repository" title="Sync now — pull latest and push to GitHub"><i data-lucide="refresh-cw" class="icon"></i></button>
@@ -2028,6 +2043,27 @@
     applyZoom();
     $("#fontDown").addEventListener("click", () => { contentZoom -= 0.1; applyZoom(); });
     $("#fontUp").addEventListener("click", () => { contentZoom += 0.1; applyZoom(); });
+
+    // Quick add dropdown — Business/Campaign/Project/Employee (admin) + Task (everyone).
+    function closeQuickMenu() { $("#quickAddMenu").classList.add("hidden"); $("#quickAddBtn").setAttribute("aria-expanded", "false"); }
+    $("#quickAddBtn").addEventListener("click", e => {
+      e.stopPropagation();
+      const menu = $("#quickAddMenu");
+      const opening = menu.classList.contains("hidden");
+      menu.classList.toggle("hidden");
+      $("#quickAddBtn").setAttribute("aria-expanded", String(opening));
+      if (opening) renderIcons();
+    });
+    $("#quickAddMenu").addEventListener("click", e => {
+      const item = e.target.closest("[data-qa]");
+      if (!item) return;
+      const qa = item.dataset.qa;
+      closeQuickMenu();
+      if (qa === "task") openTaskModal();
+      else openEntityEditor(qa, null);
+    });
+    document.addEventListener("click", () => closeQuickMenu());
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeQuickMenu(); });
 
     // Manual sync — pull latest + push tasks to GitHub (the hub every tool reads/writes).
     $("#syncBtn").addEventListener("click", async () => {
