@@ -1,0 +1,12 @@
+[Unit]
+Description=Single Brain API (FastAPI/uvicorn)
+After=network.target
+[Service]
+Type=simple
+WorkingDirectory=/root/singlebrain-app
+EnvironmentFile=-/root/singlebrain-app/.env
+ExecStart=/root/singlebrain-app/venv/bin/uvicorn app.api:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+User=root
+[Install]
+WantedBy=multi-user.target

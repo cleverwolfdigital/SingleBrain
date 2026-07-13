@@ -20,20 +20,45 @@ def init_db():
 
 # Idempotent, additive migrations for columns introduced after the initial
 # schema shipped (CREATE TABLE IF NOT EXISTS won't alter an existing table).
-_TASK_COLUMNS = {
-    "estimate_min": "INTEGER",
-    "actual_sec": "INTEGER DEFAULT 0",
-    "started_at": "INTEGER",
-    "completed_at": "INTEGER",
+_COLUMN_MIGRATIONS = {
+    "tasks": {
+        "estimate_min": "INTEGER",
+        "actual_sec": "INTEGER DEFAULT 0",
+        "started_at": "INTEGER",
+        "completed_at": "INTEGER",
+        "assignee": "TEXT",       # email of the staff member the task is assigned to
+        "client": "TEXT",
+        "recurring_id": "INTEGER",
+    },
+    "businesses": {
+        "initials": "TEXT",
+        "tier": "INTEGER",
+        "owner": "TEXT",
+        "state": "TEXT",
+        "kind": "TEXT DEFAULT 'business'",
+        "parent_id": "INTEGER",
+    },
+    "projects": {
+        "state": "TEXT",
+        "badge": "TEXT",
+        "kind": "TEXT DEFAULT 'project'",
+        "priority": "TEXT",
+    },
+    "staff": {
+        "email": "TEXT",
+    },
 }
 
 
 def _migrate():
     with get_conn() as conn:
-        existing = {r["name"] for r in conn.execute("PRAGMA table_info(tasks)")}
-        for col, decl in _TASK_COLUMNS.items():
-            if col not in existing:
-                conn.execute(f"ALTER TABLE tasks ADD COLUMN {col} {decl}")
+        for table, cols in _COLUMN_MIGRATIONS.items():
+            existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+            if not existing:
+                continue  # table not created yet; schema.sql will create it with columns
+            for col, decl in cols.items():
+                if col not in existing:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
         conn.commit()
 
 

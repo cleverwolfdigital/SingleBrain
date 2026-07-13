@@ -20,12 +20,76 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from . import db, seed, auth, repo, config
+from . import db, seed, auth, repo, config, catalog
 
 app = FastAPI(title="Single Brain API")
 app.include_router(auth.router)
 
 FRONTEND = Path(__file__).resolve().parent.parent / "frontend" / "index.html"
+
+
+# ---------------- RBAC / access control ----------------
+# Configured super admins are always elevated regardless of the stored role.
+SUPER_ADMINS = {
+    e.strip().lower()
+    for e in os.environ.get("SB_SUPER_ADMINS", "quincy@cleverwolfdigital.com").split(",")
+    if e.strip()
+}
+
+
+def _ensure_app_user(email, name=None):
+    """Register a logged-in email as an app user (defaults to 'staff'; configured
+    super admins are elevated). Idempotent — safe to call on every request."""
+    if not email:
+        return None
+    email = email.strip().lower()
+    rows = db.query("SELECT * FROM app_users WHERE email=?", (email,))
+    if not rows:
+        role = "super_admin" if email in SUPER_ADMINS else "staff"
+        db.execute("INSERT OR IGNORE INTO app_users(email,name,role) VALUES(?,?,?)", (email, name, role))
+    elif email in SUPER_ADMINS and rows[0].get("role") != "super_admin":
+        db.execute("UPDATE app_users SET role='super_admin' WHERE email=?", (email,))
+    return db.query("SELECT * FROM app_users WHERE email=?", (email,))[0]
+
+
+def _role(email):
+    email = (email or "").strip().lower()
+    if email in SUPER_ADMINS:
+        return "super_admin"
+    rows = db.query("SELECT role FROM app_users WHERE email=?", (email,))
+    return (rows[0]["role"] if rows else "staff") or "staff"
+
+
+def _is_admin(email):
+    return _role(email) == "super_admin"
+
+
+def _access_lists(email):
+    """(businesses, projects) a user may view. (None, None) for admins = everything."""
+    if _is_admin(email):
+        return None, None
+    biz = [r["business"] for r in db.query("SELECT business FROM user_business_access WHERE email=?", (email,))]
+    proj = [r["project"] for r in db.query("SELECT project FROM user_project_access WHERE email=?", (email,))]
+    return biz, proj
+
+
+def _require_admin(request):
+    email = auth.current_user(request)
+    if not _is_admin(email):
+        raise HTTPException(403, "Super Admin access required.")
+    return email
+
+
+def _visible_tasks(email, tasks):
+    """Filter a task list to what a viewer may see: their assigned tasks plus any
+    task tied to a business they've been granted. Admins see everything."""
+    if _is_admin(email):
+        return tasks
+    biz, _ = _access_lists(email)
+    allowed = set(biz or [])
+    me = (email or "").strip().lower()
+    return [t for t in tasks
+            if (t.get("assignee") or "").strip().lower() == me or (t.get("business") or "") in allowed]
 
 
 @app.middleware("http")
@@ -44,6 +108,8 @@ async def _auth_gate(request: Request, call_next):
 def _startup():
     db.init_db()
     seed.seed()
+    catalog.seed_catalog()
+    catalog.generate_recurring()
     auth.init_auth_db()
 
 
@@ -61,7 +127,17 @@ def health():
 
 @app.get("/api/me")
 def me(request: Request):
-    return {"email": auth.current_user(request)}
+    email = auth.current_user(request)
+    _ensure_app_user(email)
+    role = _role(email)
+    biz, proj = _access_lists(email)
+    return {
+        "email": email,
+        "role": role,
+        "is_super_admin": role == "super_admin",
+        "businesses": biz,   # null => all (admin); list => the only ones visible
+        "projects": proj,
+    }
 
 
 def _apply_timing(t):
@@ -76,7 +152,7 @@ def _apply_timing(t):
     return t
 
 
-def _tasks_with_deps():
+def _tasks_with_deps(viewer=None):
     tasks = db.query("SELECT * FROM tasks ORDER BY id DESC")
     deps = db.query("SELECT task_id, depends_on FROM task_dependencies")
     by_task = {}
@@ -85,18 +161,21 @@ def _tasks_with_deps():
     for t in tasks:
         t["dependencies"] = by_task.get(t["id"], [])
         _apply_timing(t)
+    if viewer is not None:
+        tasks = _visible_tasks(viewer, tasks)
     return tasks
 
 
 @app.get("/api/state")
-def state():
+def state(request: Request):
+    viewer = auth.current_user(request)
     return {
         "businesses": db.query("SELECT * FROM businesses ORDER BY name"),
         "projects": db.query("SELECT * FROM projects ORDER BY id"),
         "staff": db.query("SELECT * FROM staff ORDER BY id"),
         "blockers": db.query("SELECT * FROM blockers ORDER BY id"),
         "recommendations": db.query("SELECT * FROM recommendations ORDER BY id"),
-        "tasks": _tasks_with_deps(),
+        "tasks": _tasks_with_deps(viewer),
         "journal": db.query("SELECT * FROM daily_journal ORDER BY id DESC LIMIT 30"),
     }
 
@@ -154,26 +233,34 @@ class TaskIn(BaseModel):
     due: Optional[str] = None
     notes: Optional[str] = None
     estimate_min: Optional[int] = None
+    assignee: Optional[str] = None
     dependencies: List[int] = Field(default_factory=list)
 
 
 @app.get("/api/tasks")
-def get_tasks():
-    return _tasks_with_deps()
+def get_tasks(request: Request):
+    return _tasks_with_deps(auth.current_user(request))
 
 
 @app.post("/api/tasks")
-def create_task(t: TaskIn):
+def create_task(t: TaskIn, request: Request):
     name = (t.name or "").strip()
     if len(name) < 5:
         raise HTTPException(422, "Task name must be at least 5 characters.")
     if t.priority not in ("High", "Medium", "Low"):
         raise HTTPException(422, "Priority must be High, Medium, or Low.")
     est = t.estimate_min if (t.estimate_min and t.estimate_min > 0) else None
+    # Admins may assign to anyone; staff-created tasks belong to the creator so
+    # they remain visible to them under access filtering.
+    current = auth.current_user(request)
+    if _is_admin(current):
+        assignee = (t.assignee or "").strip().lower() or None
+    else:
+        assignee = (current or "").strip().lower() or None
     tid = db.execute(
-        "INSERT INTO tasks(business,name,category,priority,due,notes,status,estimate_min,actual_sec) "
-        "VALUES(?,?,?,?,?,?,'open',?,0)",
-        (t.business, name, t.category, t.priority, t.due, t.notes, est),
+        "INSERT INTO tasks(business,name,category,priority,due,notes,status,estimate_min,actual_sec,assignee) "
+        "VALUES(?,?,?,?,?,?,'open',?,0,?)",
+        (t.business, name, t.category, t.priority, t.due, t.notes, est, assignee),
     )
     for dep in t.dependencies:
         db.execute("INSERT OR IGNORE INTO task_dependencies(task_id,depends_on) VALUES(?,?)", (tid, dep))
@@ -302,8 +389,9 @@ def _shift_anchor(period, anchor, direction):
 
 
 @app.get("/api/reports")
-def reports(period: str = "week", date: Optional[str] = None, offset: int = 0):
+def reports(request: Request, period: str = "week", date: Optional[str] = None, offset: int = 0):
     from datetime import date as _date
+    viewer = auth.current_user(request)
     if date:
         try:
             anchor = _date.fromisoformat(date)
@@ -321,6 +409,7 @@ def reports(period: str = "week", date: Optional[str] = None, offset: int = 0):
         "ORDER BY completed_at DESC",
         (start, end),
     )
+    done = _visible_tasks(viewer, done)
 
     def bucket(key):
         agg = {}
@@ -336,9 +425,9 @@ def reports(period: str = "week", date: Optional[str] = None, offset: int = 0):
     total_est = sum(t.get("estimate_min") or 0 for t in done)
     tracked = [t for t in done if (t.get("actual_sec") or 0) > 0]
 
-    # Portfolio-wide snapshot (not period-bound) for context.
-    open_rows = db.query("SELECT status, started_at FROM tasks WHERE status!='done'")
-    active_count = sum(1 for r in open_rows if r.get("started_at"))
+    # Portfolio-wide snapshot (not period-bound) for context, scoped to the viewer.
+    open_all = _visible_tasks(viewer, db.query("SELECT * FROM tasks WHERE status!='done'"))
+    active_count = sum(1 for r in open_all if r.get("started_at"))
 
     return {
         "period": period,
@@ -349,7 +438,7 @@ def reports(period: str = "week", date: Optional[str] = None, offset: int = 0):
         "actual_sec": total_actual,
         "estimate_min": total_est,
         "tracked_count": len(tracked),
-        "open_count": len(open_rows),
+        "open_count": len(open_all),
         "active_count": active_count,
         "by_business": bucket("business"),
         "by_category": bucket("category"),
@@ -416,9 +505,9 @@ class ChatIn(BaseModel):
     history: List[dict] = Field(default_factory=list)
 
 
-def _state_context():
+def _state_context(viewer=None):
     """Build Grok's context from the SOURCE OF TRUTH (Master_Dashboard.md + project files)
-    plus the live task list — not the stale DB seed."""
+    plus the live task list — not the stale DB seed. Tasks are scoped to the viewer."""
     parts = []
     for label, rel in [
         ("Master_Dashboard.md (SINGLE SOURCE OF TRUTH — portfolio by tier, staff+emails, projects, rotation, backlog)",
@@ -432,10 +521,9 @@ def _state_context():
         except Exception:
             pass
     try:
-        s = state()
         tasks = "; ".join(
             f'{t["name"]} [{t.get("priority") or "?"}, {t.get("business") or "-"}, {t.get("status") or "open"}, due {t.get("due") or "-"}]'
-            for t in s["tasks"][:60]
+            for t in _tasks_with_deps(viewer)[:60]
         ) or "none"
         parts.append(f"===== Live tasks (dashboard DB, synced to Tasks.md) =====\n{tasks}")
     except Exception:
@@ -456,7 +544,7 @@ def chat(c: ChatIn, request: Request):
         "Base every answer on this — never claim a business is missing if it appears below. "
         "When asked to add or change a business, staff member, project, or task, state exactly what "
         "you'd change and ask the user to confirm (live write-actions are rolling out; for now you "
-        "advise, summarize, and draft).\n\n" + _state_context()
+        "advise, summarize, and draft).\n\n" + _state_context(auth.current_user(request))
     )
     msgs = [{"role": "system", "content": system}]
     for h in (c.history or [])[-8:]:
@@ -482,3 +570,426 @@ def chat(c: ChatIn, request: Request):
         raise HTTPException(502, f"Grok API error ({e.code}): {detail}")
     except Exception as e:
         raise HTTPException(502, f"Grok request failed: {e}")
+
+
+# ---------- Manual sync (pull latest + push tasks to GitHub) ----------
+@app.post("/api/sync")
+def sync_now(request: Request):
+    """Pull the latest from GitHub and push the current task state back, so the
+    dashboard, the repo, and every agent (Claude Code, Obsidian, Jermes) converge."""
+    pushed = _sync_tasks_to_repo()
+    return {"ok": True, "pushed": bool(pushed)}
+
+
+# ---------- Task assignment ----------
+class AssignIn(BaseModel):
+    assignee: Optional[str] = None
+
+
+@app.post("/api/tasks/{task_id}/assign")
+def assign_task(task_id: int, body: AssignIn, request: Request):
+    _require_admin(request)
+    _get_task(task_id)
+    a = (body.assignee or "").strip().lower() or None
+    db.execute("UPDATE tasks SET assignee=? WHERE id=?", (a, task_id))
+    return {"ok": True, "assignee": a}
+
+
+# ---------- Super Admin: users + access ----------
+class AppUserIn(BaseModel):
+    email: str
+    name: Optional[str] = None
+    role: Optional[str] = "staff"
+
+
+class AccessIn(BaseModel):
+    businesses: List[str] = Field(default_factory=list)
+    projects: List[str] = Field(default_factory=list)
+
+
+def _user_summary(u):
+    email = u["email"]
+    biz = [r["business"] for r in db.query("SELECT business FROM user_business_access WHERE email=?", (email,))]
+    proj = [r["project"] for r in db.query("SELECT project FROM user_project_access WHERE email=?", (email,))]
+    cnt = db.query(
+        "SELECT COUNT(*) c FROM tasks WHERE lower(assignee)=? AND status!='done'", (email.lower(),)
+    )[0]["c"]
+    return {
+        "email": email,
+        "name": u.get("name"),
+        "role": u.get("role") or "staff",
+        "is_configured_admin": email.lower() in SUPER_ADMINS,
+        "businesses": biz,
+        "projects": proj,
+        "open_tasks": cnt,
+    }
+
+
+@app.get("/api/admin/users")
+def admin_users(request: Request):
+    _require_admin(request)
+    return [_user_summary(u) for u in db.query("SELECT * FROM app_users ORDER BY role DESC, email")]
+
+
+@app.post("/api/admin/users")
+def admin_add_user(body: AppUserIn, request: Request):
+    _require_admin(request)
+    email = (body.email or "").strip().lower()
+    if not auth._valid_email(email):
+        raise HTTPException(422, "Enter a valid email address.")
+    is_domain = email.endswith("@" + auth.ALLOWED_DOMAIN)
+    req_role = (body.role or "staff").strip()
+    if email in SUPER_ADMINS:
+        role = "super_admin"
+    elif req_role == "guest" or not is_domain:
+        role = "guest"          # external emails can only be guests
+    elif req_role == "super_admin":
+        role = "super_admin"
+    else:
+        role = "staff"
+    name = (body.name or "").strip() or None
+    if db.query("SELECT email FROM app_users WHERE email=?", (email,)):
+        db.execute("UPDATE app_users SET name=?, role=? WHERE email=?", (name, role, email))
+    else:
+        db.execute("INSERT INTO app_users(email,name,role) VALUES(?,?,?)", (email, name, role))
+    return {"ok": True, "email": email}
+
+
+@app.delete("/api/admin/users/{email}")
+def admin_delete_user(email: str, request: Request):
+    _require_admin(request)
+    email = email.strip().lower()
+    if email in SUPER_ADMINS:
+        raise HTTPException(400, "Cannot remove a configured super admin.")
+    db.execute("DELETE FROM app_users WHERE email=?", (email,))
+    db.execute("DELETE FROM user_business_access WHERE email=?", (email,))
+    db.execute("DELETE FROM user_project_access WHERE email=?", (email,))
+    return {"ok": True}
+
+
+@app.put("/api/admin/users/{email}/access")
+def admin_set_access(email: str, body: AccessIn, request: Request):
+    _require_admin(request)
+    email = email.strip().lower()
+    if not db.query("SELECT email FROM app_users WHERE email=?", (email,)):
+        raise HTTPException(404, "User not found.")
+    db.execute("DELETE FROM user_business_access WHERE email=?", (email,))
+    db.execute("DELETE FROM user_project_access WHERE email=?", (email,))
+    for b in dict.fromkeys(x for x in body.businesses if x):
+        db.execute("INSERT OR IGNORE INTO user_business_access(email,business) VALUES(?,?)", (email, b))
+    for p in dict.fromkeys(x for x in body.projects if x):
+        db.execute("INSERT OR IGNORE INTO user_project_access(email,project) VALUES(?,?)", (email, p))
+    return {"ok": True}
+
+
+# ================= Catalog (businesses, projects, campaigns, staff, clients) =================
+@app.get("/api/catalog")
+def catalog_all(request: Request):
+    biz = db.query("SELECT * FROM businesses ORDER BY COALESCE(tier, 9), name")
+    names = {b["id"]: b["name"] for b in biz}
+    for b in biz:
+        b["parent_name"] = names.get(b.get("parent_id"))
+    return {
+        "businesses": biz,
+        "projects": db.query("SELECT * FROM projects ORDER BY id"),
+        "staff": db.query("SELECT * FROM staff ORDER BY id"),
+        "clients": db.query("SELECT * FROM clients ORDER BY name"),
+        "recurring": db.query("SELECT * FROM recurring_tasks ORDER BY id"),
+    }
+
+
+class BusinessIn(BaseModel):
+    name: str
+    initials: Optional[str] = None
+    tier: Optional[int] = None
+    owner: Optional[str] = None
+    state: Optional[str] = None
+    status: Optional[str] = "active"
+    kind: Optional[str] = "business"
+    parent_id: Optional[int] = None
+    notes: Optional[str] = None
+
+
+@app.post("/api/businesses")
+def create_business(b: BusinessIn, request: Request):
+    _require_admin(request)
+    name = (b.name or "").strip()
+    if not name:
+        raise HTTPException(422, "Name is required.")
+    if db.query("SELECT 1 FROM businesses WHERE name=?", (name,)):
+        raise HTTPException(409, "A business with that name already exists.")
+    initials = (b.initials or "").strip() or catalog._initials(name)
+    bid = db.execute(
+        "INSERT INTO businesses(name,initials,tier,owner,state,status,kind,parent_id,notes) VALUES(?,?,?,?,?,?,?,?,?)",
+        (name, initials, b.tier, b.owner, b.state, b.status or "active", b.kind or "business", b.parent_id, b.notes),
+    )
+    return {"ok": True, "id": bid}
+
+
+@app.put("/api/businesses/{bid}")
+def update_business(bid: int, b: BusinessIn, request: Request):
+    _require_admin(request)
+    if not db.query("SELECT 1 FROM businesses WHERE id=?", (bid,)):
+        raise HTTPException(404, "Business not found.")
+    name = (b.name or "").strip()
+    initials = (b.initials or "").strip() or catalog._initials(name)
+    parent = b.parent_id if b.parent_id != bid else None  # no self-parenting
+    db.execute(
+        "UPDATE businesses SET name=?,initials=?,tier=?,owner=?,state=?,status=?,kind=?,parent_id=?,notes=? WHERE id=?",
+        (name, initials, b.tier, b.owner, b.state, b.status, b.kind, parent, b.notes, bid),
+    )
+    return {"ok": True}
+
+
+@app.delete("/api/businesses/{bid}")
+def delete_business(bid: int, request: Request):
+    _require_admin(request)
+    db.execute("UPDATE businesses SET parent_id=NULL WHERE parent_id=?", (bid,))
+    db.execute("DELETE FROM businesses WHERE id=?", (bid,))
+    return {"ok": True}
+
+
+class ProjectIn(BaseModel):
+    name: str
+    business: Optional[str] = None
+    owner: Optional[str] = None
+    status: Optional[str] = "active"
+    state: Optional[str] = None
+    badge: Optional[str] = None
+    kind: Optional[str] = "project"     # 'project' | 'campaign'
+    priority: Optional[str] = None
+    next_action: Optional[str] = None
+    due: Optional[str] = None
+
+
+@app.post("/api/projects")
+def create_project(p: ProjectIn, request: Request):
+    _require_admin(request)
+    if not (p.name or "").strip():
+        raise HTTPException(422, "Name is required.")
+    pid = db.execute(
+        "INSERT INTO projects(name,business,owner,status,state,badge,kind,priority,next_action,due) "
+        "VALUES(?,?,?,?,?,?,?,?,?,?)",
+        (p.name.strip(), p.business, p.owner, p.status or "active", p.state, p.badge,
+         p.kind or "project", p.priority, p.next_action, p.due),
+    )
+    return {"ok": True, "id": pid}
+
+
+@app.put("/api/projects/{pid}")
+def update_project(pid: int, p: ProjectIn, request: Request):
+    _require_admin(request)
+    if not db.query("SELECT 1 FROM projects WHERE id=?", (pid,)):
+        raise HTTPException(404, "Project not found.")
+    db.execute(
+        "UPDATE projects SET name=?,business=?,owner=?,status=?,state=?,badge=?,kind=?,priority=?,next_action=?,due=? WHERE id=?",
+        (p.name.strip(), p.business, p.owner, p.status, p.state, p.badge, p.kind, p.priority, p.next_action, p.due, pid),
+    )
+    return {"ok": True}
+
+
+@app.delete("/api/projects/{pid}")
+def delete_project(pid: int, request: Request):
+    _require_admin(request)
+    db.execute("DELETE FROM projects WHERE id=?", (pid,))
+    return {"ok": True}
+
+
+class StaffIn(BaseModel):
+    name: str
+    role: Optional[str] = None
+    focus: Optional[str] = None
+    status: Optional[str] = "active"
+    email: Optional[str] = None
+
+
+@app.post("/api/staff")
+def create_staff(s: StaffIn, request: Request):
+    _require_admin(request)
+    if not (s.name or "").strip():
+        raise HTTPException(422, "Name is required.")
+    sid = db.execute(
+        "INSERT INTO staff(name,role,focus,status,email) VALUES(?,?,?,?,?)",
+        (s.name.strip(), s.role, s.focus, s.status or "active", (s.email or "").strip().lower() or None),
+    )
+    return {"ok": True, "id": sid}
+
+
+@app.put("/api/staff/{sid}")
+def update_staff(sid: int, s: StaffIn, request: Request):
+    _require_admin(request)
+    if not db.query("SELECT 1 FROM staff WHERE id=?", (sid,)):
+        raise HTTPException(404, "Staff member not found.")
+    db.execute(
+        "UPDATE staff SET name=?,role=?,focus=?,status=?,email=? WHERE id=?",
+        (s.name.strip(), s.role, s.focus, s.status, (s.email or "").strip().lower() or None, sid),
+    )
+    return {"ok": True}
+
+
+@app.delete("/api/staff/{sid}")
+def delete_staff(sid: int, request: Request):
+    _require_admin(request)
+    db.execute("DELETE FROM staff WHERE id=?", (sid,))
+    return {"ok": True}
+
+
+class ClientIn(BaseModel):
+    name: str
+    business: Optional[str] = None
+    retainer_amount: Optional[float] = None
+    cadence: Optional[str] = "monthly"
+    status: Optional[str] = "active"
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@app.post("/api/clients")
+def create_client(c: ClientIn, request: Request):
+    _require_admin(request)
+    if not (c.name or "").strip():
+        raise HTTPException(422, "Name is required.")
+    cid = db.execute(
+        "INSERT INTO clients(name,business,retainer_amount,cadence,status,contact_name,contact_email,notes) "
+        "VALUES(?,?,?,?,?,?,?,?)",
+        (c.name.strip(), c.business, c.retainer_amount, c.cadence or "monthly", c.status or "active",
+         c.contact_name, c.contact_email, c.notes),
+    )
+    return {"ok": True, "id": cid}
+
+
+@app.put("/api/clients/{cid}")
+def update_client(cid: int, c: ClientIn, request: Request):
+    _require_admin(request)
+    if not db.query("SELECT 1 FROM clients WHERE id=?", (cid,)):
+        raise HTTPException(404, "Client not found.")
+    db.execute(
+        "UPDATE clients SET name=?,business=?,retainer_amount=?,cadence=?,status=?,contact_name=?,contact_email=?,notes=? WHERE id=?",
+        (c.name.strip(), c.business, c.retainer_amount, c.cadence, c.status, c.contact_name, c.contact_email, c.notes, cid),
+    )
+    return {"ok": True}
+
+
+@app.delete("/api/clients/{cid}")
+def delete_client(cid: int, request: Request):
+    _require_admin(request)
+    db.execute("DELETE FROM clients WHERE id=?", (cid,))
+    return {"ok": True}
+
+
+class RecurringIn(BaseModel):
+    name: str
+    business: Optional[str] = None
+    client_id: Optional[int] = None
+    client_name: Optional[str] = None
+    category: Optional[str] = None
+    priority: Optional[str] = "Medium"
+    estimate_min: Optional[int] = None
+    assignee: Optional[str] = None
+    day_of_month: Optional[int] = 1
+    active: Optional[int] = 1
+
+
+@app.post("/api/recurring")
+def create_recurring(r: RecurringIn, request: Request):
+    _require_admin(request)
+    if not (r.name or "").strip():
+        raise HTTPException(422, "Name is required.")
+    rid = db.execute(
+        "INSERT INTO recurring_tasks(name,business,client_id,client_name,category,priority,estimate_min,assignee,day_of_month,active) "
+        "VALUES(?,?,?,?,?,?,?,?,?,?)",
+        (r.name.strip(), r.business, r.client_id, r.client_name, r.category, r.priority or "Medium",
+         r.estimate_min, (r.assignee or "").strip().lower() or None, r.day_of_month or 1, 1 if r.active else 0),
+    )
+    return {"ok": True, "id": rid}
+
+
+@app.put("/api/recurring/{rid}")
+def update_recurring(rid: int, r: RecurringIn, request: Request):
+    _require_admin(request)
+    if not db.query("SELECT 1 FROM recurring_tasks WHERE id=?", (rid,)):
+        raise HTTPException(404, "Recurring task not found.")
+    db.execute(
+        "UPDATE recurring_tasks SET name=?,business=?,client_id=?,client_name=?,category=?,priority=?,estimate_min=?,assignee=?,day_of_month=?,active=? WHERE id=?",
+        (r.name.strip(), r.business, r.client_id, r.client_name, r.category, r.priority, r.estimate_min,
+         (r.assignee or "").strip().lower() or None, r.day_of_month or 1, 1 if r.active else 0, rid),
+    )
+    return {"ok": True}
+
+
+@app.delete("/api/recurring/{rid}")
+def delete_recurring(rid: int, request: Request):
+    _require_admin(request)
+    db.execute("DELETE FROM recurring_tasks WHERE id=?", (rid,))
+    return {"ok": True}
+
+
+@app.post("/api/recurring/generate")
+def recurring_generate(request: Request):
+    _require_admin(request)
+    created = catalog.generate_recurring()
+    if created:
+        _sync_tasks_to_repo()
+    return {"ok": True, "created": created}
+
+
+# ================= Sidebar pins (per-user, max 5) =================
+MAX_PINS = 5
+
+
+class PinIn(BaseModel):
+    kind: str    # business | project | client | campaign
+    ref: str     # the item's name
+
+
+@app.get("/api/pins")
+def get_pins(request: Request):
+    email = (auth.current_user(request) or "").strip().lower()
+    return db.query("SELECT kind, ref FROM user_pins WHERE email=? ORDER BY created_at", (email,))
+
+
+@app.post("/api/pins")
+def toggle_pin(body: PinIn, request: Request):
+    email = (auth.current_user(request) or "").strip().lower()
+    kind = (body.kind or "").strip().lower()
+    ref = (body.ref or "").strip()
+    if kind not in ("business", "project", "client", "campaign") or not ref:
+        raise HTTPException(422, "kind must be business/project/client/campaign and ref is required.")
+    existing = db.query("SELECT 1 FROM user_pins WHERE email=? AND kind=? AND ref=?", (email, kind, ref))
+    if existing:
+        db.execute("DELETE FROM user_pins WHERE email=? AND kind=? AND ref=?", (email, kind, ref))
+        return {"ok": True, "pinned": False}
+    count = db.query("SELECT COUNT(*) c FROM user_pins WHERE email=?", (email,))[0]["c"]
+    if count >= MAX_PINS:
+        raise HTTPException(409, f"You can pin up to {MAX_PINS} items. Unpin one first.")
+    db.execute("INSERT OR IGNORE INTO user_pins(email,kind,ref) VALUES(?,?,?)", (email, kind, ref))
+    return {"ok": True, "pinned": True}
+
+
+# ================= Feedback (bugs / suggestions) via email =================
+FEEDBACK_TO = os.environ.get("SB_FEEDBACK_TO", "").strip() or (sorted(SUPER_ADMINS)[0] if SUPER_ADMINS else "")
+
+
+class FeedbackIn(BaseModel):
+    kind: str = "bug"     # bug | suggestion
+    message: str
+    page: Optional[str] = None
+
+
+@app.post("/api/feedback")
+def submit_feedback(body: FeedbackIn, request: Request):
+    email = auth.current_user(request) or "unknown"
+    msg = (body.message or "").strip()
+    if len(msg) < 3:
+        raise HTTPException(422, "Please add a bit more detail.")
+    kind = "Suggestion" if (body.kind or "").lower().startswith("sugg") else "Bug"
+    if not FEEDBACK_TO:
+        raise HTTPException(503, "Feedback email is not configured.")
+    subject = f"[Single Brain] {kind} from {email}"
+    text = f"{kind} report\nFrom: {email}\nPage: {body.page or '-'}\n\n{msg}"
+    try:
+        sent = auth.send_email(FEEDBACK_TO, subject, text)
+    except Exception as e:
+        raise HTTPException(502, f"Could not send feedback: {e}")
+    return {"ok": True, "sent": bool(sent)}

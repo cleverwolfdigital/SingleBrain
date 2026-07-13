@@ -19,21 +19,30 @@ here** — they live only in the VPS `.env` and `data/` (both gitignored). The G
 ## Layout
 ```
 app/
-  api.py        FastAPI routes: state, tasks, timers, reports, chat
-  auth.py       Magic Link + TOTP 2FA gate
+  api.py        FastAPI routes: state, tasks, timers, reports, chat, catalog CRUD,
+                RBAC/admin, clients, recurring, pins, feedback, sync
+  auth.py       Magic Link + TOTP 2FA gate (+ guest allowlist, remember-device 90d)
   db.py         thin SQLite layer + additive migrations
   schema.sql    data model
+  catalog.py    DB-backed businesses/projects/staff seed + recurring-task engine
   repo.py       git Pull -> Work -> Push against the brain repo
   journal.py    morning/EOD journal -> SQLite + markdown -> push
   seed.py       first-run seed
   config.py     env-driven paths + settings
 frontend/index.html   the entire dashboard UI (HTML/CSS/JS, no build step)
+scripts/cron_sync.sh  scheduled sync: generate recurring tasks + git pull/push
+systemd/              unit files: singlebrain-api.service, singlebrain-sync.{service,timer}
 requirements.txt
 run.sh                legacy Streamlit launcher (NOT the production entrypoint)
 dashboard.py          legacy Streamlit prototype (kept for history)
-singlebrain-api.service   systemd unit (production entrypoint)
 .env.example          required env vars (names only — no secrets)
 ```
+
+## Scheduled sync
+`singlebrain-sync.timer` runs `scripts/cron_sync.sh` at 08:00 and 18:00 Hawaii time:
+it generates the current month's recurring tasks and pushes the task state to GitHub.
+Install: copy `systemd/*` to `/etc/systemd/system/`, then
+`systemctl daemon-reload && systemctl enable --now singlebrain-sync.timer`.
 
 ## Deploy a change to production
 Files are copied to the VPS; the frontend is read fresh on each request, the

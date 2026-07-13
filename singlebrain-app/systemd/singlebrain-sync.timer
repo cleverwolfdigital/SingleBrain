@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Single Brain sync at 8am and 6pm Hawaii time
+
+[Timer]
+OnCalendar=*-*-* 08:00:00 Pacific/Honolulu
+OnCalendar=*-*-* 18:00:00 Pacific/Honolulu
+Persistent=true
+
+[Install]
+WantedBy=timers.target

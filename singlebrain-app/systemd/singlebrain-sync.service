@@ -1,0 +1,9 @@
+[Unit]
+Description=Single Brain scheduled sync (recurring tasks + git push)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/singlebrain-app
+ExecStart=/root/singlebrain-app/scripts/cron_sync.sh

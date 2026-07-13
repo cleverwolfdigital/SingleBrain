@@ -7,6 +7,7 @@ configured, the magic link is logged to stdout so the flow stays testable.
 import io
 import os
 import re
+import time
 import smtplib
 from email.message import EmailMessage
 
@@ -31,9 +32,10 @@ SMTP_USER = os.environ.get("SB_SMTP_USER", "")
 SMTP_PASS = os.environ.get("SB_SMTP_PASS", "")
 MAIL_FROM = os.environ.get("SB_MAIL_FROM", "Single Brain <noreply@cleverwolfdigital.com>")
 
-MAGIC_MAX_AGE = 900              # 15 minutes
-SESSION_MAX_AGE = 60 * 60 * 12   # 12 hours
-PENDING_MAX_AGE = 600            # 10 minutes to complete 2FA
+MAGIC_MAX_AGE = 900                     # 15 minutes
+SESSION_MAX_AGE = 60 * 60 * 12          # 12 hours (default session)
+REMEMBER_MAX_AGE = 60 * 60 * 24 * 90    # 90 days ("remember this device")
+PENDING_MAX_AGE = 600                   # 10 minutes to complete 2FA
 COOKIE_SESSION = "sb_session"
 COOKIE_PENDING = "sb_pending"
 SECURE_COOKIES = BASE_URL.startswith("https")
@@ -43,6 +45,44 @@ _pending = URLSafeTimedSerializer(SECRET_KEY, salt="sb-pending")
 _session = URLSafeTimedSerializer(SECRET_KEY, salt="sb-session")
 
 router = APIRouter()
+
+# App-store links for authenticator apps, shown on first-time 2FA enrollment.
+# Plain string (not an f-string) so the inline <script> braces are safe. A tiny
+# script hides the non-matching store on iOS/Android; desktop shows both.
+AUTHENTICATOR_APPS_HTML = """
+<div style="margin:14px 0 8px">
+  <p class="muted" style="margin:0 0 8px">Need an app? Get one free on your phone:</p>
+  <div id="authApps" style="display:grid;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#0a1622;border:1px solid #26414f;border-radius:9px;padding:9px 12px">
+      <span style="font-size:13px">Google Authenticator</span>
+      <span style="display:flex;gap:10px">
+        <a data-store="ios" href="https://apps.apple.com/app/google-authenticator/id388497605" style="color:#d0a853;font-size:12px;text-decoration:none">iOS</a>
+        <a data-store="android" href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" style="color:#d0a853;font-size:12px;text-decoration:none">Android</a>
+      </span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#0a1622;border:1px solid #26414f;border-radius:9px;padding:9px 12px">
+      <span style="font-size:13px">Microsoft Authenticator</span>
+      <span style="display:flex;gap:10px">
+        <a data-store="ios" href="https://apps.apple.com/app/microsoft-authenticator/id983156458" style="color:#d0a853;font-size:12px;text-decoration:none">iOS</a>
+        <a data-store="android" href="https://play.google.com/store/apps/details?id=com.azure.authenticator" style="color:#d0a853;font-size:12px;text-decoration:none">Android</a>
+      </span>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var ua = navigator.userAgent || "";
+  var ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var android = /Android/.test(ua);
+  if (ios || android) {
+    var keep = ios ? "ios" : "android";
+    document.querySelectorAll("#authApps a[data-store]").forEach(function(a){
+      if (a.getAttribute("data-store") !== keep) a.style.display = "none";
+    });
+  }
+})();
+</script>
+"""
 
 # public paths that skip the auth gate
 PUBLIC_PREFIXES = ("/login", "/auth/", "/logout", "/static", "/api/health", "/favicon")
@@ -65,8 +105,22 @@ def _norm_email(email):
     return (email or "").strip().lower()
 
 
+def _valid_email(email):
+    return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email or ""))
+
+
 def allowed(email):
-    return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email)) and email.endswith("@" + ALLOWED_DOMAIN)
+    """Domain accounts are always allowed. Guests (any domain) are allowed only if a
+    super admin has explicitly provisioned them in app_users."""
+    email = (email or "").strip().lower()
+    if not _valid_email(email):
+        return False
+    if email.endswith("@" + ALLOWED_DOMAIN):
+        return True
+    try:
+        return bool(db.query("SELECT 1 FROM app_users WHERE lower(email)=? LIMIT 1", (email,)))
+    except Exception:
+        return False
 
 
 def _get_user(email):
@@ -90,15 +144,39 @@ def current_user(request):
     if not tok:
         return None
     try:
-        data = _session.loads(tok, max_age=SESSION_MAX_AGE)
-        return data.get("email")
+        data, ts = _session.loads(tok, max_age=REMEMBER_MAX_AGE, return_timestamp=True)
     except (BadSignature, SignatureExpired):
         return None
+    ttl = int(data.get("ttl") or SESSION_MAX_AGE)
+    if time.time() - ts.timestamp() > ttl:
+        return None
+    return data.get("email")
 
 
 def _set_cookie(resp, name, value, max_age):
     resp.set_cookie(name, value, max_age=max_age, httponly=True,
                     secure=SECURE_COOKIES, samesite="lax", path="/")
+
+
+def send_email(to, subject, text, html=None):
+    """Generic transactional send over the same SMTP transport as magic links
+    (Resend/Mailjet/Gmail). Returns True if sent, False if SMTP isn't configured."""
+    if not (SMTP_HOST and SMTP_USER and SMTP_PASS):
+        print(f"[mail] SMTP not configured -- would send to {to}: {subject}", flush=True)
+        return False
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = MAIL_FROM
+    msg["To"] = to
+    msg.set_content(text)
+    if html:
+        msg.add_alternative(html, subtype="html")
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as s:
+        s.ehlo()
+        s.starttls()
+        s.login(SMTP_USER, SMTP_PASS)
+        s.send_message(msg)
+    return True
 
 
 def send_magic_email(email, link):
@@ -237,7 +315,8 @@ def _twofa_page(email, enrolling, secret=None, err=""):
         uri = pyotp.totp.TOTP(secret).provisioning_uri(name=email, issuer_name=ISSUER)
         img = qrcode.make(uri, image_factory=qrcode.image.svg.SvgPathImage)
         buf = io.BytesIO(); img.save(buf); svg = buf.getvalue().decode()
-        intro = f"""<p class="lead">First time here. Scan this with Google Authenticator, Microsoft Authenticator, or Authy, then enter the 6-digit code.</p>
+        intro = f"""<p class="lead">First time here. Get an authenticator app below, scan this code, then enter the 6-digit code.</p>
+{AUTHENTICATOR_APPS_HTML}
 <div class="qr">{svg}</div>
 <p class="muted">Can't scan? Enter this key manually:</p><code class="key">{secret}</code>"""
     else:
@@ -248,6 +327,7 @@ def _twofa_page(email, enrolling, secret=None, err=""):
 <form method="post" action="/auth/2fa">
   <label>6-digit code</label>
   <input name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" required autofocus autocomplete="one-time-code">
+  <label style="display:flex;align-items:center;gap:9px;margin-top:14px;font-size:13px;color:#c9d6e2;cursor:pointer"><input type="checkbox" name="remember" value="1" checked style="width:auto;margin:0;accent-color:#d0a853"> Remember this device for 90 days</label>
   <button class="btn" type="submit">Verify &amp; enter</button>
 </form>{err_html}
 <div class="muted">Signed in as {email}. <a href="/logout" style="color:#9fb2c2">Cancel</a></div>""")
@@ -264,7 +344,7 @@ def twofa_page(request: Request):
 
 
 @router.post("/auth/2fa", response_class=HTMLResponse)
-def twofa_verify(request: Request, code: str = Form(...)):
+def twofa_verify(request: Request, code: str = Form(...), remember: str = Form("")):
     email = _pending_email(request)
     if not email:
         return RedirectResponse("/login", status_code=302)
@@ -277,8 +357,9 @@ def twofa_verify(request: Request, code: str = Form(...)):
                             err="Incorrect code. Try the current code from your app."), status_code=401)
     if enrolling:
         db.execute("UPDATE auth_users SET enrolled=1 WHERE email=?", (email,))
+    ttl = REMEMBER_MAX_AGE if remember else SESSION_MAX_AGE
     resp = RedirectResponse("/", status_code=302)
-    _set_cookie(resp, COOKIE_SESSION, _session.dumps({"email": email}), SESSION_MAX_AGE)
+    _set_cookie(resp, COOKIE_SESSION, _session.dumps({"email": email, "ttl": ttl}), ttl)
     resp.delete_cookie(COOKIE_PENDING, path="/")
     return resp
 
