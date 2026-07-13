@@ -79,9 +79,26 @@ Active building energy is focused on these **5 things**:
 
 ## Staff
 
-| Name            | Background & Responsibilities                                                                 | Current Support Work                  | Status |
-|-----------------|---------------------------------------------------------------------------------------------------|---------------------------------------|--------|
-| **Jay Goodearl**| Former roles: Catholic Charities (Housing Relief), YMCA (Academic Tutor), KTUH (Operations Director – audio production, PSAs, executive leadership). Currently runs YouTube gaming channel "Good Games dude" and previously worked at Star Wars News Net. | Editing, social media planning, content creation for HomeAid Hawaii, Lifeline, and Tory's Roofing | Active |
+| Name            | Email                              | Role                              | Status     |
+|-----------------|------------------------------------|-----------------------------------|------------|
+| **Quincy Solano** | quincy@cleverwolfdigital.com     | Owner / Decision Maker            | Active     |
+| **Jeremy Lum**    | jeremy@cleverwolfdigital.com     | Sr. Digital Marketing Manager     | Active     |
+| **Jordan**        | jordan@cleverwolfdigital.com     | Email Systems                     | Active     |
+| **Nicole**        | nicole@cleverwolfdigital.com     | Team Member                       | Unassigned |
+| **Kari**          | kari@cleverwolfdigital.com       | Team Member                       | Unassigned |
+| **Delmore**       | delmore@cleverwolfdigital.com    | Team Member                       | Unassigned |
+| **Jay**           | jay@cleverwolfdigital.com        | Team Member                       | Unassigned |
+| **Madison**       | madison@cleverwolfdigital.com    | Team Member                       | Unassigned |
+| **Gio**           | gio@cleverwolfdigital.com        | Team Member                       | Unassigned |
+| **Tyler**         | tyler@cleverwolfdigital.com      | Team Member                       | Unassigned |
+
+---
+
+## Single Brain Dashboard
+
+**Live URL:** [brain.cleverwolfdigital.com](https://brain.cleverwolfdigital.com)
+
+**Access Policy:** Only users with an `@cleverwolfdigital.com` email address are allowed to log in.
 
 ---
 
@@ -127,7 +144,7 @@ Active building energy is focused on these **5 things**:
 ## Where Things Live
 
 - **Single Source of Truth**: GitHub repo (`SingleBrain`)
-- **Primary Interface**: Web Dashboard — **LIVE** at https://single-brain.pages.dev (protected by Cloudflare Access · GitHub login + 2FA · access limited to quincy@cleverwolfdigital.com)
+- **Primary Interface**: Web Dashboard (`brain.cleverwolfdigital.com`)
 - **Backup**: Obsidian (Google Drive)
 - **Daily Work**: Hermes + Claude Code
 - **Deep Work**: Claude Chat Projects
