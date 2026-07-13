@@ -662,6 +662,7 @@
     <nav class="nav">
       <button class="nav-button" data-view="journal"><i data-lucide="notebook-pen" class="icon"></i>Daily Journal</button>
       <button class="nav-button" data-view="chat"><i data-lucide="message-square-text" class="icon"></i>CWD Brain Chat</button>
+      <button class="nav-button" data-view="google"><i data-lucide="calendar-check" class="icon"></i>Google</button>
       <button class="nav-button" data-view="tutorial"><i data-lucide="graduation-cap" class="icon"></i>Tutorial</button>
       <button class="nav-button" id="feedbackNav" data-view="feedback"><i data-lucide="message-square-warning" class="icon"></i>Feedback</button>
       <button class="nav-button hidden" id="adminNav" data-view="admin"><i data-lucide="shield-check" class="icon"></i>Super Admin</button>
@@ -930,6 +931,11 @@
     <section class="view" id="feedback">
       <div class="view-header"><div><div class="eyebrow">Help Desk</div><h1>Feedback</h1><p id="feedbackLead">Report bugs and suggestions, and track their status.</p></div><button class="button" id="openFeedbackBtn"><i data-lucide="plus" class="icon-sm"></i>New feedback</button></div>
       <div id="feedbackList"></div>
+    </section>
+
+    <section class="view" id="google">
+      <div class="view-header"><div><div class="eyebrow">Integration</div><h1>Google Drive &amp; Calendar</h1><p>Connect your Google account to see your upcoming events and recent files — read-only.</p></div><button class="button secondary hidden" id="googleDisconnect"><i data-lucide="log-out" class="icon-sm"></i>Disconnect</button></div>
+      <div id="googleBody"></div>
     </section>
   </main>
 
@@ -2202,6 +2208,44 @@
       else if (!$("#userModal").classList.contains("hidden")) closeUserModal();
     });
 
+    // ---------- Google Drive + Calendar ----------
+    function fmtGoogleDate(iso, allDay) {
+      if (!iso) return "";
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString("en-US", allDay ? { month: "short", day: "numeric", year: "numeric" } : { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      } catch (e) { return iso; }
+    }
+    async function renderGoogle() {
+      const body = $("#googleBody");
+      if (!body) return;
+      body.innerHTML = '<div class="task-empty">Loading…</div>';
+      let st = { configured: false, connected: false };
+      try { const r = await fetch("/api/google/status", { credentials: "same-origin" }); if (r.ok) st = await r.json(); } catch (e) {}
+      $("#googleDisconnect").classList.toggle("hidden", !st.connected);
+      if (!st.configured) { body.innerHTML = '<div class="task-empty">Google isn\'t fully set up yet — an admin needs to add the Google client secret on the server.</div>'; return; }
+      if (!st.connected) {
+        body.innerHTML = '<article class="card" style="padding:26px;text-align:center"><p style="color:var(--muted);margin:0 0 16px;line-height:1.6">Connect your Google account to see your Calendar and Drive here.<br>Read-only — nothing is ever edited or deleted.</p><a class="button" href="/auth/google/start"><i data-lucide="link" class="icon-sm"></i>Connect Google</a></article>';
+        renderIcons();
+        return;
+      }
+      body.innerHTML = '<div class="grid dashboard-grid"><div class="stack"><article class="card"><div class="panel-header"><h2>Upcoming events</h2><span>Calendar</span></div><div class="panel-body" id="gCal"><div class="task-empty" style="margin:0">Loading…</div></div></article></div><div class="stack"><article class="card"><div class="panel-header"><h2>Recent files</h2><span>Drive</span></div><div class="panel-body" id="gDrive"><div class="task-empty" style="margin:0">Loading…</div></div></article></div></div>';
+      try {
+        const r = await fetch("/api/google/calendar", { credentials: "same-origin" });
+        const ev = r.ok ? await r.json() : [];
+        $("#gCal").innerHTML = ev.length ? ev.map(e => `<div class="risk-row" style="grid-template-columns:1fr;padding:9px 0"><div><strong>${escapeHTML(e.summary)}</strong><p>${escapeHTML(fmtGoogleDate(e.start, e.all_day))}</p></div></div>`).join("") : '<div class="task-empty" style="margin:0">No upcoming events.</div>';
+      } catch (e) { $("#gCal").innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t load calendar.</div>'; }
+      try {
+        const r = await fetch("/api/google/drive", { credentials: "same-origin" });
+        const files = r.ok ? await r.json() : [];
+        $("#gDrive").innerHTML = files.length ? files.map(f => `<div class="risk-row" style="grid-template-columns:1fr;padding:9px 0"><div><strong><a href="${escapeHTML(f.link)}" target="_blank" rel="noopener" style="color:var(--text)">${escapeHTML(f.name)}</a></strong><p>Modified ${escapeHTML(fmtGoogleDate(f.modified))}</p></div></div>`).join("") : '<div class="task-empty" style="margin:0">No files.</div>';
+      } catch (e) { $("#gDrive").innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t load Drive.</div>'; }
+      renderIcons();
+    }
+    $("#googleDisconnect").addEventListener("click", async () => {
+      try { const r = await fetch("/api/google/disconnect", { method: "POST", credentials: "same-origin" }); if (r.ok) { showToast("Google disconnected"); renderGoogle(); } } catch (e) { showToast("Couldn't reach the server."); }
+    });
+
     function showView(id) {
       $$(".view").forEach(view => view.classList.toggle("active", view.id === id));
       $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === id));
@@ -2209,6 +2253,7 @@
       if (id === "admin") loadAdminUsers().then(renderAdmin);
       if (id === "feedback") renderFeedback();
       if (id === "mytasks") renderMyTasks();
+      if (id === "google") renderGoogle();
       $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
       $("#sidebar").classList.remove("open");
       $("#mobileOverlay").classList.add("hidden");
@@ -2579,6 +2624,13 @@
 
     const initialView = location.hash.slice(1);
     if (initialView && document.getElementById(initialView)) showView(initialView);
+    const gp = new URLSearchParams(location.search).get("google");
+    if (gp) {
+      if (gp === "connected") { showToast("Google connected ✓"); setTimeout(() => showView("google"), 300); }
+      else if (gp === "denied") showToast("Google connection was cancelled.");
+      else showToast("Google connection failed — please try again.");
+      history.replaceState(null, "", location.pathname + location.hash);
+    }
     renderIcons();
   </script>
 

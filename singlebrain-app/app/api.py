@@ -20,7 +20,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from . import db, seed, auth, repo, config, catalog
+from . import db, seed, auth, repo, config, catalog, google_int
 
 app = FastAPI(title="Single Brain API")
 app.include_router(auth.router)
@@ -113,6 +113,7 @@ def _startup():
     catalog.seed_catalog()
     catalog.generate_recurring()
     auth.init_auth_db()
+    google_int.init_db()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -738,6 +739,70 @@ def add_client_note(n: ClientNoteIn, request: Request):
 def delete_client_note(nid: int, request: Request):
     _require_admin(request)
     db.execute("DELETE FROM client_notes WHERE id=?", (nid,))
+    return {"ok": True}
+
+
+# ================= Google Drive + Calendar (per-user OAuth) =================
+@app.get("/auth/google/start")
+def google_start(request: Request):
+    email = auth.current_user(request)
+    if not email:
+        return RedirectResponse("/login", status_code=302)
+    if not google_int.configured():
+        raise HTTPException(503, "Google integration is not configured yet.")
+    state = auth._session.dumps({"email": email, "g": 1})
+    return RedirectResponse(google_int.auth_url(state), status_code=302)
+
+
+@app.get("/auth/google/callback")
+def google_callback(request: Request, code: str = "", state: str = "", error: str = ""):
+    if error:
+        return RedirectResponse("/?google=denied", status_code=302)
+    try:
+        data = auth._session.loads(state, max_age=600)
+        email = data.get("email")
+    except Exception:
+        return RedirectResponse("/?google=error", status_code=302)
+    if not email or not code:
+        return RedirectResponse("/?google=error", status_code=302)
+    try:
+        tok = google_int.exchange_code(code)
+        google_int.save_tokens(email, tok)
+    except Exception:
+        return RedirectResponse("/?google=error", status_code=302)
+    return RedirectResponse("/?google=connected", status_code=302)
+
+
+@app.get("/api/google/status")
+def google_status(request: Request):
+    return google_int.status(auth.current_user(request))
+
+
+@app.get("/api/google/calendar")
+def google_calendar(request: Request):
+    try:
+        ev = google_int.calendar_events(auth.current_user(request))
+    except Exception as e:
+        raise HTTPException(502, f"Google Calendar error: {e}")
+    if ev is None:
+        raise HTTPException(400, "Google is not connected.")
+    return ev
+
+
+@app.get("/api/google/drive")
+def google_drive(request: Request):
+    try:
+        files = google_int.drive_files(auth.current_user(request))
+    except Exception as e:
+        raise HTTPException(502, f"Google Drive error: {e}")
+    if files is None:
+        raise HTTPException(400, "Google is not connected.")
+    return files
+
+
+@app.post("/api/google/disconnect")
+def google_disconnect(request: Request):
+    google_int.disconnect(auth.current_user(request))
     return {"ok": True}
 
 
