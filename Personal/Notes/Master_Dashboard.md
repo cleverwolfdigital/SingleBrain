@@ -1,6 +1,6 @@
 # Master Dashboard — Single Brain
 
-**Last Updated:** July 12, 2026  
+**Last Updated:** July 13, 2026  
 **Owner:** Quincy Solano
 
 This is the single source of truth for all businesses, projects, staff, and activity across the entire portfolio.
@@ -32,28 +32,30 @@ Active building energy is focused on these **5 things**:
 |-------------------------------|----------|----------------|--------------------|---------|-------------|
 | Clever Wolf Digital           | Active   | ~$30k          | Quincy             | Daily   | — |
 | CleverWolf.ai                 | Active   | —              | Quincy             | Daily   | Productize offer |
-| Titan Medical Transportation  | Active   | $10k           | Quincy + Peter (50/50) | Daily | — |
 | Kapwa Coffee Bar              | Active   | $7k            | —                  | Daily   | — |
 | Vending / HVAC                | Active   | $4–6k          | Quincy             | Daily   | — |
 
 ### Tier 2 — Growth Bets (Weekly Rotation)
 
-| Entity                    | Status    | Owner | Cadence | Next Action |
-|---------------------------|-----------|-------|---------|-------------|
-| Kapuna Meals              | Starting  | —     | Weekly  | — |
-| Opala Hoa                 | Starting  | —     | Weekly  | Validate unit economics |
-| Shaka's Food Truck        | Active    | —     | Weekly  | — |
-| Ghost Kitchen Hawaii      | Starting  | —     | Weekly  | — |
-| Island Laundromat Co.     | Diligence | —     | Weekly  | Evaluate investment |
+| Entity                        | Status    | Owner                  | Cadence | Next Action |
+|-------------------------------|-----------|------------------------|---------|-------------|
+| Titan Medical Transportation  | Active    | Quincy + Peter (50/50) | Weekly  | Ongoing operations (~$10k/mo) |
+| **Level Up Corporation** (parent) | Active | —                  | Weekly  | Podcast = funnel; Level Up Smarter = paid offer |
+| ↳ Level Up Self               | Active    | —                      | Weekly  | — |
+| ↳ Level Up Smarter            | Active    | —                      | Weekly  | Build paid offer |
+| ↳ Level Up Library            | Active    | —                      | Weekly  | — |
+| ↳ The Smarter Podcast         | Active    | —                      | Weekly  | Grow the funnel |
+| Kapuna Meals                  | Starting  | —                      | Weekly  | — |
+| Opala Hoa                     | Starting  | —                      | Weekly  | Validate unit economics |
+| Shaka's Food Truck            | Active    | —                      | Weekly  | — |
+| Ghost Kitchen Hawaii          | Starting  | —                      | Weekly  | — |
+| Island Laundromat Co.         | Diligence | —                      | Weekly  | Evaluate investment |
+| Kimchee #88                   | Planning  | —                      | Weekly  | Legal setup + brand development (launch Feb/Apr 2027) |
 
 ### Tier 3 — Media / Niche Sites (Systematized)
 
 | Entity                  | Status | Cadence       | Pipeline Built? |
 |-------------------------|--------|---------------|-----------------|
-| Level Up Self           | Active | Weekly review | ☐ |
-| Level Up Smarter        | Active | Weekly review | ☐ |
-| Level Up Library        | Active | Weekly review | ☐ |
-| The Smarter Podcast     | Active | Weekly review | ☐ |
 | The Ongoing Conversation| Active | Weekly review | ☐ |
 | Let's Try Hawaii        | Active | Weekly review | ☐ |
 | Pop808Hawaii            | Active | Weekly review | ☐ |
