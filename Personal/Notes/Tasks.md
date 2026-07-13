@@ -4,6 +4,7 @@ _Source of truth for dashboard tasks. Auto-generated from the Single Brain dashb
 
 | Task | Business | Category | Priority | Due | Status | Est | Tracked |
 |------|----------|----------|----------|-----|--------|-----|---------|
+| Flyer designs | Clever Wolf Digital | Marketing | High | 2026-07-13 | open | — | — |
 | ask Sandra if standing filming twice a month | Clever Wolf Digital | Staffing | High | 2026-07-13 | done | — | — |
 | ezytire tracking tag | Clever Wolf Digital | Marketing | High | 2026-07-14 | open | — | — |
 | DNS and Hosting Setup | Clever Wolf Digital | Operations | High | 2026-07-15 | open | — | — |
