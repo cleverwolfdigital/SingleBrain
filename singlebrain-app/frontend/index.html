@@ -2446,6 +2446,8 @@
           if (avatar) { avatar.textContent = initials; avatar.title = `${email}${ME.is_super_admin ? " · Super Admin" : ""}`; }
         }
         applyAccess();
+        const activeView = $(".view.active");
+        if (activeView) showView(activeView.id);   // re-render now that role/data are loaded
         let tourSeen = true;
         try { tourSeen = !!localStorage.getItem("sb-tour-seen"); } catch (e) {}
         if (!tourSeen) setTimeout(() => { if (typeof startTour === "function") startTour(); }, 1300);
@@ -2486,6 +2488,11 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "1.8", date: "Jul 13, 2026", items: [
+        "Google Drive & Calendar — connect your account to see upcoming events and recent files (read-only).",
+        "Clients: an updates log, multiple contacts, and a business filter.",
+        "Staff personal notes; hide or delete completed tasks.",
+      ] },
       { version: "1.7", date: "Jul 13, 2026", items: [
         "New “My Tasks” tab — everything assigned to you, with timers.",
         "Assign tasks to any teammate, and link tasks to a client.",
