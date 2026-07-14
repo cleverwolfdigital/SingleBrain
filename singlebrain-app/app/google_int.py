@@ -20,7 +20,7 @@ from . import db
 
 REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "https://brain.cleverwolfdigital.com/auth/google/callback")
 SCOPES = ("openid email "
-          "https://www.googleapis.com/auth/calendar.readonly "
+          "https://www.googleapis.com/auth/calendar "
           "https://www.googleapis.com/auth/drive")
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -274,11 +274,79 @@ def delete_drive_file(email, file_id):
 
 def status(email):
     email = (email or "").strip().lower()
-    rows = db.query("SELECT email, connected_at FROM google_tokens WHERE email=?", (email,))
+    rows = db.query("SELECT email, connected_at, scope FROM google_tokens WHERE email=?", (email,))
+    scopes = ((rows[0]["scope"] if rows else "") or "").split()
     return {
         "configured": configured(),
         "connected": bool(rows),
         "connected_at": rows[0]["connected_at"] if rows else None,
+        # Full calendar scope (read teammates' calendars + create events). Users who
+        # connected before this scope shipped will show False until they reconnect.
+        "calendar": "https://www.googleapis.com/auth/calendar" in scopes,
+        "drive": "https://www.googleapis.com/auth/drive" in scopes,
+    }
+
+
+def list_calendar_events(viewer_email, calendar_id, time_min, time_max, max_results=100):
+    """Read events from a specific calendar (a teammate's email) using the viewer's
+    token. Returns a list of events, or None if the viewer isn't connected. Raises
+    urllib.error.HTTPError (403/404) when the viewer lacks access to that calendar."""
+    token = get_access_token(viewer_email)
+    if not token:
+        return None
+    cid = urllib.parse.quote(calendar_id, safe="@.")
+    url = "https://www.googleapis.com/calendar/v3/calendars/" + cid + "/events?" + urllib.parse.urlencode({
+        "timeMin": time_min, "timeMax": time_max, "singleEvents": "true",
+        "orderBy": "startTime", "maxResults": max_results,
+    })
+    data = _api_get(url, token)
+    out = []
+    for e in data.get("items", []):
+        if e.get("status") == "cancelled":
+            continue
+        start = e.get("start", {})
+        end = e.get("end", {})
+        out.append({
+            "summary": e.get("summary") or "(busy)",
+            "start": start.get("dateTime") or start.get("date"),
+            "end": end.get("dateTime") or end.get("date"),
+            "all_day": "date" in start and "dateTime" not in start,
+            "location": e.get("location"),
+            "link": e.get("htmlLink"),
+            "organizer": (e.get("organizer") or {}).get("email"),
+        })
+    return out
+
+
+def create_event(viewer_email, summary, start_local, end_local, tz,
+                 attendees=None, description=None, location=None, send_updates=True):
+    """Create an event on the viewer's primary calendar and invite attendees.
+    start_local/end_local are naive local datetimes (YYYY-MM-DDTHH:MM:SS) interpreted
+    in `tz`. Returns the created event (id, link, start), or None if not connected."""
+    token = get_access_token(viewer_email)
+    if not token:
+        return None
+    tz = tz or "Pacific/Honolulu"
+    body = {
+        "summary": summary or "Meeting",
+        "start": {"dateTime": start_local, "timeZone": tz},
+        "end": {"dateTime": end_local, "timeZone": tz},
+    }
+    if description:
+        body["description"] = description
+    if location:
+        body["location"] = location
+    if attendees:
+        body["attendees"] = [{"email": a} for a in attendees if a]
+    url = "https://www.googleapis.com/calendar/v3/calendars/primary/events?" + urllib.parse.urlencode({
+        "sendUpdates": "all" if send_updates else "none",
+    })
+    data = _api_post(url, token, json.dumps(body).encode("utf-8"), "application/json")
+    return {
+        "id": data.get("id"),
+        "link": data.get("htmlLink"),
+        "summary": data.get("summary"),
+        "start": (data.get("start") or {}).get("dateTime"),
     }
 
 

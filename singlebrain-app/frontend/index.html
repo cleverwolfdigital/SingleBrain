@@ -411,6 +411,20 @@
     .drive-progress { flex-basis: 100%; color: var(--muted); font-size: 11px; }
     .attach-badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; color: var(--muted); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 20px; font: 600 10px var(--font-display); vertical-align: middle; }
     .attach-badge .icon-sm { width: 12px; height: 12px; }
+    .cal-toolbar { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; padding: 14px; margin-bottom: 14px; }
+    .cal-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .cal-range { display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; }
+    .cal-range button { padding: 7px 14px; background: transparent; color: var(--muted); border: 0; font: 600 12px var(--font-display); cursor: pointer; }
+    .cal-range button.active { background: var(--panel-hover); color: var(--text); }
+    .cal-nav { display: flex; align-items: center; gap: 6px; }
+    .cal-label { font: 600 14px var(--font-display); color: var(--text); margin: 0 2px 12px; }
+    .cal-day { margin-bottom: 16px; }
+    .cal-day-head { font: 600 11px var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+    .cal-event { display: flex; align-items: center; gap: 12px; padding: 9px 4px; border-bottom: 1px solid var(--line); }
+    .cal-time { flex: 0 0 128px; color: var(--muted); font-size: 12px; }
+    .cal-ev-body { flex: 1; min-width: 0; }
+    .cal-ev-body strong { display: block; font-size: 13px; }
+    .cal-ev-body small { color: var(--faint); font-size: 11px; }
     .team-grid { grid-template-columns: repeat(4, 1fr); }
     .person-card { min-height: 184px; padding: 16px; text-align: center; }
     .person-card .avatar { width: 46px; height: 46px; margin: 0 auto 9px; font-size: 13px; }
@@ -688,6 +702,7 @@
       <button class="nav-button" data-view="blockers"><i data-lucide="triangle-alert" class="icon"></i>Blockers<span class="nav-badge">3</span></button>
       <button class="nav-button" data-view="recommendations"><i data-lucide="route" class="icon"></i>Recommendations</button>
       <button class="nav-button" data-view="rotation"><i data-lucide="calendar-clock" class="icon"></i>Daily Rotation</button>
+      <button class="nav-button" data-view="schedule"><i data-lucide="calendar-days" class="icon"></i>Team Calendar</button>
       <button class="nav-button" data-view="reports"><i data-lucide="bar-chart-3" class="icon"></i>Productivity</button>
     </nav>
     <div class="nav-label" style="margin-top:15px">Intelligence</div>
@@ -915,13 +930,14 @@
         <article class="card tut-card"><div class="tut-num">14</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
         <article class="card tut-card"><div class="tut-num">15</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
         <article class="card tut-card"><div class="tut-num">16</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. Each file has two removal options: the <b>✕</b> takes it off this item but keeps it in Drive, and <b>🗑 Delete from Google Drive</b> moves the actual file to your Drive trash. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
+        <article class="card tut-card"><div class="tut-num">17</div><h3>Team Calendar &amp; scheduling</h3><p>Open <b>Team Calendar</b> (sidebar) to see a teammate's calendar — pick them from the dropdown and switch between <b>Day</b> and <b>Week</b>. The first time, click <b>Reconnect Google</b> (we added calendar access). To see someone's events, they share their Google Calendar with you first (Google Calendar → Settings → Share with specific people → "See all event details"). Click <b>New meeting</b> to create a Google Calendar event and email invites to teammates and clients you add.</p></article>
       </div>
 
       <div class="tut-section" data-admin-only>Team &amp; admin</div>
       <div class="grid tutorial-grid" data-admin-only>
-        <article class="card tut-card"><div class="tut-num">17</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
-        <article class="card tut-card"><div class="tut-num">18</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table lets you set who owns each open task. Assignees always see their tasks, even without full business access. You can promote up to <b>2</b> people to Super Admin.</p></article>
-        <article class="card tut-card"><div class="tut-num">19</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
+        <article class="card tut-card"><div class="tut-num">18</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
+        <article class="card tut-card"><div class="tut-num">19</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table lets you set who owns each open task. Assignees always see their tasks, even without full business access. You can promote up to <b>2</b> people to Super Admin.</p></article>
+        <article class="card tut-card"><div class="tut-num">20</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
       </div>
     </section>
 
@@ -974,7 +990,36 @@
       <div id="feedbackList"></div>
     </section>
 
+    <section class="view" id="schedule">
+      <div class="view-header">
+        <div><div class="eyebrow">Team</div><h1>Team Calendar &amp; Scheduling</h1><p>See a teammate's calendar and set up a meeting or client call.</p></div>
+        <button class="button hidden" id="newMeetingBtn"><i data-lucide="calendar-plus" class="icon-sm"></i>New meeting</button>
+      </div>
+      <div id="scheduleBody"><div class="task-empty">Loading…</div></div>
+    </section>
   </main>
+
+  <div class="modal-overlay hidden" id="meetingModal" role="dialog" aria-modal="true" aria-labelledby="meetingTitle" aria-hidden="true">
+    <section class="task-modal">
+      <header class="modal-header">
+        <div><div class="eyebrow">Team Calendar</div><h2 id="meetingTitle">New meeting</h2><p>Creates a Google Calendar event on your calendar and emails an invite to everyone you add.</p></div>
+        <button class="icon-button modal-close" type="button" data-close-meeting aria-label="Close" title="Close"><i data-lucide="x" class="icon"></i></button>
+      </header>
+      <div class="task-form">
+        <div class="field"><label for="mtgTitle">Title <span class="required-mark">*</span></label><input class="input" id="mtgTitle" type="text" placeholder="e.g. Client kickoff — Acme" autocomplete="off"></div>
+        <div class="task-form-grid">
+          <div class="field"><label for="mtgDate">Date <span class="required-mark">*</span></label><input class="input" id="mtgDate" type="date"></div>
+          <div class="field"><label for="mtgStart">Start <span class="required-mark">*</span></label><input class="input" id="mtgStart" type="time" value="10:00"></div>
+          <div class="field"><label for="mtgEnd">End <span class="required-mark">*</span></label><input class="input" id="mtgEnd" type="time" value="10:30"></div>
+        </div>
+        <div class="field"><label for="mtgGuests">Guests (comma-separated emails)</label><input class="input" id="mtgGuests" type="text" placeholder="teammate@cleverwolfdigital.com, client@company.com" autocomplete="off"></div>
+        <div class="field"><label for="mtgLocation">Location / link (optional)</label><input class="input" id="mtgLocation" type="text" placeholder="Zoom link, address, or Google Meet" autocomplete="off"></div>
+        <div class="field"><label for="mtgNotes">Notes (optional)</label><textarea class="textarea" id="mtgNotes" maxlength="2000" placeholder="Agenda or context for the invite"></textarea></div>
+        <span class="field-error" id="mtgError"></span>
+        <div class="modal-actions"><button class="button secondary" type="button" data-close-meeting>Cancel</button><button class="button" type="button" id="mtgSubmit"><i data-lucide="send" class="icon-sm"></i>Create &amp; send invites</button></div>
+      </div>
+    </section>
+  </div>
 
   <div class="modal-overlay hidden" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle" aria-hidden="true">
     <section class="task-modal">
@@ -2178,6 +2223,11 @@
     // Files modal (attachments on business/campaign/project/task)
     $$('[data-close-files]').forEach(b => b.addEventListener("click", closeFilesModal));
     $("#filesModal").addEventListener("click", e => { if (e.target === $("#filesModal")) closeFilesModal(); });
+    // Team Calendar: new meeting
+    $("#newMeetingBtn").addEventListener("click", () => openMeetingModal());
+    $$('[data-close-meeting]').forEach(b => b.addEventListener("click", () => hideModal("#meetingModal")));
+    $("#meetingModal").addEventListener("click", e => { if (e.target === $("#meetingModal")) hideModal("#meetingModal"); });
+    $("#mtgSubmit").addEventListener("click", submitMeeting);
     $("#detailFiles").addEventListener("click", () => { if (detailEntity && detailEntity.item) openFilesModal(detailEntity.type, detailEntity.item.id, detailEntity.item.name); });
     (function wireFilesModal() {
       const drop = $("#filesDrop"), picker = $("#filesFile");
@@ -2445,6 +2495,113 @@
       renderIcons();
     }
 
+    // ---------- Team Calendar & scheduling ----------
+    let calMember = "", calDays = 1, calAnchor = null;   // calAnchor = a Date
+    function calAnchorISO() {
+      const d = calAnchor || new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+    function fmtEventTime(e) {
+      if (e.all_day) return "All day";
+      const t = iso => { try { return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }); } catch (x) { return ""; } };
+      return `${t(e.start)}${e.end ? " – " + t(e.end) : ""}`;
+    }
+    async function renderSchedule() {
+      const host = $("#scheduleBody");
+      if (!host) return;
+      const st = await fetchGoogleStatus();
+      if (!st.connected || !st.calendar) {
+        $("#newMeetingBtn").classList.add("hidden");
+        host.innerHTML = st.configured
+          ? `<article class="card" style="padding:26px;text-align:center;max-width:560px"><p style="color:var(--muted);margin:0 0 16px;line-height:1.6">${st.connected ? "Reconnect Google to turn on team calendars and scheduling (we added calendar access)." : "Connect your Google account to see teammates' calendars and schedule meetings."}<br>A window opens to authorize, then closes automatically.</p><button class="button" id="schedConnect"><i data-lucide="link" class="icon-sm"></i>${st.connected ? "Reconnect Google" : "Connect Google"}</button></article>`
+          : '<div class="task-empty">Google isn\'t set up yet — ask an admin to finish the setup.</div>';
+        renderIcons();
+        const b = $("#schedConnect");
+        if (b) b.addEventListener("click", async () => { b.disabled = true; const ok = await connectDrivePopup(); await fetchGoogleStatus(true); if (googleStatus.connected && googleStatus.calendar) renderSchedule(); else { b.disabled = false; if (ok === false) showToast("Connection cancelled."); } });
+        return;
+      }
+      $("#newMeetingBtn").classList.remove("hidden");
+      const members = assignableUsers();
+      if (!calMember && members.length) calMember = members[0].email;
+      if (!calAnchor) calAnchor = new Date();
+      const opts = members.map(m => `<option value="${escapeHTML(m.email)}"${m.email === calMember ? " selected" : ""}>${escapeHTML(m.name)} (${escapeHTML(m.email)})</option>`).join("");
+      host.innerHTML = `<div class="cal-toolbar card"><div class="field" style="margin:0;flex:1;min-width:220px"><label for="calMember">Team member</label><select class="input" id="calMember">${opts || '<option value="">No teammates with emails yet</option>'}</select></div><div class="cal-controls"><div class="cal-range" role="group"><button type="button" data-range="1" class="${calDays === 1 ? "active" : ""}">Day</button><button type="button" data-range="7" class="${calDays === 7 ? "active" : ""}">Week</button></div><div class="cal-nav"><button class="icon-button" id="calPrev" title="Previous"><i data-lucide="chevron-left" class="icon-sm"></i></button><button class="button secondary" id="calToday">Today</button><button class="icon-button" id="calNext" title="Next"><i data-lucide="chevron-right" class="icon-sm"></i></button></div></div></div><div id="calLabel" class="cal-label"></div><div id="calEvents"><div class="task-empty">Loading…</div></div>`;
+      $("#calMember").addEventListener("change", e => { calMember = e.target.value; loadTeamCalendar(); });
+      $$('[data-range]').forEach(btn => btn.addEventListener("click", () => { calDays = parseInt(btn.dataset.range, 10) || 1; renderSchedule(); }));
+      $("#calPrev").addEventListener("click", () => { calAnchor.setDate(calAnchor.getDate() - calDays); loadTeamCalendar(); });
+      $("#calNext").addEventListener("click", () => { calAnchor.setDate(calAnchor.getDate() + calDays); loadTeamCalendar(); });
+      $("#calToday").addEventListener("click", () => { calAnchor = new Date(); loadTeamCalendar(); });
+      renderIcons();
+      loadTeamCalendar();
+    }
+    async function loadTeamCalendar() {
+      const host = $("#calEvents");
+      if (!host) return;
+      if (!calMember) { host.innerHTML = '<div class="task-empty">No teammate selected.</div>'; return; }
+      const startD = new Date(calAnchor), endD = new Date(calAnchor);
+      endD.setDate(endD.getDate() + calDays - 1);
+      const fmtD = d => d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      const label = $("#calLabel");
+      if (label) label.textContent = calDays === 1 ? `${fmtD(startD)}, ${startD.getFullYear()}` : `${fmtD(startD)} – ${fmtD(endD)}, ${endD.getFullYear()}`;
+      host.innerHTML = '<div class="task-empty" style="margin:0">Loading…</div>';
+      try {
+        const r = await fetch(`/api/calendar/team?email=${encodeURIComponent(calMember)}&date=${calAnchorISO()}&days=${calDays}`, { credentials: "same-origin" });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { host.innerHTML = `<div class="task-empty">${escapeHTML(d.detail || "Couldn't load calendar.")}</div>`; return; }
+        if (!d.accessible) {
+          host.innerHTML = `<article class="card" style="padding:20px"><div style="display:flex;gap:10px"><i data-lucide="lock" class="icon-sm" style="margin-top:2px;color:var(--amber)"></i><div><strong style="display:block;margin-bottom:4px">Calendar not shared yet</strong><p style="color:var(--muted);font-size:12px;line-height:1.55;margin:0">${escapeHTML(d.reason || "")}</p></div></div></article>`;
+          renderIcons();
+          return;
+        }
+        const events = d.events || [];
+        if (!events.length) { host.innerHTML = '<div class="task-empty">No events in this range.</div>'; renderIcons(); return; }
+        const byDay = {};
+        events.forEach(e => { const key = (e.start || "").slice(0, 10); (byDay[key] = byDay[key] || []).push(e); });
+        host.innerHTML = Object.keys(byDay).sort().map(day => {
+          const dd = new Date(day + "T12:00:00");
+          const head = dd.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+          const rows = byDay[day].map(e => `<div class="cal-event"><span class="cal-time">${escapeHTML(fmtEventTime(e))}</span><div class="cal-ev-body"><strong>${escapeHTML(e.summary)}</strong>${e.location ? `<small>${escapeHTML(e.location)}</small>` : ""}</div>${e.link ? `<a class="icon-button" href="${escapeHTML(e.link)}" target="_blank" rel="noopener" title="Open in Google Calendar"><i data-lucide="external-link" class="icon-sm"></i></a>` : ""}</div>`).join("");
+          return `<div class="cal-day"><div class="cal-day-head">${escapeHTML(head)}</div>${rows}</div>`;
+        }).join("");
+        renderIcons();
+      } catch (e) { host.innerHTML = '<div class="task-empty">Couldn\'t reach the server.</div>'; }
+    }
+    function openMeetingModal(prefillGuest) {
+      $("#mtgTitle").value = "";
+      $("#mtgDate").value = calAnchorISO();
+      $("#mtgStart").value = "10:00";
+      $("#mtgEnd").value = "10:30";
+      $("#mtgGuests").value = prefillGuest || calMember || "";
+      $("#mtgLocation").value = "";
+      $("#mtgNotes").value = "";
+      $("#mtgError").textContent = "";
+      showModal("#meetingModal");
+      $("#mtgTitle").focus();
+    }
+    async function submitMeeting() {
+      const title = $("#mtgTitle").value.trim();
+      const date = $("#mtgDate").value, start = $("#mtgStart").value, end = $("#mtgEnd").value;
+      const err = $("#mtgError");
+      err.textContent = "";
+      if (!title) { err.textContent = "Give the meeting a title."; return; }
+      if (!date || !start || !end) { err.textContent = "Date, start, and end are required."; return; }
+      if (end <= start) { err.textContent = "The end time must be after the start."; return; }
+      const guests = $("#mtgGuests").value.split(",").map(s => s.trim()).filter(Boolean);
+      const bad = guests.find(g => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(g));
+      if (bad) { err.textContent = `"${bad}" isn't a valid email.`; return; }
+      const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || "Pacific/Honolulu";
+      const btn = $("#mtgSubmit");
+      btn.disabled = true; btn.innerHTML = '<i data-lucide="loader" class="icon-sm"></i>Creating…'; renderIcons();
+      try {
+        const r = await fetch("/api/calendar/events", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ summary: title, start: `${date}T${start}:00`, end: `${date}T${end}:00`, tz, attendees: guests, description: $("#mtgNotes").value.trim() || null, location: $("#mtgLocation").value.trim() || null }) });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) { showToast("Meeting created — invites sent ✓"); hideModal("#meetingModal"); const av = $(".view.active"); if (av && av.id === "schedule") loadTeamCalendar(); }
+        else { err.textContent = d.detail || ("Error " + r.status); }
+      } catch (e) { err.textContent = "Couldn't reach the server."; }
+      btn.disabled = false; btn.innerHTML = '<i data-lucide="send" class="icon-sm"></i>Create &amp; send invites'; renderIcons();
+    }
+
     // ---------- Files modal: attachments on business/campaign/project/task ----------
     let filesCtx = { type: null, id: null, title: "" };
     let filesDirty = false;   // set when files are added/removed → refresh badges on close
@@ -2608,6 +2765,7 @@
       if (id === "feedback") renderFeedback();
       if (id === "mytasks") renderMyTasks();
       if (id === "overview") loadOverviewCalendar();
+      if (id === "schedule") renderSchedule();
       $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
       $("#sidebar").classList.remove("open");
       $("#mobileOverlay").classList.add("hidden");
@@ -2819,6 +2977,11 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.0", date: "Jul 14, 2026", items: [
+        "New Team Calendar: pick a teammate from the dropdown to see their calendar (they share it with you in Google first).",
+        "Schedule from the dashboard — 'New meeting' creates a Google Calendar event and emails invites to teammates and clients you add.",
+        "One-time reconnect: Google now includes calendar access, so click Reconnect the first time you open Team Calendar.",
+      ] },
       { version: "1.9", date: "Jul 13, 2026", items: [
         "Attach files to any business, campaign, project, or task — for reference, review, retrieval, or storage.",
         "Connect your Google Drive on demand the first time you add a file — a window opens to authorize, then closes automatically.",
@@ -3032,6 +3195,7 @@
       { view: "journal", sel: ".journal-grid", title: "Daily Journal", body: "Set your focus each morning; log wins and tomorrow's first move each evening." },
       { view: "overview", sel: "#cwdChatBtn", title: "CWD Brain Chat", body: "Ask this anything about your portfolio — it reads your live businesses and tasks." },
       { view: "businesses", sel: "#businessGrid .business-card", title: "Files on everything", body: "Open any business, project, campaign, or task and use Files to attach documents from Google Drive — upload or link them, then share by link or with a person. A 📎 badge shows the count." },
+      { view: "overview", sel: '[data-view="schedule"]', title: "Team Calendar", body: "See a teammate's calendar and schedule meetings here. Pick a person, switch Day/Week, and hit New meeting to create a Google event and send invites." },
       { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
       { view: "overview", sel: "#feedbackNav", title: "Feedback", body: "Found a bug or have an idea? Send it straight to the team here." },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },

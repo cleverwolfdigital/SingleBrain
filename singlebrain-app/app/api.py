@@ -519,7 +519,12 @@ DASHBOARD_FEATURES = (
     "can upload files (or drag-drop), add a link, and share each file by link or with a specific person "
     "(view or edit). Each file can be removed from the item (kept in Drive) or deleted from Drive "
     "entirely (moved to Drive trash). A paperclip badge on each card shows the attachment count.\n"
-    "- Overview shows upcoming Google Calendar events once Drive is connected.\n"
+    "- Overview shows the user's own upcoming Google Calendar events once connected.\n"
+    "- Team Calendar: pick a teammate from a dropdown to see their calendar (Day/Week). The teammate "
+    "must first share their Google Calendar with the viewer ('See all event details'); otherwise the "
+    "view explains how. 'New meeting' creates a Google Calendar event on the viewer's calendar and "
+    "emails invites to the teammates/clients added as guests. Requires full Google Calendar access "
+    "(one-time reconnect).\n"
     "- Productivity reports roll up completed work + tracked time by day/week/month/quarter/year.\n"
     "- Daily Journal (morning focus + end-of-day log). Super Admins manage team roles, per-business "
     "access, and guest invites. Feedback tab files bugs/ideas. A Tutorial tab + guided tour explain it "
@@ -895,6 +900,77 @@ def google_drive_share(file_id: str, body: ShareIn, request: Request):
 def google_disconnect(request: Request):
     google_int.disconnect(auth.current_user(request))
     return {"ok": True}
+
+
+# ================= Team calendar + scheduling =================
+@app.get("/api/calendar/team")
+def team_calendar(request: Request, email: str, date: Optional[str] = None, days: int = 1):
+    """A teammate's calendar for the given range, read with the viewer's token.
+    Returns accessible=False (with guidance) when the teammate hasn't shared it."""
+    from datetime import date as _date
+    viewer = auth.current_user(request)
+    member = (email or "").strip().lower()
+    if not member:
+        raise HTTPException(422, "Pick a team member.")
+    if date:
+        try:
+            anchor = _date.fromisoformat(date)
+        except ValueError:
+            raise HTTPException(422, "date must be YYYY-MM-DD.")
+    else:
+        now = datetime.now(HST)
+        anchor = _date(now.year, now.month, now.day)
+    days = max(1, min(31, days))
+    start = datetime(anchor.year, anchor.month, anchor.day, tzinfo=HST)
+    end = start + timedelta(days=days)
+    try:
+        events = google_int.list_calendar_events(viewer, member, start.isoformat(), end.isoformat())
+    except urllib.error.HTTPError as e:
+        if e.code in (403, 404):
+            return {
+                "accessible": False, "email": member, "events": [],
+                "reason": (f"You don't have access to {member}'s calendar yet. Ask them to share it "
+                           f"with you in Google Calendar (Settings → Share with specific people → add "
+                           f"{viewer} with 'See all event details')."),
+            }
+        raise HTTPException(502, f"Google Calendar error: {e}")
+    except Exception as e:
+        raise HTTPException(502, f"Google Calendar error: {e}")
+    if events is None:
+        raise HTTPException(400, "Google Calendar isn't connected.")
+    return {"accessible": True, "email": member, "events": events}
+
+
+class EventIn(BaseModel):
+    summary: str
+    start: str                 # local datetime "YYYY-MM-DDTHH:MM:SS"
+    end: str
+    tz: Optional[str] = "Pacific/Honolulu"
+    attendees: List[str] = Field(default_factory=list)
+    description: Optional[str] = None
+    location: Optional[str] = None
+
+
+@app.post("/api/calendar/events")
+def create_calendar_event(body: EventIn, request: Request):
+    email = auth.current_user(request)
+    if not (body.summary or "").strip():
+        raise HTTPException(422, "Give the meeting a title.")
+    if not body.start or not body.end:
+        raise HTTPException(422, "Start and end times are required.")
+    if body.end <= body.start:
+        raise HTTPException(422, "The end time must be after the start time.")
+    attendees = [a.strip().lower() for a in body.attendees if a and a.strip()]
+    try:
+        res = google_int.create_event(
+            email, body.summary.strip(), body.start, body.end, body.tz,
+            attendees, (body.description or "").strip() or None, (body.location or "").strip() or None,
+        )
+    except Exception as e:
+        raise HTTPException(502, f"Couldn't create the event: {e}")
+    if res is None:
+        raise HTTPException(400, "Google Calendar isn't connected.")
+    return res
 
 
 # ================= Attachments (files on business / campaign / project / task) =================
