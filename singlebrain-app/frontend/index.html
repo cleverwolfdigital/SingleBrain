@@ -896,7 +896,7 @@
       <div class="grid tutorial-grid">
         <article class="card tut-card"><div class="tut-num">4</div><h3>The sidebar</h3><p>Everything lives in the left sidebar. <b>Overview</b> is today's brief. <b>Businesses</b>, <b>Projects</b>, <b>Clients</b>, and <b>Staff</b> are your portfolio. <b>Productivity</b> reports on your time. <b>Daily Journal</b>, <b>CWD Brain Chat</b>, and <b>Daily Rotation</b> support the daily flow. <b>Feedback</b> sends us bugs and ideas.</p></article>
         <article class="card tut-card"><div class="tut-num">5</div><h3>Pin your favorites</h3><p>Open any business, project, campaign, or client and tap the <b>★ star</b> to pin it to a <b>Pinned</b> section at the top of the sidebar (up to 5). Tap the star again to unpin. Great for the handful of things you touch every day.</p></article>
-        <article class="card tut-card"><div class="tut-num">6</div><h3>Quick tools</h3><p>The <b>Overview</b> page has one-click shortcuts to ChatGPT, Claude, Grok, OpenClaw, and Hermes. The top bar also has a <b>Sync</b> button (⟳) that pushes your latest to the shared brain.</p></article>
+        <article class="card tut-card"><div class="tut-num">6</div><h3>Quick tools</h3><p>The <b>Overview</b> page has one-click shortcuts to ChatGPT, Claude, Grok, OpenClaw, and Hermes, plus your upcoming <b>Google Calendar</b> events (once your Drive is connected). The top bar has a <b>Sync</b> button (⟳) that pushes your latest to the shared brain, and a <b>What's new</b> button that shows the latest release notes — use <b>← →</b> to browse past updates.</p></article>
       </div>
 
       <div class="tut-section">Your portfolio</div>
@@ -914,13 +914,14 @@
         <article class="card tut-card"><div class="tut-num">13</div><h3>Productivity reports</h3><p><b>Productivity</b> rolls up completed work by <b>Day / Week / Month / Quarter / Year</b> — tasks completed, time tracked, estimate accuracy, and breakdowns by business and category. Use ‹ › to move between periods.</p></article>
         <article class="card tut-card"><div class="tut-num">14</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
         <article class="card tut-card"><div class="tut-num">15</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
+        <article class="card tut-card"><div class="tut-num">16</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
       </div>
 
       <div class="tut-section" data-admin-only>Team &amp; admin</div>
       <div class="grid tutorial-grid" data-admin-only>
-        <article class="card tut-card"><div class="tut-num">16</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
-        <article class="card tut-card"><div class="tut-num">17</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table lets you set who owns each open task. Assignees always see their tasks, even without full business access. You can promote up to <b>2</b> people to Super Admin.</p></article>
-        <article class="card tut-card"><div class="tut-num">18</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
+        <article class="card tut-card"><div class="tut-num">17</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
+        <article class="card tut-card"><div class="tut-num">18</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table lets you set who owns each open task. Assignees always see their tasks, even without full business access. You can promote up to <b>2</b> people to Super Admin.</p></article>
+        <article class="card tut-card"><div class="tut-num">19</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
       </div>
     </section>
 
@@ -3017,6 +3018,8 @@
       { view: "reports", sel: "#reportMetrics", title: "Productivity", body: "See completed work and tracked time by day, week, month, quarter, or year." },
       { view: "journal", sel: ".journal-grid", title: "Daily Journal", body: "Set your focus each morning; log wins and tomorrow's first move each evening." },
       { view: "overview", sel: "#cwdChatBtn", title: "CWD Brain Chat", body: "Ask this anything about your portfolio — it reads your live businesses and tasks." },
+      { view: "businesses", sel: "#businessGrid .business-card", title: "Files on everything", body: "Open any business, project, campaign, or task and use Files to attach documents from Google Drive — upload or link them, then share by link or with a person. A 📎 badge shows the count." },
+      { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
       { view: "overview", sel: "#feedbackNav", title: "Feedback", body: "Found a bug or have an idea? Send it straight to the team here." },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },
     ];
