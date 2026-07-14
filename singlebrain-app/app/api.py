@@ -503,6 +503,29 @@ XAI_API_KEY = os.environ.get("XAI_API_KEY", "")
 XAI_BASE_URL = os.environ.get("XAI_BASE_URL", "https://api.x.ai/v1")
 XAI_MODEL = os.environ.get("XAI_MODEL", "grok-4")
 
+# What the dashboard can DO, so Brain Chat can also answer "how do I ...?" questions
+# about the app itself. Keep this in sync with the tutorial, guided tour, and patch notes.
+DASHBOARD_FEATURES = (
+    "=== What the Single Brain dashboard can do (so you can guide users on HOW, not just WHAT) ===\n"
+    "- Tasks: Quick Add creates tasks (business, category, priority, due, estimate, assignee, client, "
+    "dependencies). Each task has a live timer (start/pause/complete) and syncs to Tasks.md in the repo. "
+    "'My Tasks' shows what's assigned to the current user.\n"
+    "- Businesses/Projects/Campaigns/Clients: browsed as cards; click one for a detail overlay with its "
+    "tasks. Admins can add/edit/delete them and set clients' recurring monthly tasks. Sub-businesses roll "
+    "up under a parent. Pin up to 5 items to the sidebar with the star.\n"
+    "- Files & attachments: any business, campaign, project, or task can have files attached (reference, "
+    "review, retrieval, storage). Open the item and click 'Files', or use the paperclip on a task row. "
+    "The first time, click 'Connect Your Drive' — a popup authorizes Google, then closes itself. Users "
+    "can upload files (or drag-drop), add a link, and share each file by link or with a specific person "
+    "(view or edit). A paperclip badge on each card shows the attachment count.\n"
+    "- Overview shows upcoming Google Calendar events once Drive is connected.\n"
+    "- Productivity reports roll up completed work + tracked time by day/week/month/quarter/year.\n"
+    "- Daily Journal (morning focus + end-of-day log). Super Admins manage team roles, per-business "
+    "access, and guest invites. Feedback tab files bugs/ideas. A Tutorial tab + guided tour explain it "
+    "all, and a 'What's new' card (with prev/next arrows) shows release notes.\n"
+    "Access is limited to @cleverwolfdigital.com users (plus admin-invited guests).\n"
+)
+
 
 class ChatIn(BaseModel):
     message: str
@@ -548,7 +571,10 @@ def chat(c: ChatIn, request: Request):
         "Base every answer on this — never claim a business is missing if it appears below. "
         "When asked to add or change a business, staff member, project, or task, state exactly what "
         "you'd change and ask the user to confirm (live write-actions are rolling out; for now you "
-        "advise, summarize, and draft).\n\n" + _state_context(auth.current_user(request))
+        "advise, summarize, and draft). You can also explain how to USE the dashboard itself — the "
+        "capabilities are listed below; walk users through steps (e.g. attaching a file, connecting "
+        "Drive, starting a timer) when they ask.\n\n"
+        + DASHBOARD_FEATURES + "\n" + _state_context(auth.current_user(request))
     )
     msgs = [{"role": "system", "content": system}]
     for h in (c.history or [])[-8:]:

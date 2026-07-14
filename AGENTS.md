@@ -32,6 +32,12 @@ All other files are secondary. Prioritize revenue actions over new builds.
 - **Google Drive** — this repo sits under `G:\My Drive\...`, so every saved file auto-syncs to
   the cloud. Local save = backed up. It does NOT reach GitHub until committed + pushed.
 - **GitHub** — `github.com/cleverwolfdigital/SingleBrain`. Reached only via `git commit` + `push`.
+- **Production dashboard app** — `singlebrain-app/` (FastAPI + single-file frontend), LIVE at
+  `brain.cleverwolfdigital.com` on the Hostinger VPS. Its user-facing capabilities (tasks + timers,
+  businesses/projects/clients, **file attachments + Google Drive**, calendar, reports, journal) are
+  listed canonically in `singlebrain-app/app/api.py` (`DASHBOARD_FEATURES`). When a feature changes,
+  update that list **plus** the tutorial, guided tour, and patch notes together, then deploy
+  (git push + `scp` to the VPS). Old Cloudflare site + `website/ai/index.html` are retired.
 - **claude.ai CleverWolf project** — chat/strategy sessions. Their output arrives here as pasted
   deltas (see below), not automatically.
 - **Standalone deliverables** — onboarding CRM (HTML), client one-pager, landing page — see
