@@ -564,6 +564,23 @@
     @media (max-width: 820px) { .snapshot-col { align-items: stretch; } .tool-shortcuts { justify-content: flex-start; } }
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinning { animation: spin 0.9s linear infinite; }
+    .icon-button.syncing svg { animation: spin 0.9s linear infinite; }
+    .bell-wrap { position: relative; }
+    .bell-dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 2px rgba(7,18,29,0.9); }
+    .bell-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 320px; max-height: 70vh; overflow-y: auto; padding: 5px; background: var(--panel-raised); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: 0 18px 44px rgba(0,0,0,0.5); }
+    .bell-head { padding: 8px 10px 6px; color: var(--faint); font: 700 9px var(--font-body); letter-spacing: 1px; text-transform: uppercase; }
+    .bell-item { display: flex; align-items: flex-start; gap: 9px; width: 100%; padding: 9px 10px; cursor: pointer; color: var(--text); background: transparent; border: 0; border-radius: 6px; text-align: left; }
+    .bell-item:hover { background: var(--panel-hover); }
+    .bell-item .icon-sm { flex: none; color: var(--gold-soft); margin-top: 1px; }
+    .bell-item strong { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.3; }
+    .bell-item small { display: block; margin-top: 2px; color: var(--faint); font-size: 9px; }
+    .bell-empty { padding: 18px 10px; color: var(--faint); font-size: 11px; text-align: center; }
+    .search-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 11px; cursor: pointer; color: var(--text); background: transparent; border: 0; border-radius: 7px; text-align: left; }
+    .search-row:hover { background: var(--panel-raised); }
+    .search-type { flex: none; width: 70px; color: var(--gold-soft); font-size: 8px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .search-main { min-width: 0; }
+    .search-main strong { display: block; overflow: hidden; font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+    .search-main small { display: block; margin-top: 2px; color: var(--faint); font-size: 10px; }
     @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
     .tier-block { margin-bottom: 26px; }
     .tier-heading { display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
@@ -633,8 +650,11 @@
         <button class="icon-button" id="fontDown" aria-label="Smaller text" title="Smaller text" style="font:700 12px var(--font-display)">A-</button>
         <button class="icon-button" id="fontUp" aria-label="Larger text" title="Larger text" style="font:700 15px var(--font-display)">A+</button>
         <button class="icon-button" id="syncBtn" aria-label="Sync to repository" title="Sync now — pull latest and push to GitHub"><i data-lucide="refresh-cw" class="icon"></i></button>
-        <button class="icon-button" aria-label="Search"><i data-lucide="search" class="icon"></i></button>
-        <button class="icon-button" aria-label="Notifications"><i data-lucide="bell" class="icon"></i></button>
+        <button class="icon-button" id="searchBtn" aria-label="Search" title="Search (⌘/Ctrl-K)"><i data-lucide="search" class="icon"></i></button>
+        <div class="bell-wrap">
+          <button class="icon-button" id="bellBtn" aria-label="Notifications" title="Notifications"><i data-lucide="bell" class="icon"></i><span class="bell-dot hidden" id="bellDot"></span></button>
+          <div class="bell-menu hidden" id="bellMenu"></div>
+        </div>
         <div class="avatar" id="userAvatar" title="Signed in">QS</div>
         <a class="icon-button" id="logoutButton" href="/logout" aria-label="Log out" title="Log out"><i data-lucide="log-out" class="icon"></i></a>
       </div>
@@ -1087,6 +1107,17 @@
     </section>
   </div>
 
+  <div class="modal-overlay hidden" id="searchModal" role="dialog" aria-modal="true" aria-label="Search" aria-hidden="true">
+    <section class="task-modal" style="width:min(640px,100%)">
+      <div style="display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line)">
+        <i data-lucide="search" class="icon"></i>
+        <input class="input" id="searchInput" placeholder="Search businesses, projects, clients, staff, tasks…" autocomplete="off" style="border:0;background:transparent;padding:0;font-size:15px">
+        <button class="icon-button" type="button" data-close-search aria-label="Close"><i data-lucide="x" class="icon"></i></button>
+      </div>
+      <div id="searchResults" style="max-height:60vh;overflow-y:auto;padding:8px"></div>
+    </section>
+  </div>
+
   <div id="tourBlocker" class="hidden"></div>
   <div id="tourSpot" class="hidden" aria-hidden="true"></div>
   <div id="tourPop" class="hidden" role="dialog" aria-label="Guided tour">
@@ -1290,6 +1321,7 @@
       renderTaskList();
       renderMyTasks();
       renderDependencyOptions();
+      if (typeof updateBellDot === "function") updateBellDot();
     }
     function persistTasks() { /* tasks persist to the repo via the API now */ }
 
@@ -2523,20 +2555,82 @@
     });
     renderPatchNotice();
 
-    // Manual sync — pull latest + push tasks to GitHub (the hub every tool reads/writes).
+    // Manual sync/refresh — reload the dashboard data, and pull+push tasks to GitHub.
     $("#syncBtn").addEventListener("click", async () => {
-      const btn = $("#syncBtn"), icon = $("i", btn);
+      const btn = $("#syncBtn");
       if (btn.disabled) return;
-      btn.disabled = true; icon.classList.add("spinning");
-      showToast("Syncing with GitHub…");
+      btn.disabled = true; btn.classList.add("syncing");
+      showToast("Refreshing…");
       try {
         const res = await fetch("/api/sync", { method: "POST", credentials: "same-origin" });
         const d = await res.json().catch(() => ({}));
-        showToast(res.ok ? (d.pushed ? "Synced to GitHub ✓" : "Synced — nothing new to push") : "Sync failed: " + (d.detail || res.status));
-        if (res.ok) await loadTasks();
-      } catch (e) { showToast("Sync failed: " + e.message); }
-      finally { btn.disabled = false; icon.classList.remove("spinning"); }
+        await reloadCatalogAndRender();
+        await loadTasks();
+        await loadPins(); renderPins();
+        const av = $(".view.active"); if (av) showView(av.id);
+        showToast(res.ok ? (d.pushed ? "Refreshed & synced to GitHub ✓" : "Refreshed ✓") : "Refreshed (sync failed: " + (d.detail || res.status) + ")");
+      } catch (e) { showToast("Couldn't reach the server: " + e.message); }
+      finally { btn.disabled = false; btn.classList.remove("syncing"); }
     });
+
+    // ---------- Global search (top bar / Ctrl-K) ----------
+    let _searchResults = [];
+    function searchAll(q) {
+      q = q.trim().toLowerCase();
+      if (!q) return [];
+      const res = [];
+      businesses.forEach(b => { if ((b.name || "").toLowerCase().includes(q)) res.push({ type: "Business", label: b.name, sub: TIER_META[b.tier] ? TIER_META[b.tier][0] : "", act: () => openBusinessDetail(b) }); });
+      projects.forEach(p => { if ((p.name || "").toLowerCase().includes(q) || (p.business || "").toLowerCase().includes(q)) res.push({ type: p.kind === "campaign" ? "Campaign" : "Project", label: p.name, sub: p.business, act: () => openProjectDetail(p) }); });
+      clients.forEach(c => { if ((c.name || "").toLowerCase().includes(q) || (c.business || "").toLowerCase().includes(q)) res.push({ type: "Client", label: c.name, sub: c.business, act: () => openClientDetail(c) }); });
+      (staffList || []).forEach(s => { if ((s.name || "").toLowerCase().includes(q)) res.push({ type: "Staff", label: s.name, sub: s.role || "", act: () => (ME.is_super_admin && s.id) ? openEntityEditor("staff", s) : showView("staff") }); });
+      tasks.forEach(t => { if ((t.task || "").toLowerCase().includes(q) || (t.business || "").toLowerCase().includes(q)) res.push({ type: "Task", label: t.task, sub: t.business + (t.assignee ? " · @" + emailName(t.assignee) : ""), act: () => showView("projects") }); });
+      return res.slice(0, 40);
+    }
+    function renderSearchResults() {
+      const q = $("#searchInput").value;
+      const box = $("#searchResults");
+      if (!q.trim()) { box.innerHTML = '<div class="task-empty" style="margin:6px">Type to search across your portfolio.</div>'; return; }
+      _searchResults = searchAll(q);
+      box.innerHTML = _searchResults.length
+        ? _searchResults.map((r, i) => `<button class="search-row" data-idx="${i}"><span class="search-type">${escapeHTML(r.type)}</span><span class="search-main"><strong>${escapeHTML(r.label)}</strong>${r.sub ? `<small>${escapeHTML(r.sub)}</small>` : ""}</span></button>`).join("")
+        : '<div class="task-empty" style="margin:6px">No matches.</div>';
+    }
+    function openSearch() { $("#searchInput").value = ""; showModal("#searchModal"); renderSearchResults(); $("#searchInput").focus(); }
+    $("#searchBtn").addEventListener("click", openSearch);
+    $("#searchInput").addEventListener("input", renderSearchResults);
+    $("#searchResults").addEventListener("click", e => { const row = e.target.closest("[data-idx]"); if (!row) return; const r = _searchResults[Number(row.dataset.idx)]; hideModal("#searchModal"); if (r && r.act) r.act(); });
+    $$('[data-close-search]').forEach(b => b.addEventListener("click", () => hideModal("#searchModal")));
+    $("#searchModal").addEventListener("click", e => { if (e.target === $("#searchModal")) hideModal("#searchModal"); });
+    document.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); openSearch(); }
+      if (e.key === "Escape" && !$("#searchModal").classList.contains("hidden")) hideModal("#searchModal");
+    });
+
+    // ---------- Notifications (bell) ----------
+    function buildNotifications() {
+      const me = (ME.email || "").toLowerCase();
+      const today = todayString();
+      const mine = tasks.filter(t => (t.assignee || "").toLowerCase() === me && t.status !== "done");
+      const notes = [];
+      mine.filter(t => t.dueDate && t.dueDate < today).forEach(t => notes.push({ icon: "alarm-clock", text: "Overdue: " + t.task, sub: t.business, view: "mytasks" }));
+      mine.filter(t => t.dueDate === today).forEach(t => notes.push({ icon: "calendar-clock", text: "Due today: " + t.task, sub: t.business, view: "mytasks" }));
+      return notes;
+    }
+    function updateBellDot() { $("#bellDot").classList.toggle("hidden", buildNotifications().length === 0); }
+    async function renderBell() {
+      const notes = buildNotifications();
+      if (ME.is_super_admin) {
+        try { const r = await fetch("/api/feedback", { credentials: "same-origin" }); if (r.ok) { const open = (await r.json()).filter(t => t.status === "open").length; if (open) notes.push({ icon: "message-square-warning", text: open + " open feedback ticket" + (open === 1 ? "" : "s"), sub: "Help desk", view: "feedback" }); } } catch (e) {}
+      }
+      $("#bellDot").classList.toggle("hidden", notes.length === 0);
+      $("#bellMenu").innerHTML = '<div class="bell-head">Notifications</div>' + (notes.length
+        ? notes.map(n => `<button class="bell-item" data-bell-view="${n.view}"><i data-lucide="${n.icon}" class="icon-sm"></i><span><strong>${escapeHTML(n.text)}</strong>${n.sub ? `<small>${escapeHTML(n.sub)}</small>` : ""}</span></button>`).join("")
+        : '<div class="bell-empty">You\'re all caught up. 🎉</div>');
+      renderIcons();
+    }
+    $("#bellBtn").addEventListener("click", e => { e.stopPropagation(); const m = $("#bellMenu"); const opening = m.classList.contains("hidden"); m.classList.toggle("hidden"); if (opening) renderBell(); });
+    $("#bellMenu").addEventListener("click", e => { const it = e.target.closest("[data-bell-view]"); if (it) { $("#bellMenu").classList.add("hidden"); showView(it.dataset.bellView); } });
+    document.addEventListener("click", () => $("#bellMenu").classList.add("hidden"));
 
     $$(".journal-form").forEach(form => {
       const kind = form.dataset.kind;
