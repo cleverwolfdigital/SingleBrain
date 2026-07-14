@@ -5,7 +5,7 @@ _Source of truth for dashboard tasks. Auto-generated from the Single Brain dashb
 | Task | Business | Category | Priority | Due | Status | Est | Tracked |
 |------|----------|----------|----------|-----|--------|-----|---------|
 | test 2 | Clever Wolf Digital |  | High | 2026-07-13 | done | — | — |
-| test 1 | Clever Wolf Digital |  | High | 2026-07-28 | open | — | — |
+| test 1 | Clever Wolf Digital |  | High | 2026-07-28 | done | — | — |
 | Social Content Calendar | Clever Wolf Digital |  | High | 2026-07-01 | done | — | — |
 | Newsletter Redesign | Clever Wolf Digital | Marketing | High | 2026-07-17 | open | — | — |
 | Flyer designs | Clever Wolf Digital | Marketing | High | 2026-07-13 | open | — | — |
