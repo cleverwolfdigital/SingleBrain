@@ -6,7 +6,7 @@ _Source of truth for dashboard tasks. Auto-generated from the Single Brain dashb
 |------|----------|----------|----------|-----|--------|-----|---------|
 | test 2 | Clever Wolf Digital |  | High | 2026-07-13 | done | — | — |
 | test 1 | Clever Wolf Digital |  | High | 2026-07-28 | open | — | — |
-| Social Content Calendar | Clever Wolf Digital |  | High | 2026-07-01 | open | — | — |
+| Social Content Calendar | Clever Wolf Digital |  | High | 2026-07-01 | done | — | — |
 | Newsletter Redesign | Clever Wolf Digital | Marketing | High | 2026-07-17 | open | — | — |
 | Flyer designs | Clever Wolf Digital | Marketing | High | 2026-07-13 | open | — | — |
 | ask Sandra if standing filming twice a month | Clever Wolf Digital | Staffing | High | 2026-07-13 | done | — | — |
