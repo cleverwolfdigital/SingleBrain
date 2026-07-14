@@ -2223,7 +2223,33 @@
       let st = { configured: false, connected: false };
       try { const r = await fetch("/api/google/status", { credentials: "same-origin" }); if (r.ok) st = await r.json(); } catch (e) {}
       $("#googleDisconnect").classList.toggle("hidden", !st.connected);
-      if (!st.configured) { body.innerHTML = '<div class="task-empty">Google isn\'t fully set up yet — an admin needs to add the Google client secret on the server.</div>'; return; }
+      if (!st.configured) {
+        body.innerHTML = ME.is_super_admin
+          ? `<article class="card" style="padding:22px;max-width:540px">
+               <h3 style="margin:0 0 6px;font:600 14px var(--font-display)">Finish Google setup</h3>
+               <p style="color:var(--muted);font-size:12px;margin:0 0 14px;line-height:1.55">Paste your Google <b>Client Secret</b> (Google Cloud console → your OAuth client → “Client secrets”). It's stored on the server; only admins can set it.</p>
+               <div class="field"><label for="gSecret">Client Secret</label><input class="input" id="gSecret" type="password" placeholder="GOCSPX-…" autocomplete="off"></div>
+               <span class="field-error" id="gSecretErr"></span>
+               <div style="margin-top:10px"><button class="button" id="gSaveSecret"><i data-lucide="save" class="icon-sm"></i>Save &amp; enable</button></div>
+             </article>`
+          : '<div class="task-empty">Google isn\'t set up yet — ask an admin to finish the setup.</div>';
+        renderIcons();
+        if (ME.is_super_admin) {
+          $("#gSaveSecret").addEventListener("click", async () => {
+            const secret = $("#gSecret").value.trim();
+            if (secret.length < 8) { $("#gSecretErr").textContent = "Paste the full client secret."; return; }
+            const btn = $("#gSaveSecret"); btn.disabled = true;
+            try {
+              const r = await fetch("/api/google/config", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client_secret: secret }) });
+              const d = await r.json().catch(() => ({}));
+              if (r.ok && d.configured) { showToast("Google enabled ✓"); renderGoogle(); }
+              else if (r.ok) { $("#gSecretErr").textContent = "Saved, but the Client ID is still missing on the server."; btn.disabled = false; }
+              else { $("#gSecretErr").textContent = d.detail || ("Error " + r.status); btn.disabled = false; }
+            } catch (e) { $("#gSecretErr").textContent = "Couldn't reach the server."; btn.disabled = false; }
+          });
+        }
+        return;
+      }
       if (!st.connected) {
         body.innerHTML = '<article class="card" style="padding:26px;text-align:center"><p style="color:var(--muted);margin:0 0 16px;line-height:1.6">Connect your Google account to see your Calendar and Drive here.<br>Read-only — nothing is ever edited or deleted.</p><a class="button" href="/auth/google/start"><i data-lucide="link" class="icon-sm"></i>Connect Google</a></article>';
         renderIcons();

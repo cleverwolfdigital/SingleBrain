@@ -806,6 +806,18 @@ def google_disconnect(request: Request):
     return {"ok": True}
 
 
+class GoogleConfigIn(BaseModel):
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+
+
+@app.post("/api/google/config")
+def google_config(body: GoogleConfigIn, request: Request):
+    _require_admin(request)
+    google_int.set_config(body.client_id, body.client_secret)
+    return {"ok": True, "configured": google_int.configured()}
+
+
 class ContactIn(BaseModel):
     client_id: Optional[int] = None
     name: Optional[str] = None

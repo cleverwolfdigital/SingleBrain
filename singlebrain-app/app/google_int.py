@@ -14,8 +14,6 @@ from datetime import datetime, timezone
 
 from . import db
 
-CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
-CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "https://brain.cleverwolfdigital.com/auth/google/callback")
 SCOPES = ("openid email "
           "https://www.googleapis.com/auth/calendar.readonly "
@@ -25,8 +23,38 @@ AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 
+def _cfg(env_key, meta_key):
+    """Read a setting from the environment first, then the stored app_meta value
+    (which admins can set from the dashboard so no SSH/.env editing is needed)."""
+    v = os.environ.get(env_key, "").strip()
+    if v:
+        return v
+    try:
+        rows = db.query("SELECT value FROM app_meta WHERE key=?", (meta_key,))
+        return (rows[0]["value"] or "").strip() if rows else ""
+    except Exception:
+        return ""
+
+
+def client_id():
+    return _cfg("GOOGLE_CLIENT_ID", "google_client_id")
+
+
+def client_secret():
+    return _cfg("GOOGLE_CLIENT_SECRET", "google_client_secret")
+
+
+def set_config(client_id_val=None, client_secret_val=None):
+    if client_id_val:
+        db.execute("INSERT INTO app_meta(key,value) VALUES('google_client_id',?) "
+                   "ON CONFLICT(key) DO UPDATE SET value=excluded.value", (client_id_val.strip(),))
+    if client_secret_val:
+        db.execute("INSERT INTO app_meta(key,value) VALUES('google_client_secret',?) "
+                   "ON CONFLICT(key) DO UPDATE SET value=excluded.value", (client_secret_val.strip(),))
+
+
 def configured():
-    return bool(CLIENT_ID and CLIENT_SECRET)
+    return bool(client_id() and client_secret())
 
 
 def init_db():
@@ -45,7 +73,7 @@ def init_db():
 
 def auth_url(state):
     params = {
-        "client_id": CLIENT_ID,
+        "client_id": client_id(),
         "redirect_uri": REDIRECT_URI,
         "response_type": "code",
         "scope": SCOPES,
@@ -70,8 +98,8 @@ def _post_token(data):
 def exchange_code(code):
     return _post_token({
         "code": code,
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
+        "client_id": client_id(),
+        "client_secret": client_secret(),
         "redirect_uri": REDIRECT_URI,
         "grant_type": "authorization_code",
     })
@@ -100,8 +128,8 @@ def get_access_token(email):
     if not t.get("refresh_token"):
         return None
     tok = _post_token({
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
+        "client_id": client_id(),
+        "client_secret": client_secret(),
         "refresh_token": t["refresh_token"],
         "grant_type": "refresh_token",
     })
