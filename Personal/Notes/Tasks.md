@@ -4,6 +4,7 @@ _Source of truth for dashboard tasks. Auto-generated from the Single Brain dashb
 
 | Task | Business | Category | Priority | Due | Status | Est | Tracked |
 |------|----------|----------|----------|-----|--------|-----|---------|
+| Work with Madison on HomeAid Report | Clever Wolf Digital | Other | High | 2026-07-13 | open | — | — |
 | test 2 | Clever Wolf Digital |  | High | 2026-07-13 | done | — | — |
 | test 1 | Clever Wolf Digital |  | High | 2026-07-28 | done | — | — |
 | Social Content Calendar | Clever Wolf Digital |  | High | 2026-07-01 | open | — | — |
