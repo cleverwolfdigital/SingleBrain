@@ -914,7 +914,7 @@
         <article class="card tut-card"><div class="tut-num">13</div><h3>Productivity reports</h3><p><b>Productivity</b> rolls up completed work by <b>Day / Week / Month / Quarter / Year</b> — tasks completed, time tracked, estimate accuracy, and breakdowns by business and category. Use ‹ › to move between periods.</p></article>
         <article class="card tut-card"><div class="tut-num">14</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
         <article class="card tut-card"><div class="tut-num">15</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
-        <article class="card tut-card"><div class="tut-num">16</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
+        <article class="card tut-card"><div class="tut-num">16</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. Each file has two removal options: the <b>✕</b> takes it off this item but keeps it in Drive, and <b>🗑 Delete from Google Drive</b> moves the actual file to your Drive trash. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
       </div>
 
       <div class="tut-section" data-admin-only>Team &amp; admin</div>
@@ -2192,6 +2192,18 @@
       $("#filesList").addEventListener("click", async e => {
         const share = e.target.closest("[data-share-id]");
         if (share) { openShareModal(share.dataset.shareId, share.dataset.shareName); return; }
+        const drivedel = e.target.closest("[data-drivedel]");
+        if (drivedel) {
+          if (!confirm("Delete this file from Google Drive?\n\nIt moves to your Drive trash (recoverable for ~30 days) and is removed from this item.")) return;
+          drivedel.disabled = true;
+          try {
+            const r = await fetch(`/api/attachments/${drivedel.dataset.drivedel}?drive=1`, { method: "DELETE", credentials: "same-origin" });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok) { showToast("Deleted from Drive (in Drive trash)"); filesDirty = true; renderAttachments(); }
+            else { showToast(d.detail || "Couldn't delete from Drive"); drivedel.disabled = false; }
+          } catch (err) { showToast("Couldn't reach the server."); drivedel.disabled = false; }
+          return;
+        }
         const detach = e.target.closest("[data-detach]");
         if (detach) {
           detach.disabled = true;
@@ -2502,7 +2514,7 @@
       try {
         const r = await fetch(`/api/attachments?entity_type=${encodeURIComponent(filesCtx.type)}&entity_id=${encodeURIComponent(filesCtx.id)}`, { credentials: "same-origin" });
         const files = r.ok ? await r.json() : [];
-        host.innerHTML = files.length ? files.map(f => `<div class="risk-row" style="grid-template-columns:1fr auto;align-items:center;gap:8px;padding:9px 0"><div style="min-width:0"><strong><a href="${escapeHTML(f.link || "#")}" target="_blank" rel="noopener" style="color:var(--text)">${escapeHTML(f.name || "File")}</a></strong><p>${f.source === "link" ? "External link" : "Google Drive"}</p></div><div style="display:flex;gap:4px">${f.file_id ? `<button class="icon-button" type="button" title="Share" data-share-id="${escapeHTML(f.file_id)}" data-share-name="${escapeHTML(f.name || "")}"><i data-lucide="share-2" class="icon-sm"></i></button>` : ""}<button class="icon-button" type="button" title="Remove from this item" data-detach="${escapeHTML(f.id)}"><i data-lucide="x" class="icon-sm"></i></button></div></div>`).join("") : ('<div class="task-empty" style="margin:0">No files yet.' + (st.connected ? " Upload one or add a link above." : "") + '</div>');
+        host.innerHTML = files.length ? files.map(f => `<div class="risk-row" style="grid-template-columns:1fr auto;align-items:center;gap:8px;padding:9px 0"><div style="min-width:0"><strong><a href="${escapeHTML(f.link || "#")}" target="_blank" rel="noopener" style="color:var(--text)">${escapeHTML(f.name || "File")}</a></strong><p>${f.source === "link" ? "External link" : "Google Drive"}</p></div><div style="display:flex;gap:4px">${f.file_id ? `<button class="icon-button" type="button" title="Share" data-share-id="${escapeHTML(f.file_id)}" data-share-name="${escapeHTML(f.name || "")}"><i data-lucide="share-2" class="icon-sm"></i></button>` : ""}${f.file_id ? `<button class="icon-button" type="button" title="Delete from Google Drive" data-drivedel="${escapeHTML(f.id)}"><i data-lucide="trash-2" class="icon-sm"></i></button>` : ""}<button class="icon-button" type="button" title="${f.file_id ? "Remove from this item (keep in Drive)" : "Remove from this item"}" data-detach="${escapeHTML(f.id)}"><i data-lucide="x" class="icon-sm"></i></button></div></div>`).join("") : ('<div class="task-empty" style="margin:0">No files yet.' + (st.connected ? " Upload one or add a link above." : "") + '</div>');
         renderIcons();
       } catch (e) { host.innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t load files.</div>'; }
     }
@@ -2811,6 +2823,7 @@
         "Attach files to any business, campaign, project, or task — for reference, review, retrieval, or storage.",
         "Connect your Google Drive on demand the first time you add a file — a window opens to authorize, then closes automatically.",
         "Upload or link files, then share them by link or with specific people.",
+        "Remove a file from an item, or delete it from Google Drive entirely (it moves to your Drive trash).",
         "A paperclip badge on each business, project, campaign, and task shows how many files are attached.",
         "Upcoming Google Calendar events now appear right on your Overview.",
         "Browse past release notes any time with the ← → arrows on this card.",

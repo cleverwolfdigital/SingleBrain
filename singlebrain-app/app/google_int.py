@@ -248,6 +248,30 @@ def share_file(email, file_id, share_type="anyone", email_address=None, role="re
     return {"id": info.get("id"), "name": info.get("name"), "link": info.get("webViewLink")}
 
 
+def delete_drive_file(email, file_id):
+    """Move a Drive file to the user's Drive trash (recoverable ~30 days), rather than
+    hard-deleting. Returns True on success (or if the file is already gone), or None if
+    the user isn't connected. Raises on other API errors."""
+    token = get_access_token(email)
+    if not token:
+        return None
+    fid = urllib.parse.quote(file_id, safe="")
+    url = f"https://www.googleapis.com/drive/v3/files/{fid}?fields=id"
+    body = json.dumps({"trashed": True}).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=body, method="PATCH",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            json.loads(r.read().decode("utf-8"))
+        return True
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return True   # already deleted in Drive; treat as success
+        raise
+
+
 def status(email):
     email = (email or "").strip().lower()
     rows = db.query("SELECT email, connected_at FROM google_tokens WHERE email=?", (email,))

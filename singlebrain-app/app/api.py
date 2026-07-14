@@ -517,7 +517,8 @@ DASHBOARD_FEATURES = (
     "review, retrieval, storage). Open the item and click 'Files', or use the paperclip on a task row. "
     "The first time, click 'Connect Your Drive' — a popup authorizes Google, then closes itself. Users "
     "can upload files (or drag-drop), add a link, and share each file by link or with a specific person "
-    "(view or edit). A paperclip badge on each card shows the attachment count.\n"
+    "(view or edit). Each file can be removed from the item (kept in Drive) or deleted from Drive "
+    "entirely (moved to Drive trash). A paperclip badge on each card shows the attachment count.\n"
     "- Overview shows upcoming Google Calendar events once Drive is connected.\n"
     "- Productivity reports roll up completed work + tracked time by day/week/month/quarter/year.\n"
     "- Daily Journal (morning focus + end-of-day log). Super Admins manage team roles, per-business "
@@ -987,14 +988,25 @@ def link_attachment(body: AttachLinkIn, request: Request):
 
 
 @app.delete("/api/attachments/{aid}")
-def delete_attachment(aid: int, request: Request):
-    """Detach a file from the entity. The file itself stays in Google Drive —
-    this only removes the dashboard's link to it."""
-    auth.current_user(request)
-    if not db.query("SELECT 1 FROM attachments WHERE id=?", (aid,)):
+def delete_attachment(aid: int, request: Request, drive: bool = False):
+    """Remove a file from the entity. By default this only detaches it (the file
+    stays in Google Drive). With drive=1, the underlying Drive file is also moved to
+    the user's Drive trash first; if that fails the row is kept so nothing is lost."""
+    email = auth.current_user(request)
+    rows = db.query("SELECT * FROM attachments WHERE id=?", (aid,))
+    if not rows:
         raise HTTPException(404, "Attachment not found.")
+    att = rows[0]
+    if drive and att.get("source") == "drive" and att.get("file_id"):
+        try:
+            res = google_int.delete_drive_file(email, att["file_id"])
+        except Exception as e:
+            raise HTTPException(502, f"Couldn't delete from Drive: {e}")
+        if res is None:
+            raise HTTPException(400, "Google Drive isn't connected — use Remove to just detach it, "
+                                     "or connect Drive and try again.")
     db.execute("DELETE FROM attachments WHERE id=?", (aid,))
-    return {"ok": True}
+    return {"ok": True, "drive_deleted": bool(drive and att.get("file_id"))}
 
 
 class GoogleConfigIn(BaseModel):
