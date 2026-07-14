@@ -170,3 +170,20 @@ CREATE TABLE IF NOT EXISTS daily_journal (
   wins TEXT, tomorrow_focus TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
+-- Files attached to any entity (business | campaign | project | task). Files live
+-- in the user's Google Drive; we store the association + link so the dashboard can
+-- list, open, share, and detach them per entity.
+CREATE TABLE IF NOT EXISTS attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entity_type TEXT NOT NULL,          -- business | campaign | project | task
+  entity_id INTEGER NOT NULL,
+  file_id TEXT,                       -- Google Drive file id (null for external links)
+  name TEXT,
+  link TEXT,
+  mime TEXT,
+  source TEXT DEFAULT 'drive',        -- drive | link
+  added_by TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_attachments_entity ON attachments(entity_type, entity_id);

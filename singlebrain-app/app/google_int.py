@@ -1,8 +1,12 @@
-"""Google Drive + Calendar (read-only) integration via OAuth 2.0.
+"""Google Drive + Calendar integration via OAuth 2.0.
 
 Per-user tokens; stdlib urllib only (no google client library). Each user connects
-their own Google account; we store access + refresh tokens and read their upcoming
-calendar events and recent Drive files.
+their own Google account; we store access + refresh tokens, read their upcoming
+calendar events, and read/upload/share their Drive files.
+
+Calendar is read-only; Drive is full-access (`drive` scope) so the dashboard can
+upload files and grant share permissions. Changing the scope means already-connected
+users must reconnect once to re-consent to the wider permission.
 """
 import os
 import json
@@ -17,7 +21,7 @@ from . import db
 REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "https://brain.cleverwolfdigital.com/auth/google/callback")
 SCOPES = ("openid email "
           "https://www.googleapis.com/auth/calendar.readonly "
-          "https://www.googleapis.com/auth/drive.readonly")
+          "https://www.googleapis.com/auth/drive")
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -143,6 +147,15 @@ def _api_get(url, token):
         return json.loads(r.read().decode("utf-8"))
 
 
+def _api_post(url, token, data, content_type):
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": content_type},
+    )
+    with urllib.request.urlopen(req, timeout=120) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
 def calendar_events(email, max_results=8):
     token = get_access_token(email)
     if not token:
@@ -175,9 +188,64 @@ def drive_files(email, max_results=10):
     })
     data = _api_get(url, token)
     return [{
+        "id": f.get("id"),
         "name": f.get("name"), "link": f.get("webViewLink"),
         "modified": f.get("modifiedTime"), "mime": f.get("mimeType"),
     } for f in data.get("files", [])]
+
+
+def upload_file(email, filename, content, mimetype=None):
+    """Upload raw bytes to the user's Drive via a single multipart/related request.
+    Returns the created file (id, name, link, mime, modified), or None if the user
+    isn't connected. Suitable for modest files; large uploads should use resumable."""
+    token = get_access_token(email)
+    if not token:
+        return None
+    mimetype = (mimetype or "application/octet-stream").split(";")[0].strip() or "application/octet-stream"
+    boundary = "singlebrain" + str(int(time.time() * 1000))
+    bb = boundary.encode("utf-8")
+    meta = json.dumps({"name": (filename or "upload").strip() or "upload"}).encode("utf-8")
+    body = b"".join([
+        b"--", bb, b"\r\n",
+        b"Content-Type: application/json; charset=UTF-8\r\n\r\n", meta, b"\r\n",
+        b"--", bb, b"\r\n",
+        b"Content-Type: ", mimetype.encode("utf-8"), b"\r\n\r\n", content, b"\r\n",
+        b"--", bb, b"--\r\n",
+    ])
+    url = ("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&"
+           "fields=id,name,mimeType,modifiedTime,webViewLink")
+    data = _api_post(url, token, body, f"multipart/related; boundary={boundary}")
+    return {
+        "id": data.get("id"), "name": data.get("name"), "link": data.get("webViewLink"),
+        "modified": data.get("modifiedTime"), "mime": data.get("mimeType"),
+    }
+
+
+def share_file(email, file_id, share_type="anyone", email_address=None, role="reader"):
+    """Grant access to a Drive file and return its shareable link.
+    share_type 'anyone' => anyone-with-the-link; 'user' => a specific email address.
+    role 'reader' (view) or 'writer' (edit). Returns None if the user isn't connected."""
+    token = get_access_token(email)
+    if not token:
+        return None
+    role = "writer" if role == "writer" else "reader"
+    fid = urllib.parse.quote(file_id, safe="")
+    if share_type == "user":
+        addr = (email_address or "").strip()
+        if not addr:
+            raise ValueError("An email address is required to share with a specific person.")
+        perm = {"role": role, "type": "user", "emailAddress": addr}
+        send_notify = "true"      # let the person know they've been given access
+    else:
+        perm = {"role": role, "type": "anyone"}
+        send_notify = "false"     # link sharing needs no notification
+    url = (f"https://www.googleapis.com/drive/v3/files/{fid}/permissions?"
+           + urllib.parse.urlencode({"sendNotificationEmail": send_notify, "fields": "id"}))
+    _api_post(url, token, json.dumps(perm).encode("utf-8"), "application/json")
+    info = _api_get(
+        f"https://www.googleapis.com/drive/v3/files/{fid}?fields=id,name,webViewLink", token
+    )
+    return {"id": info.get("id"), "name": info.get("name"), "link": info.get("webViewLink")}
 
 
 def status(email):

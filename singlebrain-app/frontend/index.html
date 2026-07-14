@@ -365,6 +365,12 @@
     .patch-date { margin-left: 4px; color: var(--faint); font-size: 10px; }
     .patch-list { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.6; }
     .patch-list li { margin-bottom: 2px; }
+    .patch-new { margin-left: 6px; padding: 1px 7px; color: var(--gold-soft); background: rgba(208,168,83,0.14); border-radius: 20px; font: 600 10px var(--font-display); white-space: nowrap; }
+    .patch-nav { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .patch-count { min-width: 34px; text-align: center; color: var(--faint); font: 600 10px var(--font-display); }
+    .patch-nav .icon-button:disabled { opacity: 0.32; cursor: default; pointer-events: none; }
+    .patch-open { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 2px 8px; color: var(--gold-soft); background: transparent; border: 1px solid var(--line-strong); border-radius: 20px; font: 600 10px var(--font-display); cursor: pointer; }
+    .patch-open:hover { background: var(--panel-hover); border-color: var(--gold); }
     @media (max-width: 560px) { .access-cols { grid-template-columns: 1fr; } }
     .sub-biz { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
     .sub-biz-label { display: block; margin-bottom: 6px; color: var(--faint); font-size: 8px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
@@ -399,6 +405,12 @@
     .task-priority.low { color: var(--green); }
     .task-priority.low::before { background: var(--green); }
     .task-empty { padding: 30px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 6px; text-align: center; font-size: 11px; }
+    .drive-drop { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px; margin-bottom: 12px; border: 1px dashed var(--line-strong); border-radius: 6px; transition: border-color .15s, background .15s; }
+    .drive-drop.drag { border-color: var(--gold); background: rgba(208, 168, 83, 0.06); }
+    .drive-drop-hint { color: var(--faint); font-size: 11px; }
+    .drive-progress { flex-basis: 100%; color: var(--muted); font-size: 11px; }
+    .attach-badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; color: var(--muted); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 20px; font: 600 10px var(--font-display); vertical-align: middle; }
+    .attach-badge .icon-sm { width: 12px; height: 12px; }
     .team-grid { grid-template-columns: repeat(4, 1fr); }
     .person-card { min-height: 184px; padding: 16px; text-align: center; }
     .person-card .avatar { width: 46px; height: 46px; margin: 0 auto 9px; font-size: 13px; }
@@ -682,7 +694,6 @@
     <nav class="nav">
       <button class="nav-button" data-view="journal"><i data-lucide="notebook-pen" class="icon"></i>Daily Journal</button>
       <button class="nav-button" data-view="chat"><i data-lucide="message-square-text" class="icon"></i>CWD Brain Chat</button>
-      <button class="nav-button" data-view="google"><i data-lucide="calendar-check" class="icon"></i>Google</button>
       <button class="nav-button" data-view="tutorial"><i data-lucide="graduation-cap" class="icon"></i>Tutorial</button>
       <button class="nav-button" id="feedbackNav" data-view="feedback"><i data-lucide="message-square-warning" class="icon"></i>Feedback</button>
       <button class="nav-button hidden" id="adminNav" data-view="admin"><i data-lucide="shield-check" class="icon"></i>Super Admin</button>
@@ -698,7 +709,7 @@
       <div class="view-header">
         <div><div class="eyebrow">Command Center</div><h1>Good morning, <span id="greetingName">there</span>.</h1><p>Fresh start — set your focus and start logging outreach.</p></div>
         <div class="snapshot-col">
-          <div class="date-chip"><i data-lucide="calendar-days" class="icon-sm"></i><strong style="color:var(--gold-soft)">Manual snapshot</strong> / New sprint</div>
+          <div class="date-chip"><i data-lucide="calendar-days" class="icon-sm"></i><strong style="color:var(--gold-soft)">Manual snapshot</strong> / New sprint <button class="patch-open" id="patchOpen" title="What's new — release notes"><i data-lucide="megaphone" class="icon-sm"></i>What's new</button></div>
           <div class="tool-shortcuts">
             <a class="tool-shortcut" href="https://chatgpt.com" target="_blank" rel="noopener" title="ChatGPT"><i data-lucide="message-square-text" class="icon-sm"></i><span>ChatGPT</span></a>
             <a class="tool-shortcut" href="https://claude.ai/design" target="_blank" rel="noopener" title="Claude"><i data-lucide="sparkles" class="icon-sm"></i><span>Claude</span></a>
@@ -709,7 +720,15 @@
         </div>
       </div>
       <article class="card patch-notice hidden" id="patchNotice">
-        <div class="patch-head"><div><span class="patch-badge" id="patchVersion">v1.7</span> <strong>What's new</strong> <span class="patch-date" id="patchDate"></span></div><button class="icon-button" id="patchClose" aria-label="Dismiss patch notes" title="Dismiss"><i data-lucide="x" class="icon"></i></button></div>
+        <div class="patch-head">
+          <div><span class="patch-badge" id="patchVersion">v1.9</span> <strong>What's new</strong> <span class="patch-date" id="patchDate"></span> <span class="patch-new hidden" id="patchNew"></span></div>
+          <div class="patch-nav">
+            <button class="icon-button" id="patchPrev" aria-label="Older update" title="Older update"><i data-lucide="chevron-left" class="icon-sm"></i></button>
+            <span class="patch-count" id="patchCount"></span>
+            <button class="icon-button" id="patchNext" aria-label="Newer update" title="Newer update"><i data-lucide="chevron-right" class="icon-sm"></i></button>
+            <button class="icon-button" id="patchClose" aria-label="Dismiss patch notes" title="Dismiss"><i data-lucide="x" class="icon"></i></button>
+          </div>
+        </div>
         <ul class="patch-list" id="patchList"></ul>
       </article>
       <div class="grid metrics">
@@ -754,6 +773,7 @@
             <div class="recommendation"><span class="rank">2</span><div><strong>Prepare the next fit call</strong><p>Use live objection notes from prior calls.</p></div></div>
             <div class="recommendation"><span class="rank">3</span><div><strong>Log reply outcomes</strong><p>Capture the exact hook that earns a response.</p></div></div>
           </div></article>
+          <article class="card"><div class="panel-header"><h2>Upcoming events</h2><span>Google Calendar</span></div><div class="panel-body" id="overviewCal"><div class="task-empty" style="margin:0">Loading…</div></div></article>
         </div>
       </div>
     </section>
@@ -953,10 +973,6 @@
       <div id="feedbackList"></div>
     </section>
 
-    <section class="view" id="google">
-      <div class="view-header"><div><div class="eyebrow">Integration</div><h1>Google Drive &amp; Calendar</h1><p>Connect your Google account to see your upcoming events and recent files — read-only.</p></div><button class="button secondary hidden" id="googleDisconnect"><i data-lucide="log-out" class="icon-sm"></i>Disconnect</button></div>
-      <div id="googleBody"></div>
-    </section>
   </main>
 
   <div class="modal-overlay hidden" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle" aria-hidden="true">
@@ -1037,6 +1053,7 @@
           <button class="icon-button" type="button" id="detailPin" aria-label="Pin to sidebar" title="Pin to sidebar"><i data-lucide="star" class="icon"></i></button>
           <button class="icon-button hidden" type="button" id="detailEdit" data-admin-only aria-label="Edit" title="Edit"><i data-lucide="pencil" class="icon"></i></button>
           <button class="icon-button hidden" type="button" id="detailDelete" data-admin-only aria-label="Delete" title="Delete"><i data-lucide="trash-2" class="icon"></i></button>
+          <button class="button secondary hidden" type="button" id="detailFiles"><i data-lucide="paperclip" class="icon-sm"></i>Files</button>
           <button class="button" type="button" id="detailAddTask"><i data-lucide="plus" class="icon-sm"></i>Add task</button>
           <button class="icon-button modal-close" type="button" data-close-detail aria-label="Close detail" title="Close"><i data-lucide="x" class="icon"></i></button>
         </div>
@@ -1103,6 +1120,44 @@
         <div class="field"><label for="fbKind">Type</label><select class="input" id="fbKind"><option value="bug">Bug report</option><option value="suggestion">Suggestion</option></select></div>
         <div class="field"><label for="fbMessage">Details <span class="required-mark">*</span></label><textarea class="textarea" id="fbMessage" maxlength="2000" placeholder="What happened, or what would make this better?"></textarea><span class="field-error" id="fbError"></span></div>
         <div class="modal-actions"><button class="button secondary" type="button" data-close-feedback>Cancel</button><button class="button" type="button" id="fbSend"><i data-lucide="send" class="icon-sm"></i>Send feedback</button></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay hidden" id="filesModal" role="dialog" aria-modal="true" aria-labelledby="filesTitle" aria-hidden="true">
+    <section class="task-modal">
+      <header class="modal-header">
+        <div><div class="eyebrow" id="filesEyebrow">Files</div><h2 id="filesTitle">—</h2><p style="color:var(--muted)">Attach reference files, or files for review, retrieval, and storage. Files live in your Google Drive.</p></div>
+        <button class="icon-button modal-close" type="button" data-close-files aria-label="Close" title="Close"><i data-lucide="x" class="icon"></i></button>
+      </header>
+      <div class="task-form">
+        <div id="filesConnect"></div>
+        <div id="filesTools" class="hidden">
+          <div id="filesDrop" class="drive-drop"><input type="file" id="filesFile" multiple hidden><button class="button secondary" type="button" id="filesUploadBtn"><i data-lucide="upload" class="icon-sm"></i>Upload file</button><button class="button secondary" type="button" id="filesLinkBtn"><i data-lucide="link-2" class="icon-sm"></i>Add link</button><span class="drive-drop-hint">or drop files here · 25&nbsp;MB max</span><div id="filesProgress" class="drive-progress hidden"></div></div>
+          <div id="filesLinkRow" class="hidden" style="display:flex;gap:8px;margin-bottom:12px"><input class="input" id="filesLinkUrl" type="url" placeholder="https://… paste a file link" style="flex:1"><button class="button" type="button" id="filesLinkAdd">Add</button></div>
+        </div>
+        <div id="filesList"><div class="task-empty" style="margin:0">Loading…</div></div>
+        <div class="modal-actions" style="justify-content:space-between">
+          <button class="button secondary hidden" type="button" id="filesDisconnect" title="Disconnect Google Drive"><i data-lucide="log-out" class="icon-sm"></i>Disconnect Drive</button>
+          <button class="button secondary" type="button" data-close-files>Done</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay hidden" id="shareModal" role="dialog" aria-modal="true" aria-labelledby="shareTitle" aria-hidden="true">
+    <section class="task-modal">
+      <header class="modal-header">
+        <div><div class="eyebrow">Google Drive</div><h2 id="shareTitle">Share file</h2><p id="shareFileName" style="color:var(--muted);word-break:break-word">—</p></div>
+        <button class="icon-button modal-close" type="button" data-close-share aria-label="Close" title="Close"><i data-lucide="x" class="icon"></i></button>
+      </header>
+      <div class="task-form">
+        <div class="field"><label for="shareMode">Who can access</label><select class="input" id="shareMode"><option value="anyone">Anyone with the link</option><option value="user">Specific person (by email)</option></select></div>
+        <div class="field hidden" id="shareEmailField"><label for="shareEmail">Their email</label><input class="input" id="shareEmail" type="email" placeholder="name@example.com" autocomplete="off"></div>
+        <div class="field"><label for="shareRole">Permission</label><select class="input" id="shareRole"><option value="reader">Can view</option><option value="writer">Can edit</option></select></div>
+        <span class="field-error" id="shareError"></span>
+        <div class="field hidden" id="shareLinkField"><label for="shareLink">Shareable link</label><div style="display:flex;gap:8px"><input class="input" id="shareLink" type="text" readonly style="flex:1"><button class="button secondary" type="button" id="shareCopy" title="Copy"><i data-lucide="copy" class="icon-sm"></i></button></div></div>
+        <div class="modal-actions"><button class="button secondary" type="button" data-close-share>Close</button><button class="button" type="button" id="shareSubmit"><i data-lucide="share-2" class="icon-sm"></i>Create link</button></div>
       </div>
     </section>
   </div>
@@ -1280,6 +1335,27 @@
         if (res.ok) pins = await res.json();
       } catch (e) { /* ignore */ }
     }
+    // Attachment counts per entity, for the little paperclip badges on cards/rows.
+    let attachCounts = {};
+    async function loadAttachCounts() {
+      try {
+        const res = await fetch("/api/attachments/counts", { credentials: "same-origin" });
+        attachCounts = res.ok ? await res.json() : {};
+      } catch (e) { attachCounts = {}; }
+    }
+    function attachCount(type, id) { const t = attachCounts[type]; return (t && t[String(id)]) || 0; }
+    function attachBadge(type, id) {
+      const n = attachCount(type, id);
+      return n ? `<span class="attach-badge" title="${n} file${n === 1 ? "" : "s"} attached"><i data-lucide="paperclip" class="icon-sm"></i>${n}</span>` : "";
+    }
+    async function refreshAttachBadges() {
+      await loadAttachCounts();
+      renderBusinessGrid();
+      renderProjectGrid();
+      if (typeof renderCampaignGrid === "function") renderCampaignGrid();
+      renderTaskList();
+      renderMyTasks();
+    }
     const isPinned = (kind, ref) => pins.some(p => p.kind === kind && p.ref === ref);
     // Everyone assignable = all staff with an email, plus any registered app users (guests).
     function assignableUsers() {
@@ -1340,10 +1416,11 @@
       const dueTxt = task.dueDate ? formatTaskDate(task.dueDate) : "—";
       const timerAttrs = task.running ? ` data-base="${task.actualSec}" data-start="${Date.now()}"` : "";
       const timerCls = task.running ? "task-timer running" : "task-timer";
-      const meta = [task.business, task.category, task.client ? "◆ " + task.client : "", task.assignee ? '<span class="task-assignee">@' + escapeHTML(emailName(task.assignee)) + "</span>" : ""].filter(Boolean);
+      const meta = [task.business, task.category, task.client ? "◆ " + task.client : "", task.assignee ? '<span class="task-assignee">@' + escapeHTML(emailName(task.assignee)) + "</span>" : "", attachBadge("task", task.id)].filter(Boolean);
+      const filesBtn = `<button class="task-btn" data-act="files" aria-label="Files" title="Files"><i data-lucide="paperclip" class="icon-sm"></i></button>`;
       const actions = done
-        ? `<span class="task-done-badge"><i data-lucide="circle-check-big" class="icon-sm"></i>Done</span><button class="task-btn" data-act="reopen" aria-label="Reopen task" title="Reopen"><i data-lucide="rotate-ccw" class="icon-sm"></i></button><button class="task-btn" data-act="delete" aria-label="Delete task" title="Delete"><i data-lucide="trash-2" class="icon-sm"></i></button>`
-        : `<button class="task-btn ${task.running ? "running" : "start"}" data-act="${task.running ? "pause" : "start"}" aria-label="${task.running ? "Pause timer" : "Start timer"}" title="${task.running ? "Pause timer" : "Start timer"}"><i data-lucide="${task.running ? "pause" : "play"}" class="icon-sm"></i></button><button class="task-btn complete" data-act="complete" aria-label="Mark complete" title="Mark complete"><i data-lucide="check" class="icon-sm"></i></button>`;
+        ? `<span class="task-done-badge"><i data-lucide="circle-check-big" class="icon-sm"></i>Done</span>${filesBtn}<button class="task-btn" data-act="reopen" aria-label="Reopen task" title="Reopen"><i data-lucide="rotate-ccw" class="icon-sm"></i></button><button class="task-btn" data-act="delete" aria-label="Delete task" title="Delete"><i data-lucide="trash-2" class="icon-sm"></i></button>`
+        : `<button class="task-btn ${task.running ? "running" : "start"}" data-act="${task.running ? "pause" : "start"}" aria-label="${task.running ? "Pause timer" : "Start timer"}" title="${task.running ? "Pause timer" : "Start timer"}"><i data-lucide="${task.running ? "pause" : "play"}" class="icon-sm"></i></button>${filesBtn}<button class="task-btn complete" data-act="complete" aria-label="Mark complete" title="Mark complete"><i data-lucide="check" class="icon-sm"></i></button>`;
       return `
         <article class="task-row ${done ? "is-done" : ""} ${task.running ? "is-running" : ""}" data-task-id="${escapeHTML(task.id)}">
           <div class="task-main"><span class="task-state"></span><div><strong title="${escapeHTML(task.notes)}">${escapeHTML(task.task)}</strong><small>${meta.map(m => m.startsWith("<") ? m : escapeHTML(m)).join(" · ")}</small></div></div>
@@ -1556,6 +1633,11 @@
       const id = row?.dataset.taskId;
       const act = button.dataset.act;
       if (!id) return;
+      if (act === "files") {
+        const t = tasks.find(x => String(x.id) === String(id));
+        openFilesModal("task", id, t ? t.task : "Task");
+        return;
+      }
       button.disabled = true;
       const isDelete = act === "delete";
       try {
@@ -1590,7 +1672,7 @@
       const note = subCount ? `<div class="sub-count-note"><i data-lucide="chevrons-down-up" class="icon-sm"></i>${subCount} sub-business${subCount === 1 ? "" : "es"} below</div>` : "";
       return `
         <article class="card business-card" data-biz-name="${escapeHTML(b.name)}" role="button" tabindex="0" aria-label="Open ${escapeHTML(b.name)}">
-          <div class="business-top"><div class="business-logo">${escapeHTML(b.initials)}</div><span class="status ${b.status}">${escapeHTML(b.state)}${pinned}</span></div>
+          <div class="business-top"><div class="business-logo">${escapeHTML(b.initials)}</div><div style="display:flex;align-items:center;gap:6px">${attachBadge("business", b.id)}<span class="status ${b.status}">${escapeHTML(b.state)}${pinned}</span></div></div>
           <h3>${escapeHTML(b.name)}${sub}</h3>
           <div class="business-meta"><span>Owner<b>${escapeHTML(b.owner)}</b></span></div>
           ${note}
@@ -1630,7 +1712,7 @@
     function projectCard(p, verb) {
       return `
       <article class="card project-card project-item" data-status="${p.status}" data-proj-name="${escapeHTML(p.name)}" role="button" tabindex="0" aria-label="Open ${escapeHTML(p.name)}">
-        <div class="project-top"><span class="status ${p.badge}">${escapeHTML(p.state)}</span><span class="priority">${escapeHTML(p.due)}</span></div>
+        <div class="project-top"><span class="status ${p.badge}">${escapeHTML(p.state)}</span><span style="display:flex;align-items:center;gap:6px">${attachBadge(p.kind === "campaign" ? "campaign" : "project", p.id)}<span class="priority">${escapeHTML(p.due)}</span></span></div>
         <h3>${escapeHTML(p.name)}</h3><p>${escapeHTML(p.business)}</p>
         <div class="project-footer"><div class="owner"><i data-lucide="corner-down-right" class="icon-sm"></i>${escapeHTML(p.next)}</div></div>
         <div class="card-open-hint"><i data-lucide="layout-list" class="icon-sm"></i>${verb}</div>
@@ -2090,6 +2172,56 @@
     });
     $$('[data-close-entity]').forEach(b => b.addEventListener("click", () => hideModal("#entityModal")));
     $$('[data-close-feedback]').forEach(b => b.addEventListener("click", () => hideModal("#feedbackModal")));
+    $$('[data-close-share]').forEach(b => b.addEventListener("click", () => hideModal("#shareModal")));
+    $("#shareModal").addEventListener("click", e => { if (e.target === $("#shareModal")) hideModal("#shareModal"); });
+    // Files modal (attachments on business/campaign/project/task)
+    $$('[data-close-files]').forEach(b => b.addEventListener("click", closeFilesModal));
+    $("#filesModal").addEventListener("click", e => { if (e.target === $("#filesModal")) closeFilesModal(); });
+    $("#detailFiles").addEventListener("click", () => { if (detailEntity && detailEntity.item) openFilesModal(detailEntity.type, detailEntity.item.id, detailEntity.item.name); });
+    (function wireFilesModal() {
+      const drop = $("#filesDrop"), picker = $("#filesFile");
+      $("#filesUploadBtn").addEventListener("click", () => picker.click());
+      picker.addEventListener("change", () => { filesUpload(picker.files); picker.value = ""; });
+      ["dragover", "dragenter"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("drag"); }));
+      ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("drag"); }));
+      drop.addEventListener("drop", e => { if (e.dataTransfer && e.dataTransfer.files.length) filesUpload(e.dataTransfer.files); });
+      $("#filesLinkBtn").addEventListener("click", () => { const row = $("#filesLinkRow"); row.classList.toggle("hidden"); if (!row.classList.contains("hidden")) $("#filesLinkUrl").focus(); });
+      $("#filesLinkAdd").addEventListener("click", filesAddLink);
+      $("#filesLinkUrl").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); filesAddLink(); } });
+      $("#filesList").addEventListener("click", async e => {
+        const share = e.target.closest("[data-share-id]");
+        if (share) { openShareModal(share.dataset.shareId, share.dataset.shareName); return; }
+        const detach = e.target.closest("[data-detach]");
+        if (detach) {
+          detach.disabled = true;
+          try {
+            const r = await fetch(`/api/attachments/${detach.dataset.detach}`, { method: "DELETE", credentials: "same-origin" });
+            if (r.ok) { showToast("File removed"); filesDirty = true; renderAttachments(); } else { showToast("Couldn't remove"); detach.disabled = false; }
+          } catch (err) { showToast("Couldn't reach the server."); detach.disabled = false; }
+        }
+      });
+      $("#filesDisconnect").addEventListener("click", async () => {
+        try {
+          const r = await fetch("/api/google/disconnect", { method: "POST", credentials: "same-origin" });
+          if (r.ok) { showToast("Google Drive disconnected"); await fetchGoogleStatus(true); renderFilesConnect(); renderAttachments(); }
+        } catch (e) { showToast("Couldn't reach the server."); }
+      });
+    })();
+    $("#shareMode").addEventListener("change", () => {
+      const isUser = $("#shareMode").value === "user";
+      $("#shareEmailField").classList.toggle("hidden", !isUser);
+      $("#shareSubmit").innerHTML = isUser
+        ? '<i data-lucide="share-2" class="icon-sm"></i>Share'
+        : '<i data-lucide="share-2" class="icon-sm"></i>Create link';
+      renderIcons();
+    });
+    $("#shareSubmit").addEventListener("click", submitShare);
+    $("#shareCopy").addEventListener("click", async () => {
+      const val = $("#shareLink").value;
+      if (!val) return;
+      try { await navigator.clipboard.writeText(val); showToast("Link copied ✓"); }
+      catch (e) { $("#shareLink").select(); document.execCommand("copy"); showToast("Link copied ✓"); }
+    });
     $("#entitySave").addEventListener("click", saveEntity);
     $("#entityDelete").addEventListener("click", deleteEntity);
     $("#fbSend").addEventListener("click", sendFeedback);
@@ -2248,23 +2380,91 @@
         return d.toLocaleString("en-US", allDay ? { month: "short", day: "numeric", year: "numeric" } : { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
       } catch (e) { return iso; }
     }
-    async function renderGoogle() {
-      const body = $("#googleBody");
-      if (!body) return;
-      body.innerHTML = '<div class="task-empty">Loading…</div>';
-      let st = { configured: false, connected: false };
-      try { const r = await fetch("/api/google/status", { credentials: "same-origin" }); if (r.ok) st = await r.json(); } catch (e) {}
-      $("#googleDisconnect").classList.toggle("hidden", !st.connected);
+    // ---------- Google Drive connection (shared, connect-on-demand) ----------
+    let googleStatus = null;
+    async function fetchGoogleStatus(force) {
+      if (googleStatus && !force) return googleStatus;
+      try {
+        const r = await fetch("/api/google/status", { credentials: "same-origin" });
+        googleStatus = r.ok ? await r.json() : { configured: false, connected: false };
+      } catch (e) { googleStatus = { configured: false, connected: false }; }
+      return googleStatus;
+    }
+    // Open the OAuth consent in a popup; resolve true (connected), false (denied),
+    // or null (window closed with no signal — caller should re-check status).
+    function connectDrivePopup() {
+      return new Promise(resolve => {
+        const w = 480, h = 660;
+        let sx = 0, sy = 0, sw = screen.width, sh = screen.height;
+        try { sx = window.screenX; sy = window.screenY; sw = window.outerWidth; sh = window.outerHeight; } catch (e) {}
+        const left = sx + Math.max(0, (sw - w) / 2), top = sy + Math.max(0, (sh - h) / 2);
+        const popup = window.open("/auth/google/start?popup=1", "sb_google", `width=${w},height=${h},left=${left},top=${top}`);
+        let done = false;
+        const onMsg = e => {
+          if (e.origin !== window.location.origin || !e.data || typeof e.data.type !== "string" || !e.data.type.startsWith("google-")) return;
+          done = true; cleanup(); resolve(e.data.type === "google-connected");
+        };
+        const timer = setInterval(() => { if (popup && popup.closed && !done) { cleanup(); resolve(null); } }, 600);
+        function cleanup() { clearInterval(timer); window.removeEventListener("message", onMsg); }
+        window.addEventListener("message", onMsg);
+      });
+    }
+
+    // ---------- Overview: upcoming Google Calendar events ----------
+    async function loadOverviewCalendar() {
+      const host = $("#overviewCal");
+      if (!host) return;
+      const st = await fetchGoogleStatus();
+      if (!st.connected) {
+        host.innerHTML = st.configured
+          ? '<div class="task-empty" style="margin:0"><button class="button secondary" id="ovCalConnect"><i data-lucide="link" class="icon-sm"></i>Connect your Drive</button></div>'
+          : '<div class="task-empty" style="margin:0">Google isn\'t set up yet.</div>';
+        renderIcons();
+        const btn = $("#ovCalConnect");
+        if (btn) btn.addEventListener("click", async () => { btn.disabled = true; await connectDrivePopup(); await fetchGoogleStatus(true); loadOverviewCalendar(); });
+        return;
+      }
+      try {
+        const r = await fetch("/api/google/calendar", { credentials: "same-origin" });
+        const ev = r.ok ? await r.json() : [];
+        host.innerHTML = ev.length ? ev.map(e => `<div class="risk-row" style="grid-template-columns:1fr;padding:9px 0"><div><strong>${escapeHTML(e.summary)}</strong><p>${escapeHTML(fmtGoogleDate(e.start, e.all_day))}</p></div></div>`).join("") : '<div class="task-empty" style="margin:0">No upcoming events.</div>';
+      } catch (e) { host.innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t load calendar.</div>'; }
+      renderIcons();
+    }
+
+    // ---------- Files modal: attachments on business/campaign/project/task ----------
+    let filesCtx = { type: null, id: null, title: "" };
+    let filesDirty = false;   // set when files are added/removed → refresh badges on close
+    const FILES_EYEBROW = { business: "Business", campaign: "Campaign", project: "Project", task: "Task" };
+
+    function closeFilesModal() {
+      hideModal("#filesModal");
+      if (filesDirty) { filesDirty = false; refreshAttachBadges(); }
+    }
+
+    async function openFilesModal(type, id, title) {
+      filesCtx = { type, id: Number(id), title: title || "" };
+      filesDirty = false;
+      $("#filesTitle").textContent = title || "Files";
+      $("#filesEyebrow").textContent = FILES_EYEBROW[type] || "Files";
+      $("#filesList").innerHTML = '<div class="task-empty" style="margin:0">Loading…</div>';
+      $("#filesLinkRow").classList.add("hidden");
+      $("#filesLinkUrl").value = "";
+      showModal("#filesModal");
+      await renderFilesConnect();
+      renderAttachments();
+    }
+
+    async function renderFilesConnect() {
+      const st = await fetchGoogleStatus();
+      const connectHost = $("#filesConnect");
+      $("#filesDisconnect").classList.toggle("hidden", !st.connected);
+      $("#filesTools").classList.toggle("hidden", !st.connected);
+      if (st.connected) { connectHost.innerHTML = ""; return; }
       if (!st.configured) {
-        body.innerHTML = ME.is_super_admin
-          ? `<article class="card" style="padding:22px;max-width:540px">
-               <h3 style="margin:0 0 6px;font:600 14px var(--font-display)">Finish Google setup</h3>
-               <p style="color:var(--muted);font-size:12px;margin:0 0 14px;line-height:1.55">Paste your Google <b>Client Secret</b> (Google Cloud console → your OAuth client → “Client secrets”). It's stored on the server; only admins can set it.</p>
-               <div class="field"><label for="gSecret">Client Secret</label><input class="input" id="gSecret" type="password" placeholder="GOCSPX-…" autocomplete="off"></div>
-               <span class="field-error" id="gSecretErr"></span>
-               <div style="margin-top:10px"><button class="button" id="gSaveSecret"><i data-lucide="save" class="icon-sm"></i>Save &amp; enable</button></div>
-             </article>`
-          : '<div class="task-empty">Google isn\'t set up yet — ask an admin to finish the setup.</div>';
+        connectHost.innerHTML = ME.is_super_admin
+          ? `<div class="card" style="padding:16px;margin-bottom:12px"><p style="color:var(--muted);font-size:12px;margin:0 0 10px;line-height:1.5">Google Drive isn't set up yet. Paste your Google <b>Client Secret</b> to enable it (stored on the server; admins only).</p><div style="display:flex;gap:8px"><input class="input" id="gSecret" type="password" placeholder="GOCSPX-…" autocomplete="off" style="flex:1"><button class="button" id="gSaveSecret"><i data-lucide="save" class="icon-sm"></i>Enable</button></div><span class="field-error" id="gSecretErr"></span></div>`
+          : '<div class="task-empty" style="margin:0 0 12px">Google Drive isn\'t set up yet — ask an admin to finish setup.</div>';
         renderIcons();
         if (ME.is_super_admin) {
           $("#gSaveSecret").addEventListener("click", async () => {
@@ -2274,7 +2474,7 @@
             try {
               const r = await fetch("/api/google/config", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client_secret: secret }) });
               const d = await r.json().catch(() => ({}));
-              if (r.ok && d.configured) { showToast("Google enabled ✓"); renderGoogle(); }
+              if (r.ok && d.configured) { showToast("Google enabled ✓"); await fetchGoogleStatus(true); renderFilesConnect(); }
               else if (r.ok) { $("#gSecretErr").textContent = "Saved, but the Client ID is still missing on the server."; btn.disabled = false; }
               else { $("#gSecretErr").textContent = d.detail || ("Error " + r.status); btn.disabled = false; }
             } catch (e) { $("#gSecretErr").textContent = "Couldn't reach the server."; btn.disabled = false; }
@@ -2282,28 +2482,111 @@
         }
         return;
       }
-      if (!st.connected) {
-        body.innerHTML = '<article class="card" style="padding:26px;text-align:center"><p style="color:var(--muted);margin:0 0 16px;line-height:1.6">Connect your Google account to see your Calendar and Drive here.<br>Read-only — nothing is ever edited or deleted.</p><a class="button" href="/auth/google/start"><i data-lucide="link" class="icon-sm"></i>Connect Google</a></article>';
+      // Configured but not connected → Connect Your Drive (popup).
+      connectHost.innerHTML = '<div class="card" style="padding:16px;margin-bottom:12px;text-align:center"><p style="color:var(--muted);font-size:12px;margin:0 0 10px;line-height:1.5">Connect your Google Drive to upload and share files. A window opens to authorize, then closes automatically.</p><button class="button" id="filesConnectBtn"><i data-lucide="link" class="icon-sm"></i>Connect Your Drive</button></div>';
+      renderIcons();
+      $("#filesConnectBtn").addEventListener("click", async () => {
+        const btn = $("#filesConnectBtn"); btn.disabled = true;
+        const ok = await connectDrivePopup();
+        await fetchGoogleStatus(true);
+        if (googleStatus.connected) { showToast("Google Drive connected ✓"); await renderFilesConnect(); renderAttachments(); }
+        else { btn.disabled = false; if (ok === false) showToast("Connection cancelled."); }
+      });
+    }
+
+    async function renderAttachments() {
+      const host = $("#filesList");
+      if (!host || !filesCtx.type) return;
+      const st = googleStatus || await fetchGoogleStatus();
+      try {
+        const r = await fetch(`/api/attachments?entity_type=${encodeURIComponent(filesCtx.type)}&entity_id=${encodeURIComponent(filesCtx.id)}`, { credentials: "same-origin" });
+        const files = r.ok ? await r.json() : [];
+        host.innerHTML = files.length ? files.map(f => `<div class="risk-row" style="grid-template-columns:1fr auto;align-items:center;gap:8px;padding:9px 0"><div style="min-width:0"><strong><a href="${escapeHTML(f.link || "#")}" target="_blank" rel="noopener" style="color:var(--text)">${escapeHTML(f.name || "File")}</a></strong><p>${f.source === "link" ? "External link" : "Google Drive"}</p></div><div style="display:flex;gap:4px">${f.file_id ? `<button class="icon-button" type="button" title="Share" data-share-id="${escapeHTML(f.file_id)}" data-share-name="${escapeHTML(f.name || "")}"><i data-lucide="share-2" class="icon-sm"></i></button>` : ""}<button class="icon-button" type="button" title="Remove from this item" data-detach="${escapeHTML(f.id)}"><i data-lucide="x" class="icon-sm"></i></button></div></div>`).join("") : ('<div class="task-empty" style="margin:0">No files yet.' + (st.connected ? " Upload one or add a link above." : "") + '</div>');
         renderIcons();
+      } catch (e) { host.innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t load files.</div>'; }
+    }
+
+    async function filesUpload(fileList) {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      const prog = $("#filesProgress");
+      for (const file of files) {
+        if (file.size > 25 * 1024 * 1024) { showToast(`${file.name} is over 25 MB — skipped`); continue; }
+        if (prog) { prog.classList.remove("hidden"); prog.textContent = `Uploading ${file.name}…`; }
+        const fd = new FormData();
+        fd.append("entity_type", filesCtx.type);
+        fd.append("entity_id", filesCtx.id);
+        fd.append("file", file);
+        try {
+          const r = await fetch("/api/attachments/upload", { method: "POST", credentials: "same-origin", body: fd });
+          const d = await r.json().catch(() => ({}));
+          if (r.ok) { showToast(`Uploaded ${file.name} ✓`); filesDirty = true; }
+          else showToast(d.detail || `Couldn't upload ${file.name}`);
+        } catch (e) { showToast(`Couldn't upload ${file.name} — network error`); }
+      }
+      if (prog) prog.classList.add("hidden");
+      renderAttachments();
+    }
+
+    async function filesAddLink() {
+      const url = $("#filesLinkUrl").value.trim();
+      if (!/^https?:\/\//i.test(url)) { showToast("Enter a valid http(s) link"); return; }
+      try {
+        const r = await fetch("/api/attachments/link", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entity_type: filesCtx.type, entity_id: filesCtx.id, link: url }) });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) { showToast("Link added ✓"); filesDirty = true; $("#filesLinkUrl").value = ""; $("#filesLinkRow").classList.add("hidden"); renderAttachments(); }
+        else showToast(d.detail || "Couldn't add link");
+      } catch (e) { showToast("Couldn't reach the server."); }
+    }
+
+    let shareFileId = null;
+    function openShareModal(id, name) {
+      shareFileId = id;
+      $("#shareFileName").textContent = name || "";
+      $("#shareMode").value = "anyone";
+      $("#shareRole").value = "reader";
+      $("#shareEmail").value = "";
+      $("#shareError").textContent = "";
+      $("#shareEmailField").classList.add("hidden");
+      $("#shareLinkField").classList.add("hidden");
+      $("#shareSubmit").disabled = false;
+      $("#shareSubmit").innerHTML = '<i data-lucide="share-2" class="icon-sm"></i>Create link';
+      showModal("#shareModal");
+    }
+
+    async function submitShare() {
+      if (!shareFileId) return;
+      const type = $("#shareMode").value;
+      const email = $("#shareEmail").value.trim();
+      const role = $("#shareRole").value;
+      $("#shareError").textContent = "";
+      if (type === "user" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        $("#shareError").textContent = "Enter a valid email address.";
         return;
       }
-      body.innerHTML = '<div class="grid dashboard-grid"><div class="stack"><article class="card"><div class="panel-header"><h2>Upcoming events</h2><span>Calendar</span></div><div class="panel-body" id="gCal"><div class="task-empty" style="margin:0">Loading…</div></div></article></div><div class="stack"><article class="card"><div class="panel-header"><h2>Recent files</h2><span>Drive</span></div><div class="panel-body" id="gDrive"><div class="task-empty" style="margin:0">Loading…</div></div></article></div></div>';
+      const btn = $("#shareSubmit");
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader" class="icon-sm"></i>Sharing…';
+      renderIcons();
       try {
-        const r = await fetch("/api/google/calendar", { credentials: "same-origin" });
-        const ev = r.ok ? await r.json() : [];
-        $("#gCal").innerHTML = ev.length ? ev.map(e => `<div class="risk-row" style="grid-template-columns:1fr;padding:9px 0"><div><strong>${escapeHTML(e.summary)}</strong><p>${escapeHTML(fmtGoogleDate(e.start, e.all_day))}</p></div></div>`).join("") : '<div class="task-empty" style="margin:0">No upcoming events.</div>';
-      } catch (e) { $("#gCal").innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t load calendar.</div>'; }
-      try {
-        const r = await fetch("/api/google/drive", { credentials: "same-origin" });
-        const files = r.ok ? await r.json() : [];
-        $("#gDrive").innerHTML = files.length ? files.map(f => `<div class="risk-row" style="grid-template-columns:1fr;padding:9px 0"><div><strong><a href="${escapeHTML(f.link)}" target="_blank" rel="noopener" style="color:var(--text)">${escapeHTML(f.name)}</a></strong><p>Modified ${escapeHTML(fmtGoogleDate(f.modified))}</p></div></div>`).join("") : '<div class="task-empty" style="margin:0">No files.</div>';
-      } catch (e) { $("#gDrive").innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t load Drive.</div>'; }
+        const r = await fetch(`/api/google/drive/${encodeURIComponent(shareFileId)}/share`, {
+          method: "POST", credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type, email: email || null, role }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) {
+          $("#shareLink").value = d.link || "";
+          $("#shareLinkField").classList.remove("hidden");
+          showToast(type === "user" ? `Shared with ${email} ✓` : "Link ready ✓");
+        } else {
+          $("#shareError").textContent = d.detail || ("Error " + r.status);
+        }
+      } catch (e) { $("#shareError").textContent = "Couldn't reach the server."; }
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="share-2" class="icon-sm"></i>Create link';
       renderIcons();
     }
-    $("#googleDisconnect").addEventListener("click", async () => {
-      try { const r = await fetch("/api/google/disconnect", { method: "POST", credentials: "same-origin" }); if (r.ok) { showToast("Google disconnected"); renderGoogle(); } } catch (e) { showToast("Couldn't reach the server."); }
-    });
-
     function showView(id) {
       $$(".view").forEach(view => view.classList.toggle("active", view.id === id));
       $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === id));
@@ -2311,7 +2594,7 @@
       if (id === "admin") loadAdminUsers().then(renderAdmin);
       if (id === "feedback") renderFeedback();
       if (id === "mytasks") renderMyTasks();
-      if (id === "google") renderGoogle();
+      if (id === "overview") loadOverviewCalendar();
       $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
       $("#sidebar").classList.remove("open");
       $("#mobileOverlay").classList.add("hidden");
@@ -2373,6 +2656,8 @@
       const canEdit = ME.is_super_admin && !!detailEntity;
       $("#detailEdit").classList.toggle("hidden", !canEdit);
       $("#detailDelete").classList.toggle("hidden", !canEdit);
+      const canFiles = detailEntity && ["business", "campaign", "project"].includes(detailEntity.type) && detailEntity.item && detailEntity.item.id != null;
+      $("#detailFiles").classList.toggle("hidden", !canFiles);
       $("#detailModal").classList.remove("hidden");
       $("#detailModal").setAttribute("aria-hidden", "false");
       document.body.classList.add("modal-open");
@@ -2456,6 +2741,7 @@
       try {
         await loadCatalog();
         await loadPins();
+        await loadAttachCounts();
         const res = await fetch("/api/me", { credentials: "same-origin" });
         if (!res.ok) { applyAccess(); return; }
         const me = await res.json();
@@ -2520,6 +2806,14 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "1.9", date: "Jul 13, 2026", items: [
+        "Attach files to any business, campaign, project, or task — for reference, review, retrieval, or storage.",
+        "Connect your Google Drive on demand the first time you add a file — a window opens to authorize, then closes automatically.",
+        "Upload or link files, then share them by link or with specific people.",
+        "A paperclip badge on each business, project, campaign, and task shows how many files are attached.",
+        "Upcoming Google Calendar events now appear right on your Overview.",
+        "Browse past release notes any time with the ← → arrows on this card.",
+      ] },
       { version: "1.8", date: "Jul 13, 2026", items: [
         "Google Drive & Calendar — connect your account to see upcoming events and recent files (read-only).",
         "Clients: an updates log, multiple contacts, and a business filter.",
@@ -2538,17 +2832,45 @@
         "Feedback help-desk with ticket status + email updates.",
       ] },
     ];
-    function renderPatchNotice() {
-      const latest = PATCH_NOTES[0];
-      if (!latest || !$("#patchNotice")) return;
-      let seen = ""; try { seen = localStorage.getItem("sb-patch-seen") || ""; } catch (e) {}
-      if (seen === latest.version) return;
-      $("#patchVersion").textContent = "v" + latest.version;
-      $("#patchDate").textContent = latest.date;
-      $("#patchList").innerHTML = latest.items.map(i => `<li>${escapeHTML(i)}</li>`).join("");
-      $("#patchNotice").classList.remove("hidden");
+    let patchIdx = 0;
+    function patchSeen() { try { return localStorage.getItem("sb-patch-seen") || ""; } catch (e) { return ""; } }
+    // How many releases are newer than the one the user last dismissed. 0 on a
+    // first visit (nothing to compare against yet).
+    function patchUnseenCount() {
+      const seen = patchSeen();
+      if (!seen) return 0;
+      const idx = PATCH_NOTES.findIndex(p => p.version === seen);
+      return idx < 0 ? PATCH_NOTES.length : idx;
+    }
+    function renderPatchAt(idx) {
+      const note = PATCH_NOTES[idx];
+      if (!note) return;
+      patchIdx = idx;
+      $("#patchVersion").textContent = "v" + note.version;
+      $("#patchDate").textContent = note.date;
+      $("#patchList").innerHTML = note.items.map(i => `<li>${escapeHTML(i)}</li>`).join("");
+      const unseen = patchUnseenCount();
+      const showNew = idx === 0 && unseen > 0;
+      $("#patchNew").textContent = showNew ? `${unseen} new since your last visit` : "";
+      $("#patchNew").classList.toggle("hidden", !showNew);
+      $("#patchCount").textContent = `${idx + 1} / ${PATCH_NOTES.length}`;
+      $("#patchPrev").disabled = idx >= PATCH_NOTES.length - 1;   // no older note
+      $("#patchNext").disabled = idx <= 0;                        // no newer note
       renderIcons();
     }
+    function openPatchNotice(idx) {
+      renderPatchAt(idx || 0);
+      $("#patchNotice").classList.remove("hidden");
+    }
+    function renderPatchNotice() {
+      if (!PATCH_NOTES.length || !$("#patchNotice")) return;
+      // Auto-open only when a newer release exists than the one last dismissed.
+      if (patchSeen() === PATCH_NOTES[0].version) return;
+      openPatchNotice(0);
+    }
+    $("#patchPrev").addEventListener("click", () => renderPatchAt(Math.min(PATCH_NOTES.length - 1, patchIdx + 1)));
+    $("#patchNext").addEventListener("click", () => renderPatchAt(Math.max(0, patchIdx - 1)));
+    $("#patchOpen").addEventListener("click", () => { openPatchNotice(0); window.scrollTo(0, 0); });
     $("#patchClose").addEventListener("click", () => {
       try { localStorage.setItem("sb-patch-seen", PATCH_NOTES[0].version); } catch (e) {}
       $("#patchNotice").classList.add("hidden");
@@ -2751,13 +3073,15 @@
 
     const initialView = location.hash.slice(1);
     if (initialView && document.getElementById(initialView)) showView(initialView);
+    // Fallback for the legacy full-page OAuth redirect (popup flow no longer hits this).
     const gp = new URLSearchParams(location.search).get("google");
     if (gp) {
-      if (gp === "connected") { showToast("Google connected ✓"); setTimeout(() => showView("google"), 300); }
+      if (gp === "connected") { showToast("Google Drive connected ✓"); fetchGoogleStatus(true).then(loadOverviewCalendar); }
       else if (gp === "denied") showToast("Google connection was cancelled.");
       else showToast("Google connection failed — please try again.");
       history.replaceState(null, "", location.pathname + location.hash);
     }
+    loadOverviewCalendar();
     renderIcons();
   </script>
 

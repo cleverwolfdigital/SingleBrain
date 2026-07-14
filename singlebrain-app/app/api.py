@@ -16,7 +16,7 @@ from typing import Optional, List
 # Quincy operates in Hawaii; report buckets ("today", "this week") are computed
 # against Hawaii-Aleutian Standard Time, which has no daylight saving.
 HST = timezone(timedelta(hours=-10))
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel, Field
 
@@ -744,33 +744,57 @@ def delete_client_note(nid: int, request: Request):
 
 # ================= Google Drive + Calendar (per-user OAuth) =================
 @app.get("/auth/google/start")
-def google_start(request: Request):
+def google_start(request: Request, popup: int = 0):
     email = auth.current_user(request)
     if not email:
         return RedirectResponse("/login", status_code=302)
     if not google_int.configured():
         raise HTTPException(503, "Google integration is not configured yet.")
-    state = auth._session.dumps({"email": email, "g": 1})
+    state = auth._session.dumps({"email": email, "g": 1, "popup": 1 if popup else 0})
     return RedirectResponse(google_int.auth_url(state), status_code=302)
+
+
+def _google_popup_close(status):
+    """A tiny self-closing page for the popup OAuth flow: it tells the opener
+    window the outcome via postMessage, then closes itself."""
+    heading = "Google Drive connected ✓" if status == "connected" else "Connection " + status
+    html = (
+        '<!doctype html><html><head><meta charset="utf-8"><title>Google Drive</title></head>'
+        '<body style="font-family:system-ui,sans-serif;background:#07121d;color:#edf4fa;'
+        'display:grid;place-items:center;height:100vh;margin:0">'
+        '<div style="text-align:center">'
+        f'<p style="font-size:15px;margin:0 0 6px">{heading}</p>'
+        '<p style="opacity:.55;font-size:12px;margin:0">You can close this window.</p></div>'
+        '<script>'
+        'try{if(window.opener)window.opener.postMessage({type:"google-' + status + '"},'
+        'window.location.origin);}catch(e){}'
+        'setTimeout(function(){window.close();},700);'
+        '</script></body></html>'
+    )
+    return HTMLResponse(html)
 
 
 @app.get("/auth/google/callback")
 def google_callback(request: Request, code: str = "", state: str = "", error: str = ""):
-    if error:
-        return RedirectResponse("/?google=denied", status_code=302)
+    popup = False
+    email = None
     try:
         data = auth._session.loads(state, max_age=600)
         email = data.get("email")
+        popup = bool(data.get("popup"))
     except Exception:
-        return RedirectResponse("/?google=error", status_code=302)
+        pass
+    if error:
+        status = "denied" if error == "access_denied" else "error"
+        return _google_popup_close(status) if popup else RedirectResponse(f"/?google={status}", status_code=302)
     if not email or not code:
-        return RedirectResponse("/?google=error", status_code=302)
+        return _google_popup_close("error") if popup else RedirectResponse("/?google=error", status_code=302)
     try:
         tok = google_int.exchange_code(code)
         google_int.save_tokens(email, tok)
     except Exception:
-        return RedirectResponse("/?google=error", status_code=302)
-    return RedirectResponse("/?google=connected", status_code=302)
+        return _google_popup_close("error") if popup else RedirectResponse("/?google=error", status_code=302)
+    return _google_popup_close("connected") if popup else RedirectResponse("/?google=connected", status_code=302)
 
 
 @app.get("/api/google/status")
@@ -800,9 +824,150 @@ def google_drive(request: Request):
     return files
 
 
+MAX_UPLOAD_BYTES = int(os.environ.get("SB_MAX_UPLOAD_MB", "25") or "25") * 1024 * 1024
+
+
+@app.post("/api/google/drive/upload")
+async def google_drive_upload(request: Request, file: UploadFile = File(...)):
+    email = auth.current_user(request)
+    content = await file.read()
+    if not content:
+        raise HTTPException(422, "The file is empty.")
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, f"File is too large ({MAX_UPLOAD_BYTES // (1024 * 1024)} MB max).")
+    try:
+        res = google_int.upload_file(email, file.filename, content, file.content_type)
+    except Exception as e:
+        raise HTTPException(502, f"Google Drive upload error: {e}")
+    if res is None:
+        raise HTTPException(400, "Google is not connected.")
+    return res
+
+
+class ShareIn(BaseModel):
+    type: str = "anyone"          # anyone | user
+    email: Optional[str] = None
+    role: str = "reader"          # reader | writer
+
+
+@app.post("/api/google/drive/{file_id}/share")
+def google_drive_share(file_id: str, body: ShareIn, request: Request):
+    email = auth.current_user(request)
+    try:
+        res = google_int.share_file(email, file_id, body.type, body.email, body.role)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"Google Drive share error: {e}")
+    if res is None:
+        raise HTTPException(400, "Google is not connected.")
+    return res
+
+
 @app.post("/api/google/disconnect")
 def google_disconnect(request: Request):
     google_int.disconnect(auth.current_user(request))
+    return {"ok": True}
+
+
+# ================= Attachments (files on business / campaign / project / task) =================
+ATTACH_TYPES = ("business", "campaign", "project", "task")
+
+
+def _attach_row(r):
+    return {
+        "id": r["id"], "entity_type": r["entity_type"], "entity_id": r["entity_id"],
+        "file_id": r.get("file_id"), "name": r.get("name"), "link": r.get("link"),
+        "mime": r.get("mime"), "source": r.get("source") or "drive",
+        "added_by": r.get("added_by"), "created_at": r.get("created_at"),
+    }
+
+
+@app.get("/api/attachments/counts")
+def attachment_counts(request: Request):
+    """Attachment counts for every entity, so cards/rows can show a badge at a
+    glance without a query per item: {entity_type: {entity_id: count}}."""
+    auth.current_user(request)
+    rows = db.query("SELECT entity_type, entity_id, COUNT(*) c FROM attachments GROUP BY entity_type, entity_id")
+    out = {}
+    for r in rows:
+        out.setdefault(r["entity_type"], {})[str(r["entity_id"])] = r["c"]
+    return out
+
+
+@app.get("/api/attachments")
+def list_attachments(entity_type: str, entity_id: int, request: Request):
+    auth.current_user(request)
+    if entity_type not in ATTACH_TYPES:
+        raise HTTPException(422, "entity_type must be business, campaign, project, or task.")
+    rows = db.query(
+        "SELECT * FROM attachments WHERE entity_type=? AND entity_id=? ORDER BY id DESC",
+        (entity_type, entity_id),
+    )
+    return [_attach_row(r) for r in rows]
+
+
+@app.post("/api/attachments/upload")
+async def upload_attachment(
+    request: Request,
+    entity_type: str = Form(...),
+    entity_id: int = Form(...),
+    file: UploadFile = File(...),
+):
+    email = auth.current_user(request)
+    if entity_type not in ATTACH_TYPES:
+        raise HTTPException(422, "entity_type must be business, campaign, project, or task.")
+    content = await file.read()
+    if not content:
+        raise HTTPException(422, "The file is empty.")
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, f"File is too large ({MAX_UPLOAD_BYTES // (1024 * 1024)} MB max).")
+    try:
+        res = google_int.upload_file(email, file.filename, content, file.content_type)
+    except Exception as e:
+        raise HTTPException(502, f"Google Drive upload error: {e}")
+    if res is None:
+        raise HTTPException(400, "Google Drive is not connected.")
+    aid = db.execute(
+        "INSERT INTO attachments(entity_type,entity_id,file_id,name,link,mime,source,added_by) "
+        "VALUES(?,?,?,?,?,?, 'drive', ?)",
+        (entity_type, entity_id, res.get("id"), res.get("name"), res.get("link"), res.get("mime"), email),
+    )
+    return {"ok": True, "attachment": _attach_row(db.query("SELECT * FROM attachments WHERE id=?", (aid,))[0])}
+
+
+class AttachLinkIn(BaseModel):
+    entity_type: str
+    entity_id: int
+    name: Optional[str] = None
+    link: str
+
+
+@app.post("/api/attachments/link")
+def link_attachment(body: AttachLinkIn, request: Request):
+    email = auth.current_user(request)
+    if body.entity_type not in ATTACH_TYPES:
+        raise HTTPException(422, "entity_type must be business, campaign, project, or task.")
+    link = (body.link or "").strip()
+    if not (link.startswith("http://") or link.startswith("https://")):
+        raise HTTPException(422, "Enter a valid file link (http/https).")
+    name = (body.name or "").strip() or link.rsplit("/", 1)[-1] or "Linked file"
+    aid = db.execute(
+        "INSERT INTO attachments(entity_type,entity_id,file_id,name,link,mime,source,added_by) "
+        "VALUES(?,?,NULL,?,?,NULL,'link',?)",
+        (body.entity_type, body.entity_id, name, link, email),
+    )
+    return {"ok": True, "attachment": _attach_row(db.query("SELECT * FROM attachments WHERE id=?", (aid,))[0])}
+
+
+@app.delete("/api/attachments/{aid}")
+def delete_attachment(aid: int, request: Request):
+    """Detach a file from the entity. The file itself stays in Google Drive —
+    this only removes the dashboard's link to it."""
+    auth.current_user(request)
+    if not db.query("SELECT 1 FROM attachments WHERE id=?", (aid,)):
+        raise HTTPException(404, "Attachment not found.")
+    db.execute("DELETE FROM attachments WHERE id=?", (aid,))
     return {"ok": True}
 
 
