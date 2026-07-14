@@ -4,7 +4,7 @@ _Source of truth for dashboard tasks. Auto-generated from the Single Brain dashb
 
 | Task | Business | Category | Priority | Due | Status | Est | Tracked |
 |------|----------|----------|----------|-----|--------|-----|---------|
-| wahiwa and aloha kia video edits | Clever Wolf Digital | Marketing | High | 2026-07-17 | open | — | — |
+| wahiwa and aloha kia video edits | Clever Wolf Digital | Marketing | High | 2026-07-17 | open | — | 0m |
 | payment info update to run ads | Spotify Hawaii | Finance | High | 2026-07-15 | open | — | — |
 | payment info update to run ads | Spotify Hawaii | Finance | High | 2026-07-15 | open | — | — |
 | Work with Madison on HomeAid Report | Clever Wolf Digital | Other | High | 2026-07-13 | open | — | — |
