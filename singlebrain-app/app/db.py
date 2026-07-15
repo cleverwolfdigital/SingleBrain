@@ -27,6 +27,7 @@ _COLUMN_MIGRATIONS = {
         "started_at": "INTEGER",
         "completed_at": "INTEGER",
         "assignee": "TEXT",       # email of the staff member the task is assigned to
+        "assigned_by": "TEXT",    # email of whoever created/assigned it — who to notify on completion
         "client": "TEXT",
         "recurring_id": "INTEGER",
     },
@@ -50,6 +51,11 @@ _COLUMN_MIGRATIONS = {
     },
     "clients": {
         "assignee": "TEXT",   # staff email who owns the client relationship
+    },
+    "app_users": {
+        # Lets a non-admin hand work to other people (and be told when it's done)
+        # without granting the whole Super Admin surface.
+        "can_assign": "INTEGER DEFAULT 0",
     },
 }
 

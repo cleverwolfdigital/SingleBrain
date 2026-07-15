@@ -66,6 +66,23 @@ def _is_admin(email):
     return _role(email) == "super_admin"
 
 
+def _can_assign(email):
+    """May hand work to someone else. Admins always can; other staff need the
+    can_assign flag — a deliberately narrow grant, so a lead can delegate and get
+    completion notices WITHOUT inheriting user management and every business."""
+    if _is_admin(email):
+        return True
+    rows = db.query("SELECT can_assign FROM app_users WHERE email=?", ((email or "").strip().lower(),))
+    return bool(rows and rows[0].get("can_assign"))
+
+
+def _require_can_assign(request):
+    email = auth.current_user(request)
+    if not _can_assign(email):
+        raise HTTPException(403, "You're not allowed to assign tasks to other people.")
+    return email
+
+
 def _access_lists(email):
     """(businesses, projects) a user may view. (None, None) for admins = everything."""
     if _is_admin(email):
@@ -138,6 +155,7 @@ def me(request: Request):
         "email": email,
         "role": role,
         "is_super_admin": role == "super_admin",
+        "can_assign": _can_assign(email),   # may hand work to other people
         "businesses": biz,   # null => all (admin); list => the only ones visible
         "projects": proj,
     }
@@ -257,14 +275,16 @@ def create_task(t: TaskIn, request: Request):
     # Admins may assign to anyone; staff-created tasks belong to the creator so
     # they remain visible to them under access filtering.
     current = auth.current_user(request)
-    if _is_admin(current):
+    if _can_assign(current):
         assignee = (t.assignee or "").strip().lower() or None
     else:
         assignee = (current or "").strip().lower() or None
+    # Remember WHO assigned it — that's who hears about it when it's completed.
     tid = db.execute(
-        "INSERT INTO tasks(business,name,category,priority,due,notes,status,estimate_min,actual_sec,assignee,client) "
-        "VALUES(?,?,?,?,?,?,'open',?,0,?,?)",
-        (t.business, name, t.category, t.priority, t.due, t.notes, est, assignee, (t.client or "").strip() or None),
+        "INSERT INTO tasks(business,name,category,priority,due,notes,status,estimate_min,actual_sec,assignee,assigned_by,client) "
+        "VALUES(?,?,?,?,?,?,'open',?,0,?,?,?)",
+        (t.business, name, t.category, t.priority, t.due, t.notes, est, assignee,
+         (current or "").strip().lower() or None, (t.client or "").strip() or None),
     )
     for dep in t.dependencies:
         db.execute("INSERT OR IGNORE INTO task_dependencies(task_id,depends_on) VALUES(?,?)", (tid, dep))
@@ -312,7 +332,7 @@ def pause_task(task_id: int):
 
 
 @app.post("/api/tasks/{task_id}/complete")
-def complete_task(task_id: int):
+def complete_task(task_id: int, request: Request):
     t = _get_task(task_id)
     add = max(0, int(time.time()) - int(t["started_at"])) if t.get("started_at") else 0
     db.execute(
@@ -320,8 +340,11 @@ def complete_task(task_id: int):
         "completed_at=?, status='done' WHERE id=?",
         (add, int(time.time()), task_id),
     )
+    done = _get_task(task_id)
+    # Tell the assigner (+ admins) it's finished — never the person who just did it.
+    notified = _notify_task_done(done, auth.current_user(request))
     pushed = _sync_tasks_to_repo()
-    return {"ok": True, "pushed": pushed, "task": _apply_timing(_get_task(task_id))}
+    return {"ok": True, "pushed": pushed, "notified": notified, "task": _apply_timing(done)}
 
 
 @app.post("/api/tasks/{task_id}/reopen")
@@ -529,6 +552,11 @@ DASHBOARD_FEATURES = (
     "emails invites to the teammates/clients added as guests. Requires full Google Calendar access "
     "(one-time reconnect).\n"
     "- Productivity reports roll up completed work + tracked time by day/week/month/quarter/year.\n"
+    "- Notifications: when a task is completed, the person who ASSIGNED it (plus admins) gets an email — "
+    "never the person who completed it. When a file is added to a task, the assignee + assigner are emailed "
+    "and the file is auto-shared with them in Drive. Files on a business/project/campaign notify nobody.\n"
+    "- Assigning: Super Admins can assign work; other staff need the 'Can assign tasks' permission "
+    "(Super Admin -> edit a person). Guests can never assign. Whoever assigns is who gets the completion email.\n"
     "- Daily Journal (morning focus + end-of-day log). Super Admins manage team roles, per-business "
     "access, and guest invites. Feedback tab files bugs/ideas. A Tutorial tab + guided tour explain it "
     "all, and a 'What's new' card (with prev/next arrows) shows release notes.\n"
@@ -627,10 +655,11 @@ class AssignIn(BaseModel):
 
 @app.post("/api/tasks/{task_id}/assign")
 def assign_task(task_id: int, body: AssignIn, request: Request):
-    _require_admin(request)
+    actor = _require_can_assign(request)
     _get_task(task_id)
     a = (body.assignee or "").strip().lower() or None
-    db.execute("UPDATE tasks SET assignee=? WHERE id=?", (a, task_id))
+    # Whoever assigns it becomes the person notified when it's completed.
+    db.execute("UPDATE tasks SET assignee=?, assigned_by=? WHERE id=?", (a, (actor or "").strip().lower() or None, task_id))
     return {"ok": True, "assignee": a}
 
 
@@ -639,6 +668,7 @@ class AppUserIn(BaseModel):
     email: str
     name: Optional[str] = None
     role: Optional[str] = "staff"
+    can_assign: Optional[bool] = None   # let a non-admin delegate work
 
 
 class AccessIn(BaseModel):
@@ -658,6 +688,7 @@ def _user_summary(u):
         "name": u.get("name"),
         "role": u.get("role") or "staff",
         "is_configured_admin": email.lower() in SUPER_ADMINS,
+        "can_assign": _can_assign(email),
         "businesses": biz,
         "projects": proj,
         "open_tasks": cnt,
@@ -697,11 +728,13 @@ def admin_add_user(body: AppUserIn, request: Request):
                 "Demote one first.",
             )
     name = (body.name or "").strip() or None
+    # Guests are outside parties — they never get to hand work to staff.
+    can_assign = 0 if role == "guest" else (1 if body.can_assign else 0)
     if db.query("SELECT email FROM app_users WHERE email=?", (email,)):
-        db.execute("UPDATE app_users SET name=?, role=? WHERE email=?", (name, role, email))
+        db.execute("UPDATE app_users SET name=?, role=?, can_assign=? WHERE email=?", (name, role, can_assign, email))
     else:
-        db.execute("INSERT INTO app_users(email,name,role) VALUES(?,?,?)", (email, name, role))
-    return {"ok": True, "email": email}
+        db.execute("INSERT INTO app_users(email,name,role,can_assign) VALUES(?,?,?,?)", (email, name, role, can_assign))
+    return {"ok": True, "email": email, "can_assign": bool(can_assign)}
 
 
 @app.delete("/api/admin/users/{email}")
@@ -976,8 +1009,109 @@ def create_calendar_event(body: EventIn, request: Request):
     return res
 
 
+# ================= Notifications (real-time, over the magic-link SMTP transport) ==============
+APP_URL = os.environ.get("SB_APP_URL", "https://brain.cleverwolfdigital.com").rstrip("/")
+
+
+def _admin_emails():
+    rows = db.query("SELECT email FROM app_users WHERE role='super_admin'")
+    return {(r["email"] or "").strip().lower() for r in rows if r.get("email")} | set(SUPER_ADMINS)
+
+
+def _notify(to_emails, subject, text):
+    """Best-effort fan-out. A mail failure must never break the action that caused it —
+    completing a task shouldn't 500 because SMTP hiccuped."""
+    clean = {(e or "").strip().lower() for e in to_emails}
+    clean = {e for e in clean if e and "@" in e}
+    sent = 0
+    for addr in sorted(clean):
+        try:
+            if auth.send_email(addr, subject, text):
+                sent += 1
+        except Exception:
+            pass
+    return sent
+
+
+def _hm(sec):
+    sec = int(sec or 0)
+    if sec <= 0:
+        return "—"
+    h, m = divmod(sec // 60, 60)
+    return f"{h}h {m:02d}m" if h else f"{m}m"
+
+
+def _notify_task_done(t, actor):
+    """Tell whoever assigned it (plus admins) that it's finished. Never emails the
+    person who just clicked complete — that's the main source of self-spam."""
+    actor = (actor or "").strip().lower()
+    audience = set(_admin_emails())
+    if t.get("assigned_by"):
+        audience.add(t["assigned_by"])
+    audience.discard(actor)
+    if not audience:
+        return 0
+    return _notify(
+        audience,
+        f"[Single Brain] Completed: {t.get('name')}",
+        f"{actor or 'Someone'} marked a task complete.\n\n"
+        f"Task:     {t.get('name')}\n"
+        f"Business: {t.get('business') or '—'}\n"
+        f"Priority: {t.get('priority') or '—'}\n"
+        f"Tracked:  {_hm(t.get('actual_sec'))}"
+        + (f"\nEstimate: {t['estimate_min']}m" if t.get("estimate_min") else "")
+        + f"\n\nOpen the dashboard: {APP_URL}\n",
+    )
+
+
+def _notify_task_file(t, actor, name, link):
+    """A file landed on a task — tell the assignee and the assigner (not the uploader)."""
+    actor = (actor or "").strip().lower()
+    audience = {(t.get("assignee") or "").strip().lower(), (t.get("assigned_by") or "").strip().lower()}
+    audience.discard(actor)
+    if not audience:
+        return 0
+    return _notify(
+        audience,
+        f"[Single Brain] File added to: {t.get('name')}",
+        f"{actor or 'Someone'} added a file to a task you're on.\n\n"
+        f"File:     {name}\n"
+        f"Task:     {t.get('name')}\n"
+        f"Business: {t.get('business') or '—'}\n"
+        + (f"\nOpen the file: {link}\n" if link else "")
+        + f"\nOpen the dashboard: {APP_URL}\n",
+    )
+
+
 # ================= Attachments (files on business / campaign / project / task) =================
 ATTACH_TYPES = ("business", "campaign", "project", "task")
+
+
+def _can_access_entity(email, entity_type, entity_id):
+    """Attachments inherit the SAME visibility as the thing they're attached to.
+    Without this any signed-in user — including an external guest — could list, add
+    to, or delete files on any business/project/task."""
+    if _is_admin(email):
+        return True
+    biz, proj = _access_lists(email)
+    allowed_biz, allowed_proj = set(biz or []), set(proj or [])
+    if entity_type == "task":
+        rows = db.query("SELECT * FROM tasks WHERE id=?", (entity_id,))
+        return bool(rows) and bool(_visible_tasks(email, rows))
+    if entity_type == "business":
+        rows = db.query("SELECT name FROM businesses WHERE id=?", (entity_id,))
+        return bool(rows) and rows[0]["name"] in allowed_biz
+    if entity_type in ("project", "campaign"):
+        rows = db.query("SELECT name, business FROM projects WHERE id=?", (entity_id,))
+        if not rows:
+            return False
+        return rows[0]["name"] in allowed_proj or (rows[0].get("business") or "") in allowed_biz
+    return False
+
+
+def _require_entity_access(email, entity_type, entity_id):
+    if not _can_access_entity(email, entity_type, entity_id):
+        raise HTTPException(403, "You don't have access to that item.")
 
 
 def _attach_row(r):
@@ -1003,9 +1137,10 @@ def attachment_counts(request: Request):
 
 @app.get("/api/attachments")
 def list_attachments(entity_type: str, entity_id: int, request: Request):
-    auth.current_user(request)
+    email = auth.current_user(request)
     if entity_type not in ATTACH_TYPES:
         raise HTTPException(422, "entity_type must be business, campaign, project, or task.")
+    _require_entity_access(email, entity_type, entity_id)
     rows = db.query(
         "SELECT * FROM attachments WHERE entity_type=? AND entity_id=? ORDER BY id DESC",
         (entity_type, entity_id),
@@ -1023,6 +1158,7 @@ async def upload_attachment(
     email = auth.current_user(request)
     if entity_type not in ATTACH_TYPES:
         raise HTTPException(422, "entity_type must be business, campaign, project, or task.")
+    _require_entity_access(email, entity_type, entity_id)
     content = await file.read()
     if not content:
         raise HTTPException(422, "The file is empty.")
@@ -1039,7 +1175,36 @@ async def upload_attachment(
         "VALUES(?,?,?,?,?,?, 'drive', ?)",
         (entity_type, entity_id, res.get("id"), res.get("name"), res.get("link"), res.get("mime"), email),
     )
-    return {"ok": True, "attachment": _attach_row(db.query("SELECT * FROM attachments WHERE id=?", (aid,))[0])}
+    notified = _after_attachment_added(email, entity_type, entity_id, res.get("name"), res.get("link"), res.get("id"))
+    return {"ok": True, "notified": notified,
+            "attachment": _attach_row(db.query("SELECT * FROM attachments WHERE id=?", (aid,))[0])}
+
+
+def _after_attachment_added(email, entity_type, entity_id, name, link, file_id):
+    """Task files: tell the assignee + assigner, and — because the file lives in the
+    UPLOADER's Drive — actually share it with them, or the link would just show them
+    Google's 'Request access' page. Files on a business/project/campaign notify nobody
+    (there's no assignee/assigner to notify)."""
+    if entity_type != "task":
+        return 0
+    rows = db.query("SELECT * FROM tasks WHERE id=?", (entity_id,))
+    if not rows:
+        return 0
+    t = rows[0]
+    actor = (email or "").strip().lower()
+    audience = {(t.get("assignee") or "").strip().lower(), (t.get("assigned_by") or "").strip().lower()}
+    audience = {a for a in audience if a and a != actor}
+    if not audience:
+        return 0
+    # Grant real access before announcing it. Best-effort: a share failure must not
+    # fail the upload — the file is already saved and recorded.
+    if file_id:
+        for addr in audience:
+            try:
+                google_int.share_file(email, file_id, "user", addr, "writer")
+            except Exception:
+                pass
+    return _notify_task_file(t, actor, name, link)
 
 
 class AttachLinkIn(BaseModel):
@@ -1054,6 +1219,7 @@ def link_attachment(body: AttachLinkIn, request: Request):
     email = auth.current_user(request)
     if body.entity_type not in ATTACH_TYPES:
         raise HTTPException(422, "entity_type must be business, campaign, project, or task.")
+    _require_entity_access(email, body.entity_type, body.entity_id)
     link = (body.link or "").strip()
     if not (link.startswith("http://") or link.startswith("https://")):
         raise HTTPException(422, "Enter a valid file link (http/https).")
@@ -1063,7 +1229,10 @@ def link_attachment(body: AttachLinkIn, request: Request):
         "VALUES(?,?,NULL,?,?,NULL,'link',?)",
         (body.entity_type, body.entity_id, name, link, email),
     )
-    return {"ok": True, "attachment": _attach_row(db.query("SELECT * FROM attachments WHERE id=?", (aid,))[0])}
+    # No file_id — an external link isn't ours to share, so this only notifies.
+    notified = _after_attachment_added(email, body.entity_type, body.entity_id, name, link, None)
+    return {"ok": True, "notified": notified,
+            "attachment": _attach_row(db.query("SELECT * FROM attachments WHERE id=?", (aid,))[0])}
 
 
 @app.delete("/api/attachments/{aid}")
@@ -1076,6 +1245,7 @@ def delete_attachment(aid: int, request: Request, drive: bool = False):
     if not rows:
         raise HTTPException(404, "Attachment not found.")
     att = rows[0]
+    _require_entity_access(email, att["entity_type"], att["entity_id"])
     if drive and att.get("source") == "drive" and att.get("file_id"):
         try:
             res = google_int.delete_drive_file(email, att["file_id"])

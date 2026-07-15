@@ -425,6 +425,9 @@
     .drive-progress { flex-basis: 100%; color: var(--muted); font-size: 11px; }
     .attach-badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; color: var(--muted); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 20px; font: 600 10px var(--font-display); vertical-align: middle; }
     .attach-badge .icon-sm { width: 12px; height: 12px; }
+    .check-line { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+    .check-line input { width: 15px; height: 15px; accent-color: var(--gold); }
+    .field-hint { display: block; margin-top: 4px; color: var(--faint); font-size: 11px; line-height: 1.45; }
     .cal-toolbar { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; padding: 14px; margin-bottom: 14px; }
     /* Inside the Overview panel the toolbar sits on the card already — drop the nested card chrome. */
     .cal-toolbar.flat { padding: 0 0 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); background: transparent; border-radius: 0; }
@@ -1164,6 +1167,7 @@
         <div class="field"><label for="newUserRole">Role</label><select class="input" id="newUserRole"><option value="staff">Staff</option><option value="guest">Guest (external)</option><option value="super_admin">Super Admin</option></select></div>
         <div class="field"><label for="newUserEmail">Email <span class="required-mark">*</span></label><input class="input" id="newUserEmail" type="email" placeholder="name@example.com" autocomplete="off"><span class="field-error" id="newUserError"></span></div>
         <div class="field"><label for="newUserName">Name</label><input class="input" id="newUserName" type="text" placeholder="Full name" autocomplete="off"></div>
+        <div class="field" id="canAssignField"><label class="check-line" for="newUserCanAssign"><input type="checkbox" id="newUserCanAssign"> Can assign tasks to other people</label><span class="field-hint">They'll be emailed when work they assigned is completed. Doesn't grant Super Admin.</span></div>
         <div class="modal-actions"><button class="button secondary" type="button" data-close-user>Cancel</button><button class="button" type="button" id="userSave"><i data-lucide="user-plus" class="icon-sm"></i>Add member</button></div>
       </div>
     </section>
@@ -1366,7 +1370,7 @@
     const renderIcons = () => { if (window.lucide) window.lucide.createIcons(); };
 
     // Access context (from /api/me). Until it loads, assume full access so nothing flickers hidden.
-    let ME = { email: "", role: "staff", is_super_admin: false, businesses: null, projects: null };
+    let ME = { email: "", role: "staff", is_super_admin: false, can_assign: false, businesses: null, projects: null };
     let adminUsers = [];
     let clients = [], recurring = [], staffList = [], pins = [], clientContacts = [], clientNotes = [];
     const canSeeBusiness = name => ME.is_super_admin || ME.businesses == null || ME.businesses.includes(name);
@@ -1689,7 +1693,7 @@
         due: $("#taskDueDate").value,
         notes: $("#taskNotes").value.trim(),
         estimate_min: Number.isFinite(estimateMin) && estimateMin > 0 ? estimateMin : null,
-        assignee: ME.is_super_admin ? ($("#taskAssignee").value || null) : null,
+        assignee: ME.can_assign ? ($("#taskAssignee").value || null) : null,
         client: $("#taskClient").value || null,
         dependencies: selectedDependencyIds().map(Number).filter(n => !isNaN(n))
       };
@@ -2361,7 +2365,7 @@
     function refreshAssigneeField() {
       const field = $("#assigneeField");
       if (!field) return;
-      if (!ME.is_super_admin) { field.classList.add("hidden"); return; }
+      if (!ME.can_assign) { field.classList.add("hidden"); return; }   // admins + anyone granted "can assign"
       field.classList.remove("hidden");
       const sel = $("#taskAssignee");
       const cur = sel.value;
@@ -2433,7 +2437,13 @@
         else { const d = await res.json().catch(() => ({})); showToast("Couldn't save: " + (d.detail || res.status)); }
       } catch (e) { showToast("Couldn't reach server: " + e.message); }
     }
-    function openUserModal() { $("#newUserEmail").value = ""; $("#newUserName").value = ""; $("#newUserRole").value = "staff"; $("#newUserError").textContent = ""; $("#userModal").classList.remove("hidden"); $("#userModal").setAttribute("aria-hidden", "false"); document.body.classList.add("modal-open"); $("#newUserEmail").focus(); }
+    function openUserModal(u) { $("#newUserEmail").value = (u && u.email) || ""; $("#newUserName").value = (u && u.name) || ""; $("#newUserRole").value = (u && u.role) || "staff"; $("#newUserCanAssign").checked = !!(u && u.can_assign); syncCanAssignField(); $("#newUserError").textContent = ""; $("#userModal").classList.remove("hidden"); $("#userModal").setAttribute("aria-hidden", "false"); document.body.classList.add("modal-open"); $("#newUserEmail").focus(); }
+    // Guests are outside parties — never offer them the ability to assign work.
+    function syncCanAssignField() {
+      const guest = $("#newUserRole").value === "guest";
+      $("#canAssignField").classList.toggle("hidden", guest);
+      if (guest) $("#newUserCanAssign").checked = false;
+    }
     function closeUserModal() { $("#userModal").classList.add("hidden"); $("#userModal").setAttribute("aria-hidden", "true"); document.body.classList.remove("modal-open"); }
     async function saveUser() {
       const email = $("#newUserEmail").value.trim().toLowerCase();
@@ -2444,8 +2454,8 @@
       if (!validEmail) { $("#newUserError").textContent = "Enter a valid email address."; return; }
       if (role !== "guest" && !isDomain) { $("#newUserError").textContent = "Staff and Admins need a @cleverwolfdigital.com email. Use the Guest role for external emails."; return; }
       try {
-        const res = await fetch("/api/admin/users", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, name, role }) });
-        if (res.ok) { showToast("Team member added"); closeUserModal(); await loadAdminUsers(); renderAdmin(); refreshAssigneeField(); }
+        const res = await fetch("/api/admin/users", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, name, role, can_assign: $("#newUserCanAssign").checked }) });
+        if (res.ok) { showToast("Team member saved"); closeUserModal(); await loadAdminUsers(); renderAdmin(); refreshAssigneeField(); }
         else { const d = await res.json().catch(() => ({})); $("#newUserError").textContent = d.detail || ("Error " + res.status); }
       } catch (e) { $("#newUserError").textContent = "Couldn't reach the server."; }
     }
@@ -2460,6 +2470,7 @@
     $$('[data-close-access]').forEach(b => b.addEventListener("click", closeAccessModal));
     $$('[data-close-user]').forEach(b => b.addEventListener("click", closeUserModal));
     $("#accessSave").addEventListener("click", saveAccess);
+    $("#newUserRole").addEventListener("change", syncCanAssignField);
     $("#userSave").addEventListener("click", saveUser);
     $("#accessModal").addEventListener("click", e => { if (e.target === $("#accessModal")) closeAccessModal(); });
     $("#userModal").addEventListener("click", e => { if (e.target === $("#userModal")) closeUserModal(); });
@@ -3008,6 +3019,7 @@
           email: me.email || "",
           role: me.role || "staff",
           is_super_admin: !!me.is_super_admin,
+          can_assign: !!me.can_assign,
           businesses: me.businesses ?? null,
           projects: me.projects ?? null,
         };
@@ -3065,6 +3077,12 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.3", date: "Jul 15, 2026", items: [
+        "You now get an email when a task you assigned is completed — and when someone adds a file to a task you're on.",
+        "Team leads can be given permission to assign tasks to other people without making them a Super Admin (Super Admin → edit a person → 'Can assign tasks').",
+        "Files added to a task are now shared automatically with the assignee and assigner, so the link actually opens for them.",
+        "Security: files attached to a business, project or task now follow the same access rules as the item itself — guests can no longer see or remove them.",
+      ] },
       { version: "2.2", date: "Jul 15, 2026", items: [
         "Fixed: the sidebar wouldn't scroll once you pinned items — anything below the fold (Feedback, Super Admin) was unreachable, especially on a phone. It scrolls now.",
         "Report a bug from anywhere: there's a new feedback button in the top bar, so it can never scroll out of reach.",
