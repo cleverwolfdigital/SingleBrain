@@ -412,6 +412,8 @@
     .attach-badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; color: var(--muted); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 20px; font: 600 10px var(--font-display); vertical-align: middle; }
     .attach-badge .icon-sm { width: 12px; height: 12px; }
     .cal-toolbar { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; padding: 14px; margin-bottom: 14px; }
+    /* Inside the Overview panel the toolbar sits on the card already — drop the nested card chrome. */
+    .cal-toolbar.flat { padding: 0 0 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); background: transparent; border-radius: 0; }
     .cal-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .cal-range { display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; }
     .cal-range button { padding: 7px 14px; background: transparent; color: var(--muted); border: 0; font: 600 12px var(--font-display); cursor: pointer; }
@@ -746,6 +748,18 @@
         </div>
         <ul class="patch-list" id="patchList"></ul>
       </article>
+      <article class="card" id="dashCal" style="margin-bottom:13px">
+        <div class="panel-header">
+          <h2>Team Calendar</h2>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="button secondary hidden" id="dashNewMeeting"><i data-lucide="calendar-plus" class="icon-sm"></i>New meeting</button>
+            <button class="filter" data-go="schedule">Full view</button>
+            <button class="icon-button" id="dashCalToggle" title="Hide calendar"><i data-lucide="chevron-up" class="icon-sm"></i></button>
+          </div>
+        </div>
+        <div class="panel-body" id="dashCalBody"><div class="task-empty" style="margin:0">Loading…</div></div>
+      </article>
+
       <div class="grid metrics">
         <article class="card metric"><div class="metric-label">Warm outreach<i data-lucide="send" class="icon-sm"></i></div><div class="metric-value">0</div><div class="metric-note">New sprint — fresh start</div></article>
         <article class="card metric"><div class="metric-label">Replies<i data-lucide="reply" class="icon-sm"></i></div><div class="metric-value">0</div><div class="metric-note">0% reply rate</div></article>
@@ -788,7 +802,6 @@
             <div class="recommendation"><span class="rank">2</span><div><strong>Prepare the next fit call</strong><p>Use live objection notes from prior calls.</p></div></div>
             <div class="recommendation"><span class="rank">3</span><div><strong>Log reply outcomes</strong><p>Capture the exact hook that earns a response.</p></div></div>
           </div></article>
-          <article class="card"><div class="panel-header"><h2>Upcoming events</h2><span>Google Calendar</span></div><div class="panel-body" id="overviewCal"><div class="task-empty" style="margin:0">Loading…</div></div></article>
         </div>
       </div>
     </section>
@@ -930,7 +943,7 @@
         <article class="card tut-card"><div class="tut-num">14</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
         <article class="card tut-card"><div class="tut-num">15</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
         <article class="card tut-card"><div class="tut-num">16</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. Each file has two removal options: the <b>✕</b> takes it off this item but keeps it in Drive, and <b>🗑 Delete from Google Drive</b> moves the actual file to your Drive trash. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
-        <article class="card tut-card"><div class="tut-num">17</div><h3>Team Calendar &amp; scheduling</h3><p>Open <b>Team Calendar</b> (sidebar) to see a teammate's calendar — pick them from the dropdown and switch between <b>Day</b> and <b>Week</b>. The first time, click <b>Reconnect Google</b> (we added calendar access). To see someone's events, they share their Google Calendar with you first (Google Calendar → Settings → Share with specific people → "See all event details"). Click <b>New meeting</b> to create a Google Calendar event and email invites to teammates and clients you add.</p></article>
+        <article class="card tut-card"><div class="tut-num">17</div><h3>Team Calendar &amp; scheduling</h3><p>The <b>Team Calendar</b> sits right on your <b>Overview</b> — it opens on your own day; the dropdown switches to any teammate, and you can switch between <b>Day</b> and <b>Week</b>. Collapse it with the chevron if you'd rather not see it, or hit <b>Full view</b> (or the sidebar's <b>Team Calendar</b>) for the big version. The first time, click <b>Reconnect Google</b> (we added calendar access). To see someone's events, they share their Google Calendar with you first (Google Calendar → Settings → Share with specific people → "See all event details"). Click <b>New meeting</b> to create a Google Calendar event and email invites to teammates and clients you add.</p></article>
       </div>
 
       <div class="tut-section" data-admin-only>Team &amp; admin</div>
@@ -2223,8 +2236,15 @@
     // Files modal (attachments on business/campaign/project/task)
     $$('[data-close-files]').forEach(b => b.addEventListener("click", closeFilesModal));
     $("#filesModal").addEventListener("click", e => { if (e.target === $("#filesModal")) closeFilesModal(); });
-    // Team Calendar: new meeting
+    // Team Calendar: new meeting (sidebar view + the Overview panel)
     $("#newMeetingBtn").addEventListener("click", () => openMeetingModal());
+    $("#dashNewMeeting").addEventListener("click", () => openMeetingModal());
+    $("#dashCalToggle").addEventListener("click", () => {
+      const nowHidden = !$("#dashCalBody").classList.contains("hidden");
+      try { localStorage.setItem("sb-dashcal-hidden", nowHidden ? "1" : "0"); } catch (e) {}
+      applyDashCalCollapsed(nowHidden);
+      if (!nowHidden) renderDashCalendar();   // re-mount on expand
+    });
     $$('[data-close-meeting]').forEach(b => b.addEventListener("click", () => hideModal("#meetingModal")));
     $("#meetingModal").addEventListener("click", e => { if (e.target === $("#meetingModal")) hideModal("#meetingModal"); });
     $("#mtgSubmit").addEventListener("click", submitMeeting);
@@ -2473,27 +2493,9 @@
       });
     }
 
-    // ---------- Overview: upcoming Google Calendar events ----------
-    async function loadOverviewCalendar() {
-      const host = $("#overviewCal");
-      if (!host) return;
-      const st = await fetchGoogleStatus();
-      if (!st.connected) {
-        host.innerHTML = st.configured
-          ? '<div class="task-empty" style="margin:0"><button class="button secondary" id="ovCalConnect"><i data-lucide="link" class="icon-sm"></i>Connect your Drive</button></div>'
-          : '<div class="task-empty" style="margin:0">Google isn\'t set up yet.</div>';
-        renderIcons();
-        const btn = $("#ovCalConnect");
-        if (btn) btn.addEventListener("click", async () => { btn.disabled = true; await connectDrivePopup(); await fetchGoogleStatus(true); loadOverviewCalendar(); });
-        return;
-      }
-      try {
-        const r = await fetch("/api/google/calendar", { credentials: "same-origin" });
-        const ev = r.ok ? await r.json() : [];
-        host.innerHTML = ev.length ? ev.map(e => `<div class="risk-row" style="grid-template-columns:1fr;padding:9px 0"><div><strong>${escapeHTML(e.summary)}</strong><p>${escapeHTML(fmtGoogleDate(e.start, e.all_day))}</p></div></div>`).join("") : '<div class="task-empty" style="margin:0">No upcoming events.</div>';
-      } catch (e) { host.innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t load calendar.</div>'; }
-      renderIcons();
-    }
+    // The Overview's old read-only "Upcoming events" card is superseded by the
+    // Team Calendar panel (#dashCal), which defaults to your own calendar and can
+    // switch to a teammate — see renderDashCalendar.
 
     // ---------- Team Calendar & scheduling ----------
     let calMember = "", calDays = 1, calAnchor = null;   // calAnchor = a Date
@@ -2506,65 +2508,117 @@
       const t = iso => { try { return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }); } catch (x) { return ""; } };
       return `${t(e.start)}${e.end ? " – " + t(e.end) : ""}`;
     }
-    async function renderSchedule() {
-      const host = $("#scheduleBody");
+    // Schedulable people: you first (so the dashboard opens on YOUR day), then teammates.
+    function calendarMembers() {
+      const meEmail = (ME.email || "").toLowerCase();
+      const all = assignableUsers();
+      const others = all.filter(m => (m.email || "").toLowerCase() !== meEmail);
+      if (!meEmail) return others;
+      const meName = (all.find(m => (m.email || "").toLowerCase() === meEmail) || {}).name || emailName(meEmail);
+      return [{ email: meEmail, name: `${meName} (you)` }, ...others];
+    }
+
+    // ONE calendar component, mounted in two places (the Overview panel and the
+    // Team Calendar view). Everything is scoped to `host` so the two mounts can't
+    // collide on element ids; the selection/date state is shared on purpose so
+    // switching views keeps your place.
+    async function renderTeamCalendar(host, opts) {
       if (!host) return;
+      const o = opts || {};
       const st = await fetchGoogleStatus();
       if (!st.connected || !st.calendar) {
-        $("#newMeetingBtn").classList.add("hidden");
         host.innerHTML = st.configured
-          ? `<article class="card" style="padding:26px;text-align:center;max-width:560px"><p style="color:var(--muted);margin:0 0 16px;line-height:1.6">${st.connected ? "Reconnect Google to turn on team calendars and scheduling (we added calendar access)." : "Connect your Google account to see teammates' calendars and schedule meetings."}<br>A window opens to authorize, then closes automatically.</p><button class="button" id="schedConnect"><i data-lucide="link" class="icon-sm"></i>${st.connected ? "Reconnect Google" : "Connect Google"}</button></article>`
-          : '<div class="task-empty">Google isn\'t set up yet — ask an admin to finish the setup.</div>';
+          ? `<article class="card" style="padding:22px;text-align:center;max-width:560px;margin:0 auto"><p style="color:var(--muted);margin:0 0 14px;line-height:1.6">${st.connected ? "Reconnect Google to turn on team calendars and scheduling (we added calendar access)." : "Connect your Google account to see teammates' calendars and schedule meetings."}<br>A window opens to authorize, then closes automatically.</p><button class="button tc-connect"><i data-lucide="link" class="icon-sm"></i>${st.connected ? "Reconnect Google" : "Connect Google"}</button></article>`
+          : '<div class="task-empty" style="margin:0">Google isn\'t set up yet — ask an admin to finish the setup.</div>';
         renderIcons();
-        const b = $("#schedConnect");
-        if (b) b.addEventListener("click", async () => { b.disabled = true; const ok = await connectDrivePopup(); await fetchGoogleStatus(true); if (googleStatus.connected && googleStatus.calendar) renderSchedule(); else { b.disabled = false; if (ok === false) showToast("Connection cancelled."); } });
+        const b = host.querySelector(".tc-connect");
+        if (b) b.addEventListener("click", async () => {
+          b.disabled = true;
+          const ok = await connectDrivePopup();
+          await fetchGoogleStatus(true);
+          if (googleStatus.connected && googleStatus.calendar) { renderTeamCalendar(host, o); refreshMeetingButtons(); }
+          else { b.disabled = false; if (ok === false) showToast("Connection cancelled."); }
+        });
+        refreshMeetingButtons();
         return;
       }
-      $("#newMeetingBtn").classList.remove("hidden");
-      const members = assignableUsers();
+      const members = calendarMembers();
       if (!calMember && members.length) calMember = members[0].email;
       if (!calAnchor) calAnchor = new Date();
-      const opts = members.map(m => `<option value="${escapeHTML(m.email)}"${m.email === calMember ? " selected" : ""}>${escapeHTML(m.name)} (${escapeHTML(m.email)})</option>`).join("");
-      host.innerHTML = `<div class="cal-toolbar card"><div class="field" style="margin:0;flex:1;min-width:220px"><label for="calMember">Team member</label><select class="input" id="calMember">${opts || '<option value="">No teammates with emails yet</option>'}</select></div><div class="cal-controls"><div class="cal-range" role="group"><button type="button" data-range="1" class="${calDays === 1 ? "active" : ""}">Day</button><button type="button" data-range="7" class="${calDays === 7 ? "active" : ""}">Week</button></div><div class="cal-nav"><button class="icon-button" id="calPrev" title="Previous"><i data-lucide="chevron-left" class="icon-sm"></i></button><button class="button secondary" id="calToday">Today</button><button class="icon-button" id="calNext" title="Next"><i data-lucide="chevron-right" class="icon-sm"></i></button></div></div></div><div id="calLabel" class="cal-label"></div><div id="calEvents"><div class="task-empty">Loading…</div></div>`;
-      $("#calMember").addEventListener("change", e => { calMember = e.target.value; loadTeamCalendar(); });
-      $$('[data-range]').forEach(btn => btn.addEventListener("click", () => { calDays = parseInt(btn.dataset.range, 10) || 1; renderSchedule(); }));
-      $("#calPrev").addEventListener("click", () => { calAnchor.setDate(calAnchor.getDate() - calDays); loadTeamCalendar(); });
-      $("#calNext").addEventListener("click", () => { calAnchor.setDate(calAnchor.getDate() + calDays); loadTeamCalendar(); });
-      $("#calToday").addEventListener("click", () => { calAnchor = new Date(); loadTeamCalendar(); });
+      const options = members.map(m => `<option value="${escapeHTML(m.email)}"${m.email === calMember ? " selected" : ""}>${escapeHTML(m.name)}</option>`).join("");
+      host.innerHTML = `<div class="cal-toolbar${o.flat ? " flat" : " card"}"><div class="field" style="margin:0;flex:1;min-width:200px"><label>Team member</label><select class="input tc-member">${options || '<option value="">No teammates with emails yet</option>'}</select></div><div class="cal-controls"><div class="cal-range" role="group"><button type="button" data-range="1" class="${calDays === 1 ? "active" : ""}">Day</button><button type="button" data-range="7" class="${calDays === 7 ? "active" : ""}">Week</button></div><div class="cal-nav"><button class="icon-button tc-prev" title="Previous"><i data-lucide="chevron-left" class="icon-sm"></i></button><button class="button secondary tc-today">Today</button><button class="icon-button tc-next" title="Next"><i data-lucide="chevron-right" class="icon-sm"></i></button></div></div></div><div class="cal-label tc-label"></div><div class="tc-events"${o.maxHeight ? ` style="max-height:${o.maxHeight}px;overflow-y:auto"` : ""}><div class="task-empty" style="margin:0">Loading…</div></div>`;
+      host.querySelector(".tc-member").addEventListener("change", e => { calMember = e.target.value; loadTeamCalendarInto(host); });
+      host.querySelectorAll("[data-range]").forEach(btn => btn.addEventListener("click", () => { calDays = parseInt(btn.dataset.range, 10) || 1; renderTeamCalendar(host, o); }));
+      host.querySelector(".tc-prev").addEventListener("click", () => { calAnchor.setDate(calAnchor.getDate() - calDays); loadTeamCalendarInto(host); });
+      host.querySelector(".tc-next").addEventListener("click", () => { calAnchor.setDate(calAnchor.getDate() + calDays); loadTeamCalendarInto(host); });
+      host.querySelector(".tc-today").addEventListener("click", () => { calAnchor = new Date(); loadTeamCalendarInto(host); });
+      refreshMeetingButtons();
       renderIcons();
-      loadTeamCalendar();
+      loadTeamCalendarInto(host);
     }
-    async function loadTeamCalendar() {
-      const host = $("#calEvents");
+
+    async function loadTeamCalendarInto(host) {
       if (!host) return;
-      if (!calMember) { host.innerHTML = '<div class="task-empty">No teammate selected.</div>'; return; }
+      const events = host.querySelector(".tc-events");
+      const label = host.querySelector(".tc-label");
+      if (!events) return;
+      if (!calMember) { events.innerHTML = '<div class="task-empty" style="margin:0">No teammate selected.</div>'; return; }
       const startD = new Date(calAnchor), endD = new Date(calAnchor);
       endD.setDate(endD.getDate() + calDays - 1);
       const fmtD = d => d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-      const label = $("#calLabel");
       if (label) label.textContent = calDays === 1 ? `${fmtD(startD)}, ${startD.getFullYear()}` : `${fmtD(startD)} – ${fmtD(endD)}, ${endD.getFullYear()}`;
-      host.innerHTML = '<div class="task-empty" style="margin:0">Loading…</div>';
+      events.innerHTML = '<div class="task-empty" style="margin:0">Loading…</div>';
       try {
         const r = await fetch(`/api/calendar/team?email=${encodeURIComponent(calMember)}&date=${calAnchorISO()}&days=${calDays}`, { credentials: "same-origin" });
         const d = await r.json().catch(() => ({}));
-        if (!r.ok) { host.innerHTML = `<div class="task-empty">${escapeHTML(d.detail || "Couldn't load calendar.")}</div>`; return; }
+        if (!r.ok) { events.innerHTML = `<div class="task-empty" style="margin:0">${escapeHTML(d.detail || "Couldn't load calendar.")}</div>`; return; }
         if (!d.accessible) {
-          host.innerHTML = `<article class="card" style="padding:20px"><div style="display:flex;gap:10px"><i data-lucide="lock" class="icon-sm" style="margin-top:2px;color:var(--amber)"></i><div><strong style="display:block;margin-bottom:4px">Calendar not shared yet</strong><p style="color:var(--muted);font-size:12px;line-height:1.55;margin:0">${escapeHTML(d.reason || "")}</p></div></div></article>`;
+          events.innerHTML = `<article class="card" style="padding:18px"><div style="display:flex;gap:10px"><i data-lucide="lock" class="icon-sm" style="margin-top:2px;color:var(--amber)"></i><div><strong style="display:block;margin-bottom:4px">Calendar not shared yet</strong><p style="color:var(--muted);font-size:12px;line-height:1.55;margin:0">${escapeHTML(d.reason || "")}</p></div></div></article>`;
           renderIcons();
           return;
         }
-        const events = d.events || [];
-        if (!events.length) { host.innerHTML = '<div class="task-empty">No events in this range.</div>'; renderIcons(); return; }
+        const list = d.events || [];
+        if (!list.length) { events.innerHTML = '<div class="task-empty" style="margin:0">No events in this range.</div>'; renderIcons(); return; }
         const byDay = {};
-        events.forEach(e => { const key = (e.start || "").slice(0, 10); (byDay[key] = byDay[key] || []).push(e); });
-        host.innerHTML = Object.keys(byDay).sort().map(day => {
+        list.forEach(e => { const key = (e.start || "").slice(0, 10); (byDay[key] = byDay[key] || []).push(e); });
+        events.innerHTML = Object.keys(byDay).sort().map(day => {
           const dd = new Date(day + "T12:00:00");
           const head = dd.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
           const rows = byDay[day].map(e => `<div class="cal-event"><span class="cal-time">${escapeHTML(fmtEventTime(e))}</span><div class="cal-ev-body"><strong>${escapeHTML(e.summary)}</strong>${e.location ? `<small>${escapeHTML(e.location)}</small>` : ""}</div>${e.link ? `<a class="icon-button" href="${escapeHTML(e.link)}" target="_blank" rel="noopener" title="Open in Google Calendar"><i data-lucide="external-link" class="icon-sm"></i></a>` : ""}</div>`).join("");
           return `<div class="cal-day"><div class="cal-day-head">${escapeHTML(head)}</div>${rows}</div>`;
         }).join("");
         renderIcons();
-      } catch (e) { host.innerHTML = '<div class="task-empty">Couldn\'t reach the server.</div>'; }
+      } catch (e) { events.innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t reach the server.</div>'; }
+    }
+
+    // "New meeting" only makes sense once Google is connected with calendar scope.
+    function refreshMeetingButtons() {
+      const on = !!(googleStatus && googleStatus.connected && googleStatus.calendar);
+      ["#newMeetingBtn", "#dashNewMeeting"].forEach(sel => { const b = $(sel); if (b) b.classList.toggle("hidden", !on); });
+    }
+
+    async function renderSchedule() { await renderTeamCalendar($("#scheduleBody"), {}); }
+
+    // Dashboard panel — same component, capped height so it doesn't shove the rest
+    // of the Overview off-screen, and collapsible (remembered per browser).
+    async function renderDashCalendar() {
+      const card = $("#dashCal");
+      if (!card) return;
+      let hidden = false;
+      try { hidden = localStorage.getItem("sb-dashcal-hidden") === "1"; } catch (e) {}
+      applyDashCalCollapsed(hidden);
+      if (hidden) return;
+      await renderTeamCalendar($("#dashCalBody"), { maxHeight: 330, flat: true });
+    }
+    function applyDashCalCollapsed(hidden) {
+      const body = $("#dashCalBody"), btn = $("#dashCalToggle");
+      if (!body || !btn) return;
+      body.classList.toggle("hidden", hidden);
+      btn.title = hidden ? "Show calendar" : "Hide calendar";
+      btn.innerHTML = `<i data-lucide="${hidden ? "chevron-down" : "chevron-up"}" class="icon-sm"></i>`;
+      const nm = $("#dashNewMeeting");
+      if (nm && hidden) nm.classList.add("hidden");
+      renderIcons();
     }
     function openMeetingModal(prefillGuest) {
       $("#mtgTitle").value = "";
@@ -2764,7 +2818,7 @@
       if (id === "admin") loadAdminUsers().then(renderAdmin);
       if (id === "feedback") renderFeedback();
       if (id === "mytasks") renderMyTasks();
-      if (id === "overview") loadOverviewCalendar();
+      if (id === "overview") renderDashCalendar();
       if (id === "schedule") renderSchedule();
       $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
       $("#sidebar").classList.remove("open");
@@ -2977,6 +3031,11 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.1", date: "Jul 15, 2026", items: [
+        "Team Calendar now sits right on your Overview — it opens on your own day, and the dropdown switches to any teammate.",
+        "'New meeting' is on the dashboard too, so you can book without leaving the Overview.",
+        "Don't need it? Collapse the calendar with the chevron — it stays hidden until you bring it back.",
+      ] },
       { version: "2.0", date: "Jul 14, 2026", items: [
         "New Team Calendar: pick a teammate from the dropdown to see their calendar (they share it with you in Google first).",
         "Schedule from the dashboard — 'New meeting' creates a Google Calendar event and emails invites to teammates and clients you add.",
@@ -3195,7 +3254,7 @@
       { view: "journal", sel: ".journal-grid", title: "Daily Journal", body: "Set your focus each morning; log wins and tomorrow's first move each evening." },
       { view: "overview", sel: "#cwdChatBtn", title: "CWD Brain Chat", body: "Ask this anything about your portfolio — it reads your live businesses and tasks." },
       { view: "businesses", sel: "#businessGrid .business-card", title: "Files on everything", body: "Open any business, project, campaign, or task and use Files to attach documents from Google Drive — upload or link them, then share by link or with a person. A 📎 badge shows the count." },
-      { view: "overview", sel: '[data-view="schedule"]', title: "Team Calendar", body: "See a teammate's calendar and schedule meetings here. Pick a person, switch Day/Week, and hit New meeting to create a Google event and send invites." },
+      { view: "overview", sel: "#dashCal", title: "Team Calendar", body: "Your day, right on the Overview. Switch the dropdown to any teammate, or hit New meeting to create a Google event and send invites. Collapse it with the chevron if you don't need it." },
       { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
       { view: "overview", sel: "#feedbackNav", title: "Feedback", body: "Found a bug or have an idea? Send it straight to the team here." },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },
@@ -3256,12 +3315,12 @@
     // Fallback for the legacy full-page OAuth redirect (popup flow no longer hits this).
     const gp = new URLSearchParams(location.search).get("google");
     if (gp) {
-      if (gp === "connected") { showToast("Google Drive connected ✓"); fetchGoogleStatus(true).then(loadOverviewCalendar); }
+      if (gp === "connected") { showToast("Google Drive connected ✓"); fetchGoogleStatus(true).then(renderDashCalendar); }
       else if (gp === "denied") showToast("Google connection was cancelled.");
       else showToast("Google connection failed — please try again.");
       history.replaceState(null, "", location.pathname + location.hash);
     }
-    loadOverviewCalendar();
+    renderDashCalendar();
     renderIcons();
   </script>
 
