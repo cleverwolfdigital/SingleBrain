@@ -1361,7 +1361,13 @@ def create_recurring(r: RecurringIn, request: Request):
         (r.name.strip(), r.business, r.client_id, r.client_name, r.category, r.priority or "Medium",
          r.estimate_min, (r.assignee or "").strip().lower() or None, r.day_of_month or 1, 1 if r.active else 0),
     )
-    return {"ok": True, "id": rid}
+    # Generate this month's instance NOW. Without this, a new recurring task stayed
+    # invisible until the next 08:00/18:00 sync (or a restart), which reads as "it
+    # didn't work" — the task simply never appeared in My Tasks.
+    created = catalog.generate_recurring()
+    if created:
+        _sync_tasks_to_repo()
+    return {"ok": True, "id": rid, "generated": created}
 
 
 @app.put("/api/recurring/{rid}")
@@ -1374,13 +1380,27 @@ def update_recurring(rid: int, r: RecurringIn, request: Request):
         (r.name.strip(), r.business, r.client_id, r.client_name, r.category, r.priority, r.estimate_min,
          (r.assignee or "").strip().lower() or None, r.day_of_month or 1, 1 if r.active else 0, rid),
     )
-    return {"ok": True}
+    # A template that was just switched on (or edited before this month generated)
+    # should land straight away rather than waiting for the next sync.
+    created = catalog.generate_recurring()
+    if created:
+        _sync_tasks_to_repo()
+    return {"ok": True, "generated": created}
 
 
 @app.delete("/api/recurring/{rid}")
 def delete_recurring(rid: int, request: Request):
     _require_admin(request)
+    # Drop the template, and tidy up instances nobody has touched (still open, no
+    # tracked time, never started) — deleting a mistake shouldn't leave orphans.
+    # Anything with time logged against it is real work and is deliberately kept.
+    db.execute(
+        "DELETE FROM tasks WHERE recurring_id=? AND status='open' "
+        "AND COALESCE(actual_sec,0)=0 AND started_at IS NULL",
+        (rid,),
+    )
     db.execute("DELETE FROM recurring_tasks WHERE id=?", (rid,))
+    _sync_tasks_to_repo()
     return {"ok": True}
 
 

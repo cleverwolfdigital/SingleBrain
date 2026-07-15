@@ -157,7 +157,21 @@
       padding: 17px 12px;
       background: rgba(9, 23, 36, 0.96);
       border-right: 1px solid var(--line);
+      /* Pinned items + both nav groups can exceed the viewport (especially on a
+         phone), which used to strand everything below the fold — Feedback and
+         Super Admin included. The rail scrolls independently of the page. */
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line-strong) transparent;
     }
+    .sidebar::-webkit-scrollbar { width: 8px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    /* Keep the footer from being squashed when the rail overflows (its margin-top:auto
+       still floats it to the bottom whenever there IS spare room). */
+    .sidebar-footer { flex-shrink: 0; }
     .nav-label { padding: 7px 10px; color: var(--faint); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
     .nav { display: grid; gap: 3px; }
     .nav-button {
@@ -679,6 +693,7 @@
         <button class="icon-button" id="fontUp" aria-label="Larger text" title="Larger text" style="font:700 15px var(--font-display)">A+</button>
         <button class="icon-button" id="syncBtn" aria-label="Sync to repository" title="Sync now — pull latest and push to GitHub"><i data-lucide="refresh-cw" class="icon"></i></button>
         <button class="icon-button" id="searchBtn" aria-label="Search" title="Search (⌘/Ctrl-K)"><i data-lucide="search" class="icon"></i></button>
+        <button class="icon-button" id="topFeedbackBtn" aria-label="Report a bug or suggest something" title="Report a bug / suggest something"><i data-lucide="message-square-warning" class="icon"></i></button>
         <div class="bell-wrap">
           <button class="icon-button" id="bellBtn" aria-label="Notifications" title="Notifications"><i data-lucide="bell" class="icon"></i><span class="bell-dot hidden" id="bellDot"></span></button>
           <div class="bell-menu hidden" id="bellMenu"></div>
@@ -1049,8 +1064,7 @@
           </div>
           <div class="field" data-field="business">
             <label for="taskBusiness">Business <span class="required-mark">*</span></label>
-            <input class="input" id="taskBusiness" name="business" list="businessOptions" placeholder="Type to search…" autocomplete="off" required>
-            <datalist id="businessOptions"></datalist>
+            <select class="input" id="taskBusiness" name="business" required></select>
             <span class="field-error" id="businessError" role="alert"></span>
           </div>
           <div class="field" data-field="client">
@@ -1564,8 +1578,11 @@
       if (!task) { setTaskError("task", "Task is required."); valid = false; }
       else if (task.length < 5) { setTaskError("task", "Task must be at least 5 characters."); valid = false; }
       const bizVal = $("#taskBusiness").value.trim();
-      if (!bizVal) { setTaskError("business", "Business is required."); valid = false; }
-      else if (!businesses.some(b => b.name === bizVal)) { setTaskError("business", "Pick a business from the list."); valid = false; }
+      // It's a <select> now, so an off-list value can't be typed in. This stays as a
+      // guard, and checks what's actually OFFERED (visible to this user) rather than
+      // the full set — the two used to disagree.
+      if (!bizVal) { setTaskError("business", "Choose a business."); valid = false; }
+      else if (!visibleBusinesses().some(b => b.name === bizVal)) { setTaskError("business", "That business isn't available to you — pick one from the list."); valid = false; }
       if (!$("#taskCategory").value) { setTaskError("category", "Category is required."); valid = false; }
       if (!$("#taskPriority").value) { setTaskError("priority", "Priority is required."); valid = false; }
       if (!dueDate) { setTaskError("dueDate", "Due date is required."); valid = false; }
@@ -1623,8 +1640,17 @@
       $("#taskName").focus();
     }
 
+    // A real <select>, not a type-to-search input: you can't type a name that isn't a
+    // business (Jay hit exactly that by entering a CLIENT name), and phones get the
+    // native picker instead of flaky datalist autocomplete.
     function renderBusinessDropdown() {
-      $("#businessOptions").innerHTML = visibleBusinesses().map(b => `<option value="${escapeHTML(b.name)}"></option>`).join("");
+      const sel = $("#taskBusiness");
+      if (!sel) return;
+      const keep = sel.value;
+      const list = visibleBusinesses().slice().sort((a, z) => a.name.localeCompare(z.name));
+      sel.innerHTML = '<option value="">Select a business…</option>'
+        + list.map(b => `<option value="${escapeHTML(b.name)}">${escapeHTML(b.name)}</option>`).join("");
+      if (keep && list.some(b => b.name === keep)) sel.value = keep;
     }
     function renderTaskClientDropdown() {
       const sel = $("#taskClient");
@@ -1958,7 +1984,10 @@
         : '<div class="dependency-empty" style="padding:16px 4px">No updates yet.</div>'}</article>`;
       const rec = recurring.filter(r => String(r.client_id) === String(c.id));
       const recAdd = ME.is_super_admin ? ` · <button class="mini-add" type="button" data-recurring-add="${c.id}">+ Add</button>` : "";
-      const recCard = `<article class="card"><div class="kim-group-head"><h3>Recurring monthly tasks</h3><span>${rec.length}${recAdd}</span></div>${rec.length ? `<ul class="kim-list">${rec.map(r => `<li><i data-lucide="repeat" class="icon-sm"></i><span class="kim-name">${escapeHTML(r.name)}</span><span class="kim-meta"><span class="task-priority ${(r.priority || "").toLowerCase()}">${escapeHTML(r.priority || "")}</span><span class="kim-due">day ${r.day_of_month || 1}${r.assignee ? " · @" + escapeHTML(emailName(r.assignee)) : ""}</span></span></li>`).join("")}</ul>` : '<div class="dependency-empty" style="padding:16px 4px">No recurring tasks yet.</div>'}</article>`;
+      // Each row gets an edit affordance for admins — the PUT/DELETE endpoints and the
+      // entity editor already existed, the rows just never offered a way in.
+      const recEdit = r => ME.is_super_admin ? `<button class="task-btn" type="button" data-recurring-edit="${r.id}" aria-label="Edit recurring task" title="Edit or delete"><i data-lucide="pencil" class="icon-sm"></i></button>` : "";
+      const recCard = `<article class="card"><div class="kim-group-head"><h3>Recurring monthly tasks</h3><span>${rec.length}${recAdd}</span></div>${rec.length ? `<ul class="kim-list">${rec.map(r => `<li><i data-lucide="repeat" class="icon-sm"></i><span class="kim-name">${escapeHTML(r.name)}</span><span class="kim-meta"><span class="task-priority ${(r.priority || "").toLowerCase()}">${escapeHTML(r.priority || "")}</span><span class="kim-due">day ${r.day_of_month || 1}${r.assignee ? " · @" + escapeHTML(emailName(r.assignee)) : ""}</span>${recEdit(r)}</span></li>`).join("")}</ul>` : '<div class="dependency-empty" style="padding:16px 4px">No recurring tasks yet.</div>'}</article>`;
       const mine = tasks.filter(t => (t.client || "") === c.name);
       const taskCard = groupCard("Tasks for this client", mine, "No tasks generated yet.");
       showDetail("Client", c.name, `${c.business || ""} · ${c.status || ""}`, overviewCard(rows) + contactsCard + notesCard + recCard + taskCard, c.business, { kind: "client", ref: c.name }, { type: "client", item: c });
@@ -1990,6 +2019,8 @@
     $("#detailGrid").addEventListener("click", e => {
       const cAdd = e.target.closest("[data-contact-add]"), cEdit = e.target.closest("[data-contact-edit]"), cDel = e.target.closest("[data-contact-del]");
       const nAdd = e.target.closest("[data-note-add]"), nDel = e.target.closest("[data-note-del]"), rAdd = e.target.closest("[data-recurring-add]");
+      const rEdit = e.target.closest("[data-recurring-edit]");
+      if (rEdit) { const r = recurring.find(x => String(x.id) === rEdit.dataset.recurringEdit); if (r) openEntityEditor("recurring", r); return; }
       if (cAdd) openEntityEditor("contact", { client_id: Number(cAdd.dataset.contactAdd) });
       else if (cEdit) { const ct = clientContacts.find(x => String(x.id) === cEdit.dataset.contactEdit); if (ct) openEntityEditor("contact", ct); }
       else if (cDel) removeContact(cDel.dataset.contactDel);
@@ -2186,6 +2217,9 @@
       else if (card) { const c = clients.find(x => String(x.id) === card.dataset.clientOpen); if (c) openClientDetail(c); }
     });
     $("#openFeedbackBtn").addEventListener("click", openFeedback);
+    // Always-visible entry point — the sidebar's Feedback item can scroll out of
+    // reach on a phone, which is how a tester lost the bug reporter entirely.
+    $("#topFeedbackBtn").addEventListener("click", openFeedback);
     const FB_STATUS = { open: ["Open", "warning"], in_progress: ["In Progress", ""], resolved: ["Resolved", ""], wont_fix: ["Won't Fix", "parked"] };
     async function renderFeedback() {
       const wrap = $("#feedbackList");
@@ -3031,6 +3065,12 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.2", date: "Jul 15, 2026", items: [
+        "Fixed: the sidebar wouldn't scroll once you pinned items — anything below the fold (Feedback, Super Admin) was unreachable, especially on a phone. It scrolls now.",
+        "Report a bug from anywhere: there's a new feedback button in the top bar, so it can never scroll out of reach.",
+        "Quick Add: Business is now a proper dropdown instead of a type-to-search box — you can't accidentally enter a client name, and it uses your phone's native picker.",
+        "Recurring monthly tasks can now be edited and deleted, and a new one creates this month's task immediately instead of waiting for the overnight sync.",
+      ] },
       { version: "2.1", date: "Jul 15, 2026", items: [
         "Team Calendar now sits right on your Overview — it opens on your own day, and the dropdown switches to any teammate.",
         "'New meeting' is on the dashboard too, so you can book without leaving the Overview.",
