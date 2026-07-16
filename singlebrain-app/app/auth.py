@@ -326,6 +326,88 @@ PASSKEY_LOGIN_HTML = """
 """
 
 
+# Offered on first-time 2FA setup so a new user never has to install an authenticator
+# app at all. Hidden automatically where WebAuthn isn't supported, so those users just
+# see the QR path. Plain string (not an f-string) — the JS braces are literal.
+PASSKEY_ENROLL_HTML = """
+<div id="pkEnrollWrap" style="display:none;margin:6px 0 18px">
+  <button class="btn" id="pkEnrollBtn" type="button">Use Face ID / Touch ID — no app needed</button>
+  <p class="muted" style="margin:8px 0 0">Fastest option. Confirms with your fingerprint or face on this device. You can add more devices later.</p>
+  <div id="pkEnrollErr" class="err" style="display:none"></div>
+  <div style="display:flex;align-items:center;gap:10px;margin:18px 0 2px">
+    <span style="flex:1;height:1px;background:#26414f"></span>
+    <span style="font-size:11px;color:#7d94a6">OR</span>
+    <span style="flex:1;height:1px;background:#26414f"></span>
+  </div>
+</div>
+<script>
+(function () {
+  if (!window.PublicKeyCredential || !navigator.credentials) return;
+  var wrap = document.getElementById('pkEnrollWrap');
+  var btn = document.getElementById('pkEnrollBtn');
+  var err = document.getElementById('pkEnrollErr');
+  wrap.style.display = 'block';
+  function dec(s) {
+    s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    var raw = atob(s), out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out.buffer;
+  }
+  function enc(buf) {
+    var b = new Uint8Array(buf), s = '';
+    for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+  }
+  btn.addEventListener('click', async function () {
+    err.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Waiting for your device…';
+    try {
+      var r = await fetch('/auth/webauthn/enroll/options', { method: 'POST', credentials: 'same-origin' });
+      var opts = await r.json();
+      if (!r.ok) throw new Error(opts.detail || 'Could not start passkey setup.');
+      opts.challenge = dec(opts.challenge);
+      opts.user.id = dec(opts.user.id);
+      if (opts.excludeCredentials) opts.excludeCredentials.forEach(function (c) { c.id = dec(c.id); });
+      var cred = await navigator.credentials.create({ publicKey: opts });
+      var payload = {
+        credential: {
+          id: cred.id,
+          rawId: enc(cred.rawId),
+          type: cred.type,
+          response: {
+            clientDataJSON: enc(cred.response.clientDataJSON),
+            attestationObject: enc(cred.response.attestationObject)
+          }
+        },
+        label: 'This device'
+      };
+      var v = await fetch('/auth/webauthn/enroll/verify', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (v.ok) { window.location = '/'; return; }
+      var d = await v.json().catch(function () { return {}; });
+      throw new Error(d.detail || 'Passkey setup failed.');
+    } catch (e) {
+      if (e && (e.name === 'NotAllowedError' || e.name === 'AbortError')) {
+        btn.disabled = false;
+        btn.textContent = 'Use Face ID / Touch ID — no app needed';
+        return;
+      }
+      err.textContent = (e && e.message) || 'Passkey setup failed. Use the authenticator code below.';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Use Face ID / Touch ID — no app needed';
+    }
+  });
+})();
+</script>
+"""
+
+
 def _login_page(msg_html=""):
     return _page("Sign in", f"""
 <div class="eyebrow">Secure access</div>
@@ -403,7 +485,11 @@ def _twofa_page(email, enrolling, secret=None, err=""):
         uri = pyotp.totp.TOTP(secret).provisioning_uri(name=email, issuer_name=ISSUER)
         img = qrcode.make(uri, image_factory=qrcode.image.svg.SvgPathImage)
         buf = io.BytesIO(); img.save(buf); svg = buf.getvalue().decode()
-        intro = f"""<p class="lead">First time here. Get an authenticator app below, scan this code, then enter the 6-digit code.</p>
+        # Passkey first: for a brand-new user it's one touch and no app to install.
+        # The authenticator path stays right below for anyone who can't use one.
+        intro = f"""<p class="lead">First time here — set up how you'll confirm it's you.</p>
+{PASSKEY_ENROLL_HTML}
+<p class="lead" style="margin-top:4px">Or use an authenticator app: get one below, scan this code, then enter the 6-digit code.</p>
 {AUTHENTICATOR_APPS_HTML}
 <div class="qr">{svg}</div>
 <p class="muted">Can't scan? Enter this key manually:</p><code class="key">{secret}</code>"""
@@ -456,6 +542,71 @@ def twofa_verify(request: Request, code: str = Form(...), remember: str = Form("
 def logout():
     resp = RedirectResponse("/login", status_code=302)
     resp.delete_cookie(COOKIE_SESSION, path="/")
+    resp.delete_cookie(COOKIE_PENDING, path="/")
+    return resp
+
+
+# ─────────── Passkey ENROLLMENT from the magic-link (pending) state ────────────
+# Why this is allowed on nothing but a magic link: the TOTP QR is ALREADY handed to
+# anyone who clicks that link, so "controls the inbox" is already this app's trust
+# anchor for establishing a second factor. Enrolling a passkey at the same moment is
+# the same anchor and yields a stronger factor — symmetric, not a shortcut.
+#
+# ⚠️ STRICTLY bootstrap-only. If the user already HAS a second factor (TOTP enrolled
+# or any passkey), this refuses: otherwise a stolen magic link could silently add a
+# passkey and walk straight past their existing second factor. In that case they must
+# clear their real second factor first, then add passkeys from the account menu.
+def _may_bootstrap_passkey(email):
+    from . import passkeys
+    u = _get_user(email)
+    if not u:
+        return False
+    return not int(u["enrolled"] or 0) and not passkeys.has_passkey(email)
+
+
+@router.post("/auth/webauthn/enroll/options")
+def webauthn_enroll_options(request: Request):
+    from . import passkeys
+    email = _pending_email(request)
+    if not email:
+        return JSONResponse({"detail": "Your sign-in link expired. Request a new one."}, status_code=401)
+    if not _may_bootstrap_passkey(email):
+        return JSONResponse(
+            {"detail": "You already have a second factor. Enter your code, then add a passkey from your account menu."},
+            status_code=403,
+        )
+    options_json, challenge = passkeys.registration_options(email, display_name=email)
+    resp = JSONResponse(json.loads(options_json))
+    _set_cookie(resp, COOKIE_CHALLENGE, _challenge.dumps({"c": challenge}), passkeys.CHALLENGE_MAX_AGE)
+    return resp
+
+
+@router.post("/auth/webauthn/enroll/verify")
+async def webauthn_enroll_verify(request: Request):
+    from . import passkeys
+    email = _pending_email(request)
+    if not email:
+        return JSONResponse({"detail": "Your sign-in link expired. Request a new one."}, status_code=401)
+    if not _may_bootstrap_passkey(email):
+        return JSONResponse({"detail": "You already have a second factor."}, status_code=403)
+    tok = request.cookies.get(COOKIE_CHALLENGE)
+    if not tok:
+        return JSONResponse({"detail": "That took too long — try again."}, status_code=400)
+    try:
+        challenge = _challenge.loads(tok, max_age=passkeys.CHALLENGE_MAX_AGE)["c"]
+    except (BadSignature, SignatureExpired):
+        return JSONResponse({"detail": "That took too long — try again."}, status_code=400)
+
+    body = await request.json()
+    try:
+        passkeys.registration_verify(email, body.get("credential"), challenge, body.get("label") or "This device")
+    except Exception:
+        return JSONResponse({"detail": "Couldn't set up that passkey. Try the authenticator code instead."}, status_code=400)
+
+    # Enrolling a passkey completes sign-in — the biometric just proved factor 2.
+    resp = JSONResponse({"ok": True})
+    _set_cookie(resp, COOKIE_SESSION, _session.dumps({"email": email, "ttl": REMEMBER_MAX_AGE}), REMEMBER_MAX_AGE)
+    resp.delete_cookie(COOKIE_CHALLENGE, path="/")
     resp.delete_cookie(COOKIE_PENDING, path="/")
     return resp
 
