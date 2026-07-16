@@ -701,7 +701,7 @@
           <button class="icon-button" id="bellBtn" aria-label="Notifications" title="Notifications"><i data-lucide="bell" class="icon"></i><span class="bell-dot hidden" id="bellDot"></span></button>
           <div class="bell-menu hidden" id="bellMenu"></div>
         </div>
-        <div class="avatar" id="userAvatar" title="Signed in">QS</div>
+        <div class="avatar" id="userAvatar" role="button" tabindex="0" title="Account &amp; passkeys" style="cursor:pointer">QS</div>
         <a class="icon-button" id="logoutButton" href="/logout" aria-label="Log out" title="Log out"><i data-lucide="log-out" class="icon"></i></a>
       </div>
     </div>
@@ -935,40 +935,41 @@
       <div class="grid tutorial-grid">
         <article class="card tut-card"><div class="tut-num">1</div><h3>Signing in</h3><p>Go to <b>brain.cleverwolfdigital.com</b> and enter your email. We send a one-time <b>magic link</b> — click it, then enter the <b>6-digit code</b> from your authenticator app. First time only: scan the QR to set up Google or Microsoft Authenticator (links are on that page for iOS &amp; Android).</p></article>
         <article class="card tut-card"><div class="tut-num">2</div><h3>Stay signed in</h3><p>On the code screen, leave <b>“Remember this device for 90 days”</b> checked so you're not logging in constantly. Access is limited to <b>@cleverwolfdigital.com</b> accounts (plus any guests an admin invites). Use the <b>log-out icon</b> (top-right) on shared devices.</p></article>
-        <article class="card tut-card"><div class="tut-num">3</div><h3>Make it readable</h3><p>Text too small? Use the <b>A− / A+</b> buttons (top-right) to grow or shrink the whole dashboard — your choice is remembered on this device.</p></article>
+        <article class="card tut-card"><div class="tut-num">3</div><h3>Skip the code with a passkey</h3><p>Tired of opening your authenticator? Click your <b>initials</b> (top-right) &rarr; <b>Add passkey</b> and use <b>Face ID, Touch ID, or Windows Hello</b>. After that, just hit <b>Sign in with Face ID / Touch ID</b> on the login page &mdash; one touch, no email link and no 6-digit code. Add one per device you use. Your authenticator app still works as a backup, and a passkey is actually <b>safer</b> than a typed code: it only works on the real dashboard, so it can&rsquo;t be phished.</p></article>
+        <article class="card tut-card"><div class="tut-num">4</div><h3>Make it readable</h3><p>Text too small? Use the <b>A− / A+</b> buttons (top-right) to grow or shrink the whole dashboard — your choice is remembered on this device.</p></article>
       </div>
 
       <div class="tut-section">Finding your way</div>
       <div class="grid tutorial-grid">
-        <article class="card tut-card"><div class="tut-num">4</div><h3>The sidebar</h3><p>Everything lives in the left sidebar. <b>Overview</b> is today's brief. <b>Businesses</b>, <b>Projects</b>, <b>Clients</b>, and <b>Staff</b> are your portfolio. <b>Productivity</b> reports on your time. <b>Daily Journal</b>, <b>CWD Brain Chat</b>, and <b>Daily Rotation</b> support the daily flow. <b>Feedback</b> sends us bugs and ideas.</p></article>
-        <article class="card tut-card"><div class="tut-num">5</div><h3>Pin your favorites</h3><p>Open any business, project, campaign, or client and tap the <b>★ star</b> to pin it to a <b>Pinned</b> section at the top of the sidebar (up to 5). Tap the star again to unpin. Great for the handful of things you touch every day.</p></article>
-        <article class="card tut-card"><div class="tut-num">6</div><h3>Quick tools</h3><p>The <b>Overview</b> page has one-click shortcuts to ChatGPT, Claude, Grok, OpenClaw, and Hermes, plus your upcoming <b>Google Calendar</b> events (once your Drive is connected). The top bar has a <b>Sync</b> button (⟳) that pushes your latest to the shared brain, and a <b>What's new</b> button that shows the latest release notes — use <b>← →</b> to browse past updates.</p></article>
+        <article class="card tut-card"><div class="tut-num">5</div><h3>The sidebar</h3><p>Everything lives in the left sidebar. <b>Overview</b> is today's brief. <b>Businesses</b>, <b>Projects</b>, <b>Clients</b>, and <b>Staff</b> are your portfolio. <b>Productivity</b> reports on your time. <b>Daily Journal</b>, <b>CWD Brain Chat</b>, and <b>Daily Rotation</b> support the daily flow. <b>Feedback</b> sends us bugs and ideas.</p></article>
+        <article class="card tut-card"><div class="tut-num">6</div><h3>Pin your favorites</h3><p>Open any business, project, campaign, or client and tap the <b>★ star</b> to pin it to a <b>Pinned</b> section at the top of the sidebar (up to 5). Tap the star again to unpin. Great for the handful of things you touch every day.</p></article>
+        <article class="card tut-card"><div class="tut-num">7</div><h3>Quick tools</h3><p>The <b>Overview</b> page has one-click shortcuts to ChatGPT, Claude, Grok, OpenClaw, and Hermes, plus your upcoming <b>Google Calendar</b> events (once your Drive is connected). The top bar has a <b>Sync</b> button (⟳) that pushes your latest to the shared brain, and a <b>What's new</b> button that shows the latest release notes — use <b>← →</b> to browse past updates.</p></article>
       </div>
 
       <div class="tut-section">Your portfolio</div>
       <div class="grid tutorial-grid">
-        <article class="card tut-card"><div class="tut-num">7</div><h3>Businesses &amp; tiers</h3><p><b>Businesses</b> lists the whole portfolio grouped <b>Tier 1–4</b> by priority. Click any card to open its <b>profile</b> — an overview plus its tasks grouped by priority. From the profile you can <b>+ Add task</b>, ★ pin, and (admins) ✎ edit or 🗑 delete.</p></article>
-        <article class="card tut-card"><div class="tut-num">8</div><h3>Sub-businesses</h3><p>Businesses can roll up under a parent. Example: <b>Level Up Corporation</b> shows its own card, and directly beneath it a boxed group of its sub-businesses (Level Up Self, Smarter, Library, The Smarter Podcast) — each a full card you can open.</p></article>
-        <article class="card tut-card"><div class="tut-num">9</div><h3>Projects &amp; campaigns</h3><p><b>Projects</b> shows active work with status, owner, and the next concrete move. Filter by Active / Blocked / Parked. <b>Campaigns</b> (marketing pushes) appear in their own section. Click any card for its execution view.</p></article>
-        <article class="card tut-card"><div class="tut-num">10</div><h3>Clients &amp; retainers</h3><p><b>Clients</b> tracks monthly retainers. Open a client to see its recurring monthly tasks. Admins can add a client, set the retainer, and attach <b>recurring tasks</b> (with a day of month + assignee) that auto-generate a fresh task every month.</p></article>
+        <article class="card tut-card"><div class="tut-num">8</div><h3>Businesses &amp; tiers</h3><p><b>Businesses</b> lists the whole portfolio grouped <b>Tier 1–4</b> by priority. Click any card to open its <b>profile</b> — an overview plus its tasks grouped by priority. From the profile you can <b>+ Add task</b>, ★ pin, and (admins) ✎ edit or 🗑 delete.</p></article>
+        <article class="card tut-card"><div class="tut-num">9</div><h3>Sub-businesses</h3><p>Businesses can roll up under a parent. Example: <b>Level Up Corporation</b> shows its own card, and directly beneath it a boxed group of its sub-businesses (Level Up Self, Smarter, Library, The Smarter Podcast) — each a full card you can open.</p></article>
+        <article class="card tut-card"><div class="tut-num">10</div><h3>Projects &amp; campaigns</h3><p><b>Projects</b> shows active work with status, owner, and the next concrete move. Filter by Active / Blocked / Parked. <b>Campaigns</b> (marketing pushes) appear in their own section. Click any card for its execution view.</p></article>
+        <article class="card tut-card"><div class="tut-num">11</div><h3>Clients &amp; retainers</h3><p><b>Clients</b> tracks monthly retainers. Open a client to see its recurring monthly tasks. Admins can add a client, set the retainer, and attach <b>recurring tasks</b> (with a day of month + assignee) that auto-generate a fresh task every month.</p></article>
       </div>
 
       <div class="tut-section">Getting work done</div>
       <div class="grid tutorial-grid">
-        <article class="card tut-card"><div class="tut-num">11</div><h3>Quick Add</h3><p>The <b>Quick add</b> button (top bar) is a menu: <b>Add a Business, Campaign, Project, Employee,</b> or <b>Task</b>. Everyone can add tasks; the catalog items are admin-only. On a task, pick a business, category, priority, due date, estimate, and link <b>dependencies</b>.</p></article>
-        <article class="card tut-card"><div class="tut-num">12</div><h3>Timers &amp; the Action Queue</h3><p>Tasks live in the <b>Action Queue</b> (Projects page). Hit <b>▶ Start</b> to run a live timer, <b>⏸ Pause</b> to bank time, and <b>✓</b> to complete. Each task shows tracked-time / estimate so you can see where the hours go.</p></article>
-        <article class="card tut-card"><div class="tut-num">13</div><h3>Productivity reports</h3><p><b>Productivity</b> rolls up completed work by <b>Day / Week / Month / Quarter / Year</b> — tasks completed, time tracked, estimate accuracy, and breakdowns by business and category. Use ‹ › to move between periods.</p></article>
-        <article class="card tut-card"><div class="tut-num">14</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
-        <article class="card tut-card"><div class="tut-num">15</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
-        <article class="card tut-card"><div class="tut-num">16</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. Each file has two removal options: the <b>✕</b> takes it off this item but keeps it in Drive, and <b>🗑 Delete from Google Drive</b> moves the actual file to your Drive trash. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
-        <article class="card tut-card"><div class="tut-num">17</div><h3>Team Calendar &amp; scheduling</h3><p>The <b>Team Calendar</b> sits right on your <b>Overview</b> — it opens on your own day; the dropdown switches to any teammate, and you can switch between <b>Day</b> and <b>Week</b>. Collapse it with the chevron if you'd rather not see it, or hit <b>Full view</b> (or the sidebar's <b>Team Calendar</b>) for the big version. The first time, click <b>Reconnect Google</b> (we added calendar access). To see someone's events, they share their Google Calendar with you first (Google Calendar → Settings → Share with specific people → "See all event details"). Click <b>New meeting</b> to create a Google Calendar event and email invites to teammates and clients you add.</p></article>
+        <article class="card tut-card"><div class="tut-num">12</div><h3>Quick Add</h3><p>The <b>Quick add</b> button (top bar) is a menu: <b>Add a Business, Campaign, Project, Employee,</b> or <b>Task</b>. Everyone can add tasks; the catalog items are admin-only. On a task, pick a business, category, priority, due date, estimate, and link <b>dependencies</b>.</p></article>
+        <article class="card tut-card"><div class="tut-num">13</div><h3>Timers &amp; the Action Queue</h3><p>Tasks live in the <b>Action Queue</b> (Projects page). Hit <b>▶ Start</b> to run a live timer, <b>⏸ Pause</b> to bank time, and <b>✓</b> to complete. Each task shows tracked-time / estimate so you can see where the hours go.</p></article>
+        <article class="card tut-card"><div class="tut-num">14</div><h3>Productivity reports</h3><p><b>Productivity</b> rolls up completed work by <b>Day / Week / Month / Quarter / Year</b> — tasks completed, time tracked, estimate accuracy, and breakdowns by business and category. Use ‹ › to move between periods.</p></article>
+        <article class="card tut-card"><div class="tut-num">15</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
+        <article class="card tut-card"><div class="tut-num">16</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
+        <article class="card tut-card"><div class="tut-num">17</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. Each file has two removal options: the <b>✕</b> takes it off this item but keeps it in Drive, and <b>🗑 Delete from Google Drive</b> moves the actual file to your Drive trash. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
+        <article class="card tut-card"><div class="tut-num">18</div><h3>Team Calendar &amp; scheduling</h3><p>The <b>Team Calendar</b> sits right on your <b>Overview</b> — it opens on your own day; the dropdown switches to any teammate, and you can switch between <b>Day</b> and <b>Week</b>. Collapse it with the chevron if you'd rather not see it, or hit <b>Full view</b> (or the sidebar's <b>Team Calendar</b>) for the big version. The first time, click <b>Reconnect Google</b> (we added calendar access). To see someone's events, they share their Google Calendar with you first (Google Calendar → Settings → Share with specific people → "See all event details"). Click <b>New meeting</b> to create a Google Calendar event and email invites to teammates and clients you add.</p></article>
       </div>
 
       <div class="tut-section" data-admin-only>Team &amp; admin</div>
       <div class="grid tutorial-grid" data-admin-only>
-        <article class="card tut-card"><div class="tut-num">18</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
-        <article class="card tut-card"><div class="tut-num">19</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table lets you set who owns each open task. Assignees always see their tasks, even without full business access. You can promote up to <b>2</b> people to Super Admin.</p></article>
-        <article class="card tut-card"><div class="tut-num">20</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
+        <article class="card tut-card"><div class="tut-num">19</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
+        <article class="card tut-card"><div class="tut-num">20</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table lets you set who owns each open task. Assignees always see their tasks, even without full business access. You can promote up to <b>2</b> people to Super Admin.</p></article>
+        <article class="card tut-card"><div class="tut-num">21</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
       </div>
     </section>
 
@@ -1239,6 +1240,25 @@
     </section>
   </div>
 
+  <div class="modal-overlay hidden" id="passkeyModal" role="dialog" aria-modal="true" aria-labelledby="passkeyTitle" aria-hidden="true">
+    <section class="task-modal">
+      <header class="modal-header">
+        <div><div class="eyebrow">Security</div><h2 id="passkeyTitle">Passkeys</h2><p>Sign in with Face ID, Touch ID, or Windows Hello instead of opening your authenticator app. Your authenticator still works as a backup.</p></div>
+        <button class="icon-button modal-close" type="button" data-close-passkey aria-label="Close" title="Close"><i data-lucide="x" class="icon"></i></button>
+      </header>
+      <div class="task-form">
+        <div id="passkeyUnsupported" class="task-empty hidden" style="margin:0 0 12px">This browser or device doesn't support passkeys. You can still sign in with a magic link + authenticator code.</div>
+        <div id="passkeyList"><div class="task-empty" style="margin:0">Loading…</div></div>
+        <div id="passkeyAddRow" class="hidden" style="display:flex;gap:8px;margin-top:12px">
+          <input class="input" id="passkeyLabel" type="text" placeholder="Name this device (e.g. Quincy's MacBook)" maxlength="60" style="flex:1">
+          <button class="button" type="button" id="passkeyAdd"><i data-lucide="fingerprint" class="icon-sm"></i>Add passkey</button>
+        </div>
+        <span class="field-error" id="passkeyError"></span>
+        <div class="modal-actions"><button class="button secondary" type="button" data-close-passkey>Done</button></div>
+      </div>
+    </section>
+  </div>
+
   <div class="modal-overlay hidden" id="searchModal" role="dialog" aria-modal="true" aria-label="Search" aria-hidden="true">
     <section class="task-modal" style="width:min(640px,100%)">
       <div style="display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line)">
@@ -1442,6 +1462,98 @@
       return Object.values(byEmail).sort((a, b) => a.name.localeCompare(b.name));
     }
     const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
+
+    // ---------- Passkeys (biometric sign-in) ----------
+    // WebAuthn speaks ArrayBuffers; the wire format is base64url. These convert both ways.
+    const b64u = {
+      dec(s) {
+        s = String(s).replace(/-/g, "+").replace(/_/g, "/");
+        while (s.length % 4) s += "=";
+        const raw = atob(s), out = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+        return out.buffer;
+      },
+      enc(buf) {
+        const b = new Uint8Array(buf);
+        let s = "";
+        for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+        return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      },
+    };
+    const passkeysSupported = () => !!(window.PublicKeyCredential && navigator.credentials);
+
+    async function openPasskeyModal() {
+      $("#passkeyError").textContent = "";
+      $("#passkeyLabel").value = "";
+      $("#passkeyUnsupported").classList.toggle("hidden", passkeysSupported());
+      $("#passkeyAddRow").classList.toggle("hidden", !passkeysSupported());
+      $("#passkeyList").innerHTML = '<div class="task-empty" style="margin:0">Loading…</div>';
+      showModal("#passkeyModal");
+      renderPasskeys();
+    }
+
+    function passkeyRowsHTML(list) {
+      if (!list.length) {
+        return '<div class="task-empty" style="margin:0">No passkeys yet. Add one below and you can skip the authenticator code next time.</div>';
+      }
+      return list.map(p => `<div class="risk-row" style="grid-template-columns:1fr auto;align-items:center;gap:10px;padding:9px 0"><div style="min-width:0"><strong>${escapeHTML(p.label || "Passkey")}</strong><p>Added ${escapeHTML((p.created_at || "").slice(0, 10))}${p.last_used_at ? " · last used " + escapeHTML(p.last_used_at.slice(0, 10)) : " · never used"}</p></div><button class="icon-button" type="button" title="Remove this passkey" data-pk-del="${escapeHTML(p.id)}"><i data-lucide="trash-2" class="icon-sm"></i></button></div>`).join("");
+    }
+
+    async function renderPasskeys() {
+      try {
+        const r = await fetch("/api/passkeys", { credentials: "same-origin" });
+        const d = r.ok ? await r.json() : { passkeys: [] };
+        $("#passkeyList").innerHTML = passkeyRowsHTML(d.passkeys || []);
+        renderIcons();
+      } catch (e) { $("#passkeyList").innerHTML = '<div class="task-empty" style="margin:0">Couldn\'t load passkeys.</div>'; }
+    }
+
+    async function addPasskey() {
+      const err = $("#passkeyError");
+      const btn = $("#passkeyAdd");
+      err.textContent = "";
+      if (!passkeysSupported()) { err.textContent = "This browser doesn't support passkeys."; return; }
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader" class="icon-sm"></i>Waiting for your device…';
+      renderIcons();
+      try {
+        const r = await fetch("/api/passkeys/register/options", { method: "POST", credentials: "same-origin" });
+        if (!r.ok) throw new Error("Couldn't start enrollment.");
+        const opts = await r.json();
+        opts.challenge = b64u.dec(opts.challenge);
+        opts.user.id = b64u.dec(opts.user.id);
+        if (opts.excludeCredentials) opts.excludeCredentials.forEach(c => { c.id = b64u.dec(c.id); });
+        const cred = await navigator.credentials.create({ publicKey: opts });
+        const payload = {
+          id: cred.id,
+          rawId: b64u.enc(cred.rawId),
+          type: cred.type,
+          response: {
+            clientDataJSON: b64u.enc(cred.response.clientDataJSON),
+            attestationObject: b64u.enc(cred.response.attestationObject),
+          },
+        };
+        const v = await fetch("/api/passkeys/register/verify", {
+          method: "POST", credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credential: payload, label: $("#passkeyLabel").value.trim() || null }),
+        });
+        const d = await v.json().catch(() => ({}));
+        if (!v.ok) throw new Error(d.detail || "Couldn't save that passkey.");
+        showToast("Passkey added ✓");
+        $("#passkeyLabel").value = "";
+        $("#passkeyList").innerHTML = passkeyRowsHTML(d.passkeys || []);
+        renderIcons();
+      } catch (e) {
+        // Cancelling the OS prompt isn't an error worth shouting about.
+        if (e && (e.name === "NotAllowedError" || e.name === "AbortError")) { /* user cancelled */ }
+        else if (e && e.name === "InvalidStateError") err.textContent = "This device already has a passkey for your account.";
+        else err.textContent = (e && e.message) || "Couldn't add that passkey.";
+      }
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="fingerprint" class="icon-sm"></i>Add passkey';
+      renderIcons();
+    }
     const todayString = () => {
       const today = new Date();
       const month = String(today.getMonth() + 1).padStart(2, "0");
@@ -2346,6 +2458,24 @@
     $("#entitySave").addEventListener("click", saveEntity);
     $("#entityDelete").addEventListener("click", deleteEntity);
     $("#fbSend").addEventListener("click", sendFeedback);
+    // Passkeys — the avatar is the account/security entry point.
+    $("#userAvatar").addEventListener("click", openPasskeyModal);
+    $("#userAvatar").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPasskeyModal(); } });
+    $$('[data-close-passkey]').forEach(b => b.addEventListener("click", () => hideModal("#passkeyModal")));
+    $("#passkeyModal").addEventListener("click", e => { if (e.target === $("#passkeyModal")) hideModal("#passkeyModal"); });
+    $("#passkeyAdd").addEventListener("click", addPasskey);
+    $("#passkeyLabel").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addPasskey(); } });
+    $("#passkeyList").addEventListener("click", async e => {
+      const del = e.target.closest("[data-pk-del]");
+      if (!del) return;
+      del.disabled = true;
+      try {
+        const r = await fetch(`/api/passkeys/${del.dataset.pkDel}`, { method: "DELETE", credentials: "same-origin" });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) { showToast("Passkey removed"); $("#passkeyList").innerHTML = passkeyRowsHTML(d.passkeys || []); renderIcons(); }
+        else { showToast("Couldn't remove that passkey"); del.disabled = false; }
+      } catch (err) { showToast("Couldn't reach the server."); del.disabled = false; }
+    });
     $("#entityModal").addEventListener("click", e => { if (e.target === $("#entityModal")) hideModal("#entityModal"); });
     $("#feedbackModal").addEventListener("click", e => { if (e.target === $("#feedbackModal")) hideModal("#feedbackModal"); });
     document.addEventListener("keydown", e => {
@@ -3077,6 +3207,12 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.4", date: "Jul 15, 2026", items: [
+        "Passkeys: sign in with Face ID, Touch ID, or Windows Hello — no authenticator app needed.",
+        "Click your initials (top right) to add a passkey. One touch replaces both the magic link and the 6-digit code.",
+        "Your authenticator app still works as a backup, so nobody gets locked out.",
+        "Passkeys are also safer than a typed code — they only work on the real dashboard, so they can't be phished.",
+      ] },
       { version: "2.3", date: "Jul 15, 2026", items: [
         "You now get an email when a task you assigned is completed — and when someone adds a file to a task you're on.",
         "Team leads can be given permission to assign tasks to other people without making them a Super Admin (Super Admin → edit a person → 'Can assign tasks').",
@@ -3313,6 +3449,7 @@
       { view: "overview", sel: "#cwdChatBtn", title: "CWD Brain Chat", body: "Ask this anything about your portfolio — it reads your live businesses and tasks." },
       { view: "businesses", sel: "#businessGrid .business-card", title: "Files on everything", body: "Open any business, project, campaign, or task and use Files to attach documents from Google Drive — upload or link them, then share by link or with a person. A 📎 badge shows the count." },
       { view: "overview", sel: "#dashCal", title: "Team Calendar", body: "Your day, right on the Overview. Switch the dropdown to any teammate, or hit New meeting to create a Google event and send invites. Collapse it with the chevron if you don't need it." },
+      { view: "overview", sel: "#userAvatar", title: "Skip the authenticator", body: "Click your initials to add a passkey — then sign in with Face ID, Touch ID, or Windows Hello instead of a 6-digit code. Your authenticator stays as a backup." },
       { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
       { view: "overview", sel: "#feedbackNav", title: "Feedback", body: "Found a bug or have an idea? Send it straight to the team here." },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },

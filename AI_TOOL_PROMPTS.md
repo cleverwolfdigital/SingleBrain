@@ -96,6 +96,9 @@ On each request:
    tasks, pins, productivity reports, journal, and FILES — attach files to any business/campaign/
    project/task (Files button, or the paperclip on a task), Connect Your Drive (popup), upload/link/
    share (by link or with a person), plus Calendar on Overview and the What's new release notes.
+6. Sign-in help: magic link + authenticator code, "remember this device 90 days", and PASSKEYS —
+   click the initials/avatar (top-right) → Add passkey → Face ID / Touch ID / Windows Hello. One
+   touch then replaces both factors; the authenticator app stays as the backup.
 ```
 
 ---

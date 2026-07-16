@@ -5,6 +5,7 @@ magic-link email (Mailjet / Resend / Gmail — any SMTP works). If SMTP is not
 configured, the magic link is logged to stdout so the flow stays testable.
 """
 import io
+import json
 import os
 import re
 import time
@@ -16,7 +17,7 @@ import qrcode
 import qrcode.image.svg
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from fastapi import APIRouter, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 
 from . import db
 
@@ -43,6 +44,9 @@ SECURE_COOKIES = BASE_URL.startswith("https")
 _magic = URLSafeTimedSerializer(SECRET_KEY, salt="sb-magic")
 _pending = URLSafeTimedSerializer(SECRET_KEY, salt="sb-pending")
 _session = URLSafeTimedSerializer(SECRET_KEY, salt="sb-session")
+_challenge = URLSafeTimedSerializer(SECRET_KEY, salt="sb-webauthn")
+
+COOKIE_CHALLENGE = "sb_wa_chal"
 
 router = APIRouter()
 
@@ -239,17 +243,101 @@ def _page(title, body):
 <div class="brand">Single Brain</div>{body}</div></body></html>"""
 
 
+# Passkey sign-in button + ceremony. Progressive enhancement: the button is hidden
+# unless the browser actually supports WebAuthn, so unsupported devices only ever
+# see the magic-link form. Plain string (not an f-string) — the JS braces are literal.
+PASSKEY_LOGIN_HTML = """
+<div id="pkWrap" style="display:none">
+  <button class="btn" id="pkBtn" type="button" style="background:#0a1622;border:1px solid #26414f;color:#edf4fa">
+    Sign in with Face ID / Touch ID
+  </button>
+  <div id="pkErr" class="err" style="display:none"></div>
+  <div style="display:flex;align-items:center;gap:10px;margin:16px 0 4px">
+    <span style="flex:1;height:1px;background:#26414f"></span>
+    <span style="font-size:11px;color:#7d94a6">OR</span>
+    <span style="flex:1;height:1px;background:#26414f"></span>
+  </div>
+</div>
+<script>
+(function () {
+  if (!window.PublicKeyCredential || !navigator.credentials) return;
+  var wrap = document.getElementById('pkWrap');
+  var btn = document.getElementById('pkBtn');
+  var err = document.getElementById('pkErr');
+  wrap.style.display = 'block';
+  var b64u = {
+    dec: function (s) {
+      s = s.replace(/-/g, '+').replace(/_/g, '/');
+      while (s.length % 4) s += '=';
+      var raw = atob(s), out = new Uint8Array(raw.length);
+      for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+      return out.buffer;
+    },
+    enc: function (buf) {
+      var b = new Uint8Array(buf), s = '';
+      for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+      return btoa(s).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+    }
+  };
+  btn.addEventListener('click', async function () {
+    err.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Waiting for your device…';
+    try {
+      var r = await fetch('/auth/webauthn/options', { method: 'POST', credentials: 'same-origin' });
+      var opts = await r.json();
+      opts.challenge = b64u.dec(opts.challenge);
+      if (opts.allowCredentials) opts.allowCredentials.forEach(function (c) { c.id = b64u.dec(c.id); });
+      var cred = await navigator.credentials.get({ publicKey: opts });
+      var payload = {
+        id: cred.id,
+        rawId: b64u.enc(cred.rawId),
+        type: cred.type,
+        response: {
+          clientDataJSON: b64u.enc(cred.response.clientDataJSON),
+          authenticatorData: b64u.enc(cred.response.authenticatorData),
+          signature: b64u.enc(cred.response.signature),
+          userHandle: cred.response.userHandle ? b64u.enc(cred.response.userHandle) : null
+        }
+      };
+      var v = await fetch('/auth/webauthn/verify', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (v.ok) { window.location = '/'; return; }
+      var d = await v.json().catch(function () { return {}; });
+      throw new Error(d.detail || 'Passkey sign-in failed.');
+    } catch (e) {
+      // A user who simply cancels the OS prompt shouldn't see a scary error.
+      if (e && (e.name === 'NotAllowedError' || e.name === 'AbortError')) {
+        btn.disabled = false;
+        btn.textContent = 'Sign in with Face ID / Touch ID';
+        return;
+      }
+      err.textContent = (e && e.message) || 'Passkey sign-in failed.';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Sign in with Face ID / Touch ID';
+    }
+  });
+})();
+</script>
+"""
+
+
 def _login_page(msg_html=""):
     return _page("Sign in", f"""
 <div class="eyebrow">Secure access</div>
 <h1>Sign in</h1>
-<p class="lead">Enter your work email. We'll send a one-time magic link, then you'll confirm with your authenticator code.</p>
+<p class="lead">Use a passkey if you've set one up. Otherwise enter your work email and we'll send a one-time magic link, then you'll confirm with your authenticator code.</p>
+{PASSKEY_LOGIN_HTML}
 <form method="post" action="/auth/request">
   <label>Work email</label>
-  <input name="email" type="email" placeholder="you@{ALLOWED_DOMAIN}" required autofocus>
+  <input name="email" type="email" placeholder="you@{ALLOWED_DOMAIN}" required>
   <button class="btn" type="submit">Send magic link</button>
 </form>{msg_html}
-<div class="muted">Access limited to @{ALLOWED_DOMAIN} accounts.</div>""")
+<div class="muted">Access limited to @{ALLOWED_DOMAIN} accounts (plus invited guests).</div>""")
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -368,5 +456,52 @@ def twofa_verify(request: Request, code: str = Form(...), remember: str = Form("
 def logout():
     resp = RedirectResponse("/login", status_code=302)
     resp.delete_cookie(COOKIE_SESSION, path="/")
+    resp.delete_cookie(COOKIE_PENDING, path="/")
+    return resp
+
+
+# ─────────────── Passkey sign-in (public — these ARE the front door) ───────────
+# A verified passkey replaces BOTH factors: the biometric/PIN unlock plus device
+# possession is already MFA, and unlike a typed code it can't be phished onto a
+# look-alike domain. The magic-link + TOTP path stays untouched as the fallback.
+@router.post("/auth/webauthn/options")
+def webauthn_login_options():
+    from . import passkeys
+    options_json, challenge = passkeys.authentication_options()
+    resp = JSONResponse(json.loads(options_json))
+    _set_cookie(resp, COOKIE_CHALLENGE, _challenge.dumps({"c": challenge}), passkeys.CHALLENGE_MAX_AGE)
+    return resp
+
+
+@router.post("/auth/webauthn/verify")
+async def webauthn_login_verify(request: Request):
+    from . import passkeys
+    tok = request.cookies.get(COOKIE_CHALLENGE)
+    if not tok:
+        return JSONResponse({"detail": "That took too long — try again."}, status_code=400)
+    try:
+        challenge = _challenge.loads(tok, max_age=passkeys.CHALLENGE_MAX_AGE)["c"]
+    except (BadSignature, SignatureExpired):
+        return JSONResponse({"detail": "That took too long — try again."}, status_code=400)
+
+    try:
+        credential = await request.json()
+        email = passkeys.authentication_verify(credential, challenge)
+    except passkeys.PasskeyError as e:
+        return JSONResponse({"detail": str(e)}, status_code=401)
+    except Exception:
+        return JSONResponse({"detail": "That passkey could not be verified."}, status_code=401)
+
+    # Re-check authorization at sign-in: a passkey is proof of identity, never of
+    # entitlement. Access revoked since enrollment must still take effect.
+    if not allowed(email):
+        return JSONResponse({"detail": "This account is no longer authorized."}, status_code=403)
+
+    # Passkey sign-in always gets the long session — re-authenticating is one touch,
+    # so there's no reason to make them do it twice a day.
+    ttl = REMEMBER_MAX_AGE
+    resp = JSONResponse({"ok": True, "email": email})
+    _set_cookie(resp, COOKIE_SESSION, _session.dumps({"email": email, "ttl": ttl}), ttl)
+    resp.delete_cookie(COOKIE_CHALLENGE, path="/")
     resp.delete_cookie(COOKIE_PENDING, path="/")
     return resp

@@ -20,7 +20,7 @@ from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from . import db, seed, auth, repo, config, catalog, google_int
+from . import db, seed, auth, repo, config, catalog, google_int, passkeys
 
 app = FastAPI(title="Single Brain API")
 app.include_router(auth.router)
@@ -131,6 +131,7 @@ def _startup():
     catalog.generate_recurring()
     auth.init_auth_db()
     google_int.init_db()
+    passkeys.init_passkey_db()   # must follow init_auth_db — it extends auth_users
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -560,6 +561,11 @@ DASHBOARD_FEATURES = (
     "- Daily Journal (morning focus + end-of-day log). Super Admins manage team roles, per-business "
     "access, and guest invites. Feedback tab files bugs/ideas. A Tutorial tab + guided tour explain it "
     "all, and a 'What's new' card (with prev/next arrows) shows release notes.\n"
+    "- Sign-in: magic link to their email + a 6-digit authenticator (TOTP) code, with "
+    "'remember this device for 90 days'. Users can also add a PASSKEY (Face ID / Touch ID / "
+    "Windows Hello) from the initials/avatar menu top-right — after that, one touch on the login "
+    "page replaces BOTH the magic link and the code. The authenticator app remains the backup, so "
+    "removing every passkey never locks anyone out.\n"
     "Access is limited to @cleverwolfdigital.com users (plus admin-invited guests).\n"
 )
 
@@ -936,6 +942,58 @@ def google_drive_share(file_id: str, body: ShareIn, request: Request):
 def google_disconnect(request: Request):
     google_int.disconnect(auth.current_user(request))
     return {"ok": True}
+
+
+# ================= Passkeys (biometric sign-in) =================
+# These live under /api (NOT /auth) on purpose: /auth/* is public so the login
+# ceremony can run, whereas ENROLLING a passkey must require an existing session —
+# otherwise anyone could bolt their own key onto someone else's account.
+@app.get("/api/passkeys")
+def list_passkeys(request: Request):
+    email = auth.current_user(request)
+    return {"passkeys": passkeys.list_for(email), "rp_id": passkeys.RP_ID}
+
+
+@app.post("/api/passkeys/register/options")
+def passkey_register_options(request: Request):
+    email = auth.current_user(request)
+    options_json, challenge = passkeys.registration_options(email, display_name=email)
+    resp = JSONResponse(json.loads(options_json))
+    auth._set_cookie(resp, auth.COOKIE_CHALLENGE, auth._challenge.dumps({"c": challenge}), passkeys.CHALLENGE_MAX_AGE)
+    return resp
+
+
+class PasskeyVerifyIn(BaseModel):
+    credential: dict
+    label: Optional[str] = None
+
+
+@app.post("/api/passkeys/register/verify")
+def passkey_register_verify(body: PasskeyVerifyIn, request: Request):
+    email = auth.current_user(request)
+    tok = request.cookies.get(auth.COOKIE_CHALLENGE)
+    if not tok:
+        raise HTTPException(400, "That took too long — try adding the passkey again.")
+    try:
+        challenge = auth._challenge.loads(tok, max_age=passkeys.CHALLENGE_MAX_AGE)["c"]
+    except Exception:
+        raise HTTPException(400, "That took too long — try adding the passkey again.")
+    try:
+        passkeys.registration_verify(email, body.credential, challenge, body.label)
+    except Exception as e:
+        raise HTTPException(400, f"Couldn't register that passkey: {e}")
+    resp = JSONResponse({"ok": True, "passkeys": passkeys.list_for(email)})
+    resp.delete_cookie(auth.COOKIE_CHALLENGE, path="/")
+    return resp
+
+
+@app.delete("/api/passkeys/{pid}")
+def delete_passkey(pid: int, request: Request):
+    """Remove one of my passkeys. Scoped to the caller, so this can only ever
+    delete your own. TOTP remains, so removing every passkey never locks you out."""
+    email = auth.current_user(request)
+    passkeys.delete_for(email, pid)
+    return {"ok": True, "passkeys": passkeys.list_for(email)}
 
 
 # ================= Team calendar + scheduling =================
