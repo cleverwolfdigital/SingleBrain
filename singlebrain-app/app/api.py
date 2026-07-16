@@ -558,6 +558,9 @@ DASHBOARD_FEATURES = (
     "and the file is auto-shared with them in Drive. Files on a business/project/campaign notify nobody.\n"
     "- Assigning: Super Admins can assign work; other staff need the 'Can assign tasks' permission "
     "(Super Admin -> edit a person). Guests can never assign. Whoever assigns is who gets the completion email.\n"
+    "- Feedback: a bug/suggestion reporter reachable from the top-bar button (and the sidebar). It takes "
+    "a SCREENSHOT (paste/drop/attach) and auto-captures the page, browser, OS and screen size; each ticket "
+    "has a status (open/in progress/resolved) the submitter can track, and the team is emailed with the image.\n"
     "- Daily Journal (morning focus + end-of-day log). Super Admins manage team roles, per-business "
     "access, and guest invites. Feedback tab files bugs/ideas. A Tutorial tab + guided tour explain it "
     "all, and a 'What's new' card (with prev/next arrows) shows release notes.\n"
@@ -1694,38 +1697,110 @@ class FeedbackUpdate(BaseModel):
     notify: Optional[bool] = False
 
 
+def _readable_context(raw):
+    """Turn the captured JSON context into a couple of human lines for the email."""
+    try:
+        c = json.loads(raw) if raw else {}
+    except Exception:
+        return ""
+    if not isinstance(c, dict):
+        return ""
+    bits = []
+    if c.get("browser"):
+        bits.append(f"Browser:  {c['browser']}")
+    if c.get("os"):
+        bits.append(f"OS:       {c['os']}")
+    if c.get("screen"):
+        bits.append(f"Screen:   {c['screen']}")
+    if c.get("viewport"):
+        bits.append(f"Viewport: {c['viewport']}")
+    return "\n".join(bits)
+
+
 @app.post("/api/feedback")
-def submit_feedback(body: FeedbackIn, request: Request):
+async def submit_feedback(
+    request: Request,
+    message: str = Form(...),
+    kind: str = Form("bug"),
+    page: Optional[str] = Form(None),
+    context: Optional[str] = Form(None),
+    screenshot: Optional[UploadFile] = File(None),
+):
     email = auth.current_user(request) or "unknown"
-    msg = (body.message or "").strip()
+    msg = (message or "").strip()
     if len(msg) < 3:
         raise HTTPException(422, "Please add a bit more detail.")
-    kind = "suggestion" if (body.kind or "").lower().startswith("sugg") else "bug"
+    kind = "suggestion" if (kind or "").lower().startswith("sugg") else "bug"
+
+    shot, shot_mime = None, None
+    if screenshot is not None:
+        shot = await screenshot.read()
+        if shot:
+            if len(shot) > 6 * 1024 * 1024:
+                raise HTTPException(413, "Screenshot is too large (6 MB max).")
+            shot_mime = (screenshot.content_type or "image/png").split(";")[0]
+        else:
+            shot = None
+
     fid = db.execute(
-        "INSERT INTO feedback(email,kind,message,page,status) VALUES(?,?,?,?,'open')",
-        (email, kind, msg, body.page),
+        "INSERT INTO feedback(email,kind,message,page,status,context,screenshot,screenshot_mime) "
+        "VALUES(?,?,?,?,'open',?,?,?)",
+        (email, kind, msg, page, context, shot, shot_mime),
     )
     sent = False
     if FEEDBACK_TO:
+        ctx = _readable_context(context)
+        body = (
+            f"{kind} report\nFrom: {email}\nPage: {page or '-'}\n"
+            + (ctx + "\n" if ctx else "")
+            + f"\n{msg}\n"
+            + (f"\n(Screenshot attached — also viewable in the dashboard Feedback tab.)\n" if shot else "")
+            + f"\nView in dashboard: {APP_URL}#feedback\n"
+        )
+        atts = [(f"feedback-{fid}.png", shot, shot_mime or "image/png")] if shot else None
         try:
-            sent = auth.send_email(
-                FEEDBACK_TO, f"[Single Brain] {kind} from {email} (#{fid})",
-                f"{kind} report\nFrom: {email}\nPage: {body.page or '-'}\n\n{msg}",
-            )
+            sent = auth.send_email(FEEDBACK_TO, f"[Single Brain] {kind} from {email} (#{fid})", body, attachments=atts)
         except Exception:
             pass
     return {"ok": True, "id": fid, "sent": bool(sent)}
 
 
+@app.get("/api/feedback/{fid}/screenshot")
+def feedback_screenshot(fid: int, request: Request):
+    """The screenshot bytes — visible to an admin or to the person who submitted it."""
+    email = (auth.current_user(request) or "").strip().lower()
+    rows = db.query("SELECT email, screenshot, screenshot_mime FROM feedback WHERE id=?", (fid,))
+    if not rows or not rows[0].get("screenshot"):
+        raise HTTPException(404, "No screenshot.")
+    r = rows[0]
+    if not _is_admin(email) and (r.get("email") or "").strip().lower() != email:
+        raise HTTPException(403, "Not allowed.")
+    from fastapi.responses import Response
+    return Response(content=r["screenshot"], media_type=r.get("screenshot_mime") or "image/png")
+
+
 @app.get("/api/feedback")
 def list_feedback(request: Request):
     email = (auth.current_user(request) or "").strip().lower()
+    # Explicit columns — never ship the raw screenshot BLOB in the list (it isn't
+    # JSON-serializable and would bloat the payload); a flag + the /screenshot route
+    # cover it. `context` is parsed to an object for the client.
+    cols = ("id, email, kind, message, page, status, admin_note, created_at, updated_at, context, "
+            "(screenshot IS NOT NULL) AS has_screenshot")
     if _is_admin(email):
-        return db.query(
-            "SELECT * FROM feedback ORDER BY "
+        rows = db.query(
+            f"SELECT {cols} FROM feedback ORDER BY "
             "CASE status WHEN 'open' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, id DESC"
         )
-    return db.query("SELECT * FROM feedback WHERE lower(email)=? ORDER BY id DESC", (email,))
+    else:
+        rows = db.query(f"SELECT {cols} FROM feedback WHERE lower(email)=? ORDER BY id DESC", (email,))
+    for r in rows:
+        r["has_screenshot"] = bool(r.get("has_screenshot"))
+        try:
+            r["context"] = json.loads(r["context"]) if r.get("context") else None
+        except Exception:
+            r["context"] = None
+    return rows
 
 
 @app.put("/api/feedback/{fid}")

@@ -162,9 +162,10 @@ def _set_cookie(resp, name, value, max_age):
                     secure=SECURE_COOKIES, samesite="lax", path="/")
 
 
-def send_email(to, subject, text, html=None):
+def send_email(to, subject, text, html=None, attachments=None):
     """Generic transactional send over the same SMTP transport as magic links
-    (Resend/Mailjet/Gmail). Returns True if sent, False if SMTP isn't configured."""
+    (Resend/Mailjet/Gmail). Returns True if sent, False if SMTP isn't configured.
+    attachments: optional list of (filename, bytes, mime) — e.g. a feedback screenshot."""
     if not (SMTP_HOST and SMTP_USER and SMTP_PASS):
         print(f"[mail] SMTP not configured -- would send to {to}: {subject}", flush=True)
         return False
@@ -175,6 +176,9 @@ def send_email(to, subject, text, html=None):
     msg.set_content(text)
     if html:
         msg.add_alternative(html, subtype="html")
+    for fn, data, mime in (attachments or []):
+        maintype, _, subtype = (mime or "application/octet-stream").partition("/")
+        msg.add_attachment(data, maintype=maintype, subtype=subtype or "octet-stream", filename=fn)
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as s:
         s.ehlo()
         s.starttls()

@@ -57,6 +57,11 @@ _COLUMN_MIGRATIONS = {
         # without granting the whole Super Admin surface.
         "can_assign": "INTEGER DEFAULT 0",
     },
+    "feedback": {
+        "context": "TEXT",          # JSON: page, browser/OS, screen + viewport, timestamp
+        "screenshot": "BLOB",       # optional pasted/attached image bytes
+        "screenshot_mime": "TEXT",
+    },
 }
 
 

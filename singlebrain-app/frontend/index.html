@@ -425,6 +425,18 @@
     .drive-progress { flex-basis: 100%; color: var(--muted); font-size: 11px; }
     .attach-badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; color: var(--muted); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 20px; font: 600 10px var(--font-display); vertical-align: middle; }
     .attach-badge .icon-sm { width: 12px; height: 12px; }
+    /* Feedback: screenshot + context + one-time nudge */
+    .fb-drop { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border: 1px dashed var(--line-strong); border-radius: 6px; transition: border-color .15s, background .15s; }
+    .fb-drop.drag { border-color: var(--gold); background: rgba(208,168,83,0.06); }
+    .fb-drop-hint { color: var(--faint); font-size: 11px; }
+    .fb-shot-preview { position: relative; margin-top: 8px; display: inline-block; }
+    .fb-shot-preview img { max-width: 100%; max-height: 200px; border: 1px solid var(--line-strong); border-radius: 6px; display: block; }
+    .fb-shot-preview .icon-button { position: absolute; top: 6px; right: 6px; background: rgba(7,18,29,0.85); }
+    .fb-ctx { margin: 2px 0 -4px; color: var(--faint); font-size: 11px; }
+    .fb-ctxline { color: var(--faint); font-size: 11px; margin: 6px 0; font-variant-numeric: tabular-nums; }
+    .fb-shot-link img { max-width: 220px; max-height: 150px; border: 1px solid var(--line); border-radius: 6px; margin: 6px 0; display: block; }
+    #topFeedbackBtn.nudge { color: var(--gold-soft); animation: fb-pulse 2s ease-in-out 2; }
+    @keyframes fb-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(208,168,83,0); } 50% { box-shadow: 0 0 0 4px rgba(208,168,83,0.28); } }
     .check-line { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
     .check-line input { width: 15px; height: 15px; accent-color: var(--gold); }
     .field-hint { display: block; margin-top: 4px; color: var(--faint); font-size: 11px; line-height: 1.45; }
@@ -1197,6 +1209,12 @@
       <div class="task-form">
         <div class="field"><label for="fbKind">Type</label><select class="input" id="fbKind"><option value="bug">Bug report</option><option value="suggestion">Suggestion</option></select></div>
         <div class="field"><label for="fbMessage">Details <span class="required-mark">*</span></label><textarea class="textarea" id="fbMessage" maxlength="2000" placeholder="What happened, or what would make this better?"></textarea><span class="field-error" id="fbError"></span></div>
+        <div class="field">
+          <label>Screenshot <span style="color:var(--faint);font-weight:400">— paste (Ctrl/⌘V), or</span></label>
+          <div id="fbDrop" class="fb-drop"><input type="file" id="fbShot" accept="image/*" hidden><button class="button secondary" type="button" id="fbShotBtn"><i data-lucide="image-plus" class="icon-sm"></i>Attach image</button><span class="fb-drop-hint">drop or paste a screenshot — it really helps us see the bug</span></div>
+          <div id="fbShotPreview" class="fb-shot-preview hidden"><img id="fbShotImg" alt="screenshot preview"><button type="button" id="fbShotClear" class="icon-button" title="Remove screenshot"><i data-lucide="x" class="icon-sm"></i></button></div>
+        </div>
+        <div class="fb-ctx" id="fbCtx"></div>
         <div class="modal-actions"><button class="button secondary" type="button" data-close-feedback>Cancel</button><button class="button" type="button" id="fbSend"><i data-lucide="send" class="icon-sm"></i>Send feedback</button></div>
       </div>
     </section>
@@ -2306,15 +2324,59 @@
     }
 
     // ---------- Feedback ----------
-    function openFeedback() { $("#fbMessage").value = ""; $("#fbKind").value = "bug"; $("#fbError").textContent = ""; showModal("#feedbackModal"); $("#fbMessage").focus(); }
+    let fbShotFile = null;   // the pending screenshot, if any
+
+    // The stuff a reporter would never think (or bother) to type — captured for them.
+    function feedbackContext() {
+      const ua = navigator.userAgent || "";
+      const os = /Windows/.test(ua) ? "Windows" : /iPhone|iPad|iPod/.test(ua) ? "iOS"
+        : /Android/.test(ua) ? "Android" : /Mac/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "Unknown";
+      const browser = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) && !/Edg\//.test(ua) ? "Chrome"
+        : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) && !/Chrome/.test(ua) ? "Safari" : "Other";
+      const view = $(".view.active");
+      return {
+        page: (view && view.id) || (location.hash || "#overview").slice(1),
+        os, browser, ua,
+        screen: `${screen.width}×${screen.height}`,
+        viewport: `${window.innerWidth}×${window.innerHeight}`,
+        role: ME.role, at: new Date().toISOString(),
+      };
+    }
+
+    function fbSetShot(file) {
+      fbShotFile = file || null;
+      const prev = $("#fbShotPreview"), drop = $("#fbDrop");
+      if (!fbShotFile) { prev.classList.add("hidden"); drop.classList.remove("hidden"); $("#fbShotImg").src = ""; return; }
+      const url = URL.createObjectURL(fbShotFile);
+      $("#fbShotImg").src = url;
+      prev.classList.remove("hidden"); drop.classList.add("hidden");
+    }
+
+    function openFeedback() {
+      $("#fbMessage").value = ""; $("#fbKind").value = "bug"; $("#fbError").textContent = "";
+      fbSetShot(null); $("#fbShot").value = "";
+      const c = feedbackContext();
+      $("#fbCtx").textContent = `Auto-attached: ${c.page} · ${c.browser} on ${c.os} · ${c.viewport}`;
+      dismissFbNudge();
+      showModal("#feedbackModal");
+      $("#fbMessage").focus();
+    }
+
     async function sendFeedback() {
       const message = $("#fbMessage").value.trim();
       if (message.length < 3) { $("#fbError").textContent = "Please add a bit more detail."; return; }
       const btn = $("#fbSend"); btn.disabled = true;
+      const ctx = feedbackContext();
+      const fd = new FormData();
+      fd.append("message", message);
+      fd.append("kind", $("#fbKind").value);
+      fd.append("page", ctx.page);
+      fd.append("context", JSON.stringify(ctx));
+      if (fbShotFile) fd.append("screenshot", fbShotFile, fbShotFile.name || "screenshot.png");
       try {
-        const res = await fetch("/api/feedback", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: $("#fbKind").value, message, page: (location.hash || "#overview").slice(1) }) });
+        const res = await fetch("/api/feedback", { method: "POST", credentials: "same-origin", body: fd });
         const d = await res.json().catch(() => ({}));
-        if (res.ok) { hideModal("#feedbackModal"); showToast("Thanks — feedback logged."); renderFeedback(); }
+        if (res.ok) { hideModal("#feedbackModal"); showToast(fbShotFile ? "Thanks — feedback + screenshot sent." : "Thanks — feedback logged."); renderFeedback(); }
         else $("#fbError").textContent = d.detail || ("Error " + res.status);
       } catch (e) { $("#fbError").textContent = "Couldn't reach the server."; }
       finally { btn.disabled = false; }
@@ -2336,6 +2398,35 @@
     // Always-visible entry point — the sidebar's Feedback item can scroll out of
     // reach on a phone, which is how a tester lost the bug reporter entirely.
     $("#topFeedbackBtn").addEventListener("click", openFeedback);
+    // One-time nudge toward the top-bar feedback button, so first-time users learn
+    // the in-app path instead of defaulting to email. Fades after they open it once.
+    function dismissFbNudge() {
+      try { localStorage.setItem("sb-fb-nudged", "1"); } catch (e) {}
+      const b = $("#topFeedbackBtn"); if (b) { b.classList.remove("nudge"); b.title = "Report a bug / suggest something"; }
+    }
+    (function maybeNudge() {
+      let seen = true; try { seen = localStorage.getItem("sb-fb-nudged") === "1"; } catch (e) {}
+      if (seen) return;
+      const b = $("#topFeedbackBtn"); if (!b) return;
+      b.classList.add("nudge"); b.title = "Found a bug or have an idea? Report it here — screenshots welcome.";
+    })();
+    // Screenshot: pick, drag-drop, paste (Ctrl/⌘V), or clear.
+    (function wireFbShot() {
+      const drop = $("#fbDrop"), picker = $("#fbShot");
+      const take = f => { if (f && f.type && f.type.startsWith("image/")) fbSetShot(f); };
+      $("#fbShotBtn").addEventListener("click", () => picker.click());
+      picker.addEventListener("change", () => { take(picker.files[0]); });
+      $("#fbShotClear").addEventListener("click", () => { fbSetShot(null); picker.value = ""; });
+      ["dragover", "dragenter"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("drag"); }));
+      ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("drag"); }));
+      drop.addEventListener("drop", e => { if (e.dataTransfer && e.dataTransfer.files[0]) take(e.dataTransfer.files[0]); });
+      // Paste an image anywhere while the feedback modal is open.
+      document.addEventListener("paste", e => {
+        if ($("#feedbackModal").classList.contains("hidden")) return;
+        const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith("image/"));
+        if (item) { const f = item.getAsFile(); if (f) { take(f); showToast("Screenshot pasted ✓"); } }
+      });
+    })();
     const FB_STATUS = { open: ["Open", "warning"], in_progress: ["In Progress", ""], resolved: ["Resolved", ""], wont_fix: ["Won't Fix", "parked"] };
     async function renderFeedback() {
       const wrap = $("#feedbackList");
@@ -2356,10 +2447,15 @@
           : (t.admin_note ? `<div class="fb-note"><b>Team:</b> ${escapeHTML(t.admin_note)}</div>` : "");
         const actions = ME.is_super_admin ? `<div class="fb-actions"><button class="button secondary" data-fb-save="${t.id}"><i data-lucide="send" class="icon-sm"></i>Save &amp; notify</button></div>` : "";
         const who = ME.is_super_admin ? " · " + escapeHTML(t.email || "unknown") : "";
+        const c = t.context || {};
+        const ctxLine = (ME.is_super_admin && (c.page || c.browser))
+          ? `<div class="fb-ctxline">${escapeHTML([c.page, c.browser && `${c.browser} on ${c.os}`, c.viewport].filter(Boolean).join(" · "))}</div>` : "";
+        const shot = t.has_screenshot
+          ? `<a class="fb-shot-link" href="/api/feedback/${t.id}/screenshot" target="_blank" rel="noopener"><img src="/api/feedback/${t.id}/screenshot" alt="screenshot" loading="lazy"></a>` : "";
         return `<article class="card fb-card">
           <div class="fb-top"><span class="fb-kind ${t.kind}">${kind}</span>${statusCtl}<span class="fb-meta">#${t.id}${who}</span></div>
           <p class="fb-msg">${escapeHTML(t.message)}</p>
-          ${noteCtl}${actions}
+          ${ctxLine}${shot}${noteCtl}${actions}
         </article>`;
       }).join("");
       renderIcons();
@@ -3207,6 +3303,11 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.5", date: "Jul 16, 2026", items: [
+        "Feedback now takes screenshots — paste (Ctrl/⌘V), drop, or attach an image right in the report. A picture tells us far more than words.",
+        "Every report auto-captures the page, browser, device and screen size, so you don't have to describe your setup.",
+        "New here? A gentle highlight points you to the feedback button (top bar) the first time — no more hunting for it.",
+      ] },
       { version: "2.4", date: "Jul 15, 2026", items: [
         "Passkeys: sign in with Face ID, Touch ID, or Windows Hello — no authenticator app needed.",
         "Click your initials (top right) to add a passkey. One touch replaces both the magic link and the 6-digit code.",
@@ -3451,7 +3552,7 @@
       { view: "overview", sel: "#dashCal", title: "Team Calendar", body: "Your day, right on the Overview. Switch the dropdown to any teammate, or hit New meeting to create a Google event and send invites. Collapse it with the chevron if you don't need it." },
       { view: "overview", sel: "#userAvatar", title: "Skip the authenticator", body: "Click your initials to add a passkey — then sign in with Face ID, Touch ID, or Windows Hello instead of a 6-digit code. Your authenticator stays as a backup." },
       { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
-      { view: "overview", sel: "#feedbackNav", title: "Feedback", body: "Found a bug or have an idea? Send it straight to the team here." },
+      { view: "overview", sel: "#topFeedbackBtn", title: "Feedback", body: "Found a bug or have an idea? This button (always in the top bar) sends it straight to the team — paste or drop a screenshot right into the report, and we auto-capture your page and browser." },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },
     ];
     let tourI = 0, tourActive = false;
