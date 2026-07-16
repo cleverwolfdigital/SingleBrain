@@ -906,10 +906,6 @@
       <div class="grid recommendation-grid" id="recommendationGrid"></div>
     </section>
 
-    <section class="view" id="kimchee">
-      <div class="view-header"><div><div class="eyebrow">Project Spotlight</div><h1>Kimchee #88</h1><p>Fast-casual Korean / local fusion restaurant — Kapolei, Hawai‘i. Target: Feb / Apr 2027.</p></div><span class="status warning">Planning</span></div>
-      <div class="grid kim-grid" id="kimGrid"></div>
-    </section>
 
     <section class="view" id="rotation">
       <div class="view-header"><div><div class="eyebrow">Operating Rhythm</div><h1>Daily Rotation</h1><p>Weekly cadence across Tier 2 growth bets and Tier 3 media sites.</p></div></div>
@@ -1357,26 +1353,10 @@
       { name: "Hermes Bot (2nd Gateway)", business: "CWD", state: "In Progress", badge: "warning", status: "active", next: "Finish Discord connection", due: "—" },
       { name: "ScrapeGraphAI Research", business: "CWD", state: "Not Started", badge: "parked", status: "parked", next: "Define first target", due: "—" },
       { name: "July 15 Meetings (Koko Head + Rise)", business: "Let's Try Hawaii", state: "Scheduled", badge: "", status: "active", next: "Confirm with Gio and Jay", due: "Jul 15" },
-      { name: "Kimchee #88 Restaurant Launch", business: "Kimchee #88", state: "Planning", badge: "warning", status: "active", next: "Legal setup + brand development", due: "Feb/Apr 2027" },
       { name: "Titan Medical Transportation", business: "Titan Medical", state: "Active", badge: "", status: "active", next: "Ongoing operations", due: "—" },
       { name: "Vending / HVAC Operations", business: "Vending / HVAC", state: "Active", badge: "", status: "active", next: "Financial tracking & vendor management", due: "—" },
       { name: "Kapwa Coffee Bar Operations", business: "Kapwa Coffee Bar", state: "Active", badge: "", status: "active", next: "Margin optimization", due: "—" }
     ];
-    const kimchee = {
-      overview: [
-        ["Concept", "Modern Korean-inspired fast-casual — kimchi-driven bowls, Korean comfort food, Hawai‘i fusion. Leverages 20+ yrs of Kimchee #7 recognition (Meat Jun, Kalbi, Korean BBQ)."],
-        ["Location", "Kapolei, Hawai‘i"],
-        ["Model", "Fast Casual Korean / Local Fusion — dine-in, takeout, delivery"],
-        ["Target launch", "February 2027 or April 2027"],
-        ["Stage", "Planning"]
-      ],
-      groups: [
-        { name: "Legal", tasks: ["Register EIN", "File Articles of Organization (breg.hawaii.gov)", "Obtain State Tax ID (hitax.hawaii.org)", "Open business bank account", "Secure health permits + restaurant licenses"] },
-        { name: "Branding", tasks: ["Design logo and brand identity", "Build website", "Design and print business cards", "Create menu concept and pricing", "Set up social media (Instagram, TikTok, Facebook)"] },
-        { name: "Operations", tasks: ["Secure location/lease in Kapolei (1,500–2,000 sqft)", "Finalize restaurant layout and design", "Contract suppliers (local farms, Korean wholesalers)", "Set up POS and technology systems", "Hire and train initial staff (7–8)"] },
-        { name: "Pre-Opening", tasks: ["Launch marketing + grand opening campaign", "Execute soft opening", "Full public launch"] }
-      ]
-    };
     const rotation = [
       ["Mon", "Kapuna Meals", "Level Up (Self / Smarter / Library)"],
       ["Tue", "Opala Hoa", "Smarter Podcast + Ongoing Conversation"],
@@ -1964,11 +1944,6 @@
     }
     renderProjectGrid();
 
-    $("#kimGrid").innerHTML =
-      `<article class="card"><h3 style="margin-bottom:12px">Overview</h3>${kimchee.overview.map(([k, v]) => `<div class="kim-row"><span>${escapeHTML(k)}</span><b>${escapeHTML(v)}</b></div>`).join("")}</article>` +
-      kimchee.groups.map(g => `
-        <article class="card"><div class="kim-group-head"><h3>${escapeHTML(g.name)}</h3><span>${g.tasks.length} tasks</span></div>
-        <ul class="kim-list">${g.tasks.map(t => `<li><i data-lucide="square" class="icon-sm"></i>${escapeHTML(t)}<span class="kim-tbd">TBD</span></li>`).join("")}</ul></article>`).join("");
 
     $("#rotationBody").innerHTML = rotation.map(r => `<tr><td class="rot-day">${escapeHTML(r[0])}</td><td>${escapeHTML(r[1])}</td><td>${escapeHTML(r[2])}</td></tr>`).join("");
 
@@ -3125,7 +3100,7 @@
       $$(".project-item").forEach(project => project.classList.toggle("hidden", button.dataset.filter !== "all" && project.dataset.status !== button.dataset.filter));
     }));
 
-    // ---------- Kimchee-style detail view (businesses + projects) ----------
+    // ---------- Detail overlay (businesses + projects) ----------
     const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
     function tasksForBusiness(name) {
       return tasks.filter(t => (t.business || "").trim().toLowerCase() === (name || "").trim().toLowerCase());
@@ -3193,9 +3168,7 @@
     function openProjectDetail(p) {
       const rows = [["Business", p.business], ["Status", p.state], ["Next action", p.next], ["Due", p.due]];
       let groupsHTML;
-      if (/kimchee/i.test(p.name)) {
-        groupsHTML = kimchee.groups.map(g => `<article class="card"><div class="kim-group-head"><h3>${escapeHTML(g.name)}</h3><span>${g.tasks.length} tasks</span></div><ul class="kim-list">${g.tasks.map(t => `<li><i data-lucide="square" class="icon-sm"></i><span class="kim-name">${escapeHTML(t)}</span><span class="kim-tbd">TBD</span></li>`).join("")}</ul></article>`).join("");
-      } else {
+      {
         const mine = tasksForBusiness(p.business).sort((a, z) => (PRIORITY_RANK[a.priority] ?? 3) - (PRIORITY_RANK[z.priority] ?? 3));
         const cats = [...new Set(mine.map(t => t.category || "Other"))];
         groupsHTML = cats.length

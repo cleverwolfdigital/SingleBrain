@@ -586,8 +586,6 @@ def _state_context(viewer=None):
     for label, rel in [
         ("Master_Dashboard.md (SINGLE SOURCE OF TRUTH — portfolio by tier, staff+emails, projects, rotation, backlog)",
          "Personal/Notes/Master_Dashboard.md"),
-        ("Kimchee_88.md (Kimchee #88 full project + task list)",
-         "Personal/Notes/Projects/Kimchee_88.md"),
     ]:
         try:
             text = (config.BRAIN_REPO / rel).read_text(encoding="utf-8")
@@ -614,7 +612,7 @@ def chat(c: ChatIn, request: Request):
         "center. Be concise, direct, and practical — a sharp operator, not a chatbot. "
         "Below is Quincy's FULL portfolio, read live from Master_Dashboard.md (the single source of "
         "truth) plus the live task list. It lists ALL businesses by tier (there are ~29 across "
-        "Tier 1–4), staff + emails, projects, Kimchee #88, daily rotation, and automation backlog. "
+        "Tier 1–4), staff + emails, projects, daily rotation, and automation backlog. "
         "Base every answer on this — never claim a business is missing if it appears below. "
         "When asked to add or change a business, staff member, project, or task, state exactly what "
         "you'd change and ask the user to confirm (live write-actions are rolling out; for now you "
