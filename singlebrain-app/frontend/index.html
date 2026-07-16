@@ -435,8 +435,24 @@
     .fb-ctx { margin: 2px 0 -4px; color: var(--faint); font-size: 11px; }
     .fb-ctxline { color: var(--faint); font-size: 11px; margin: 6px 0; font-variant-numeric: tabular-nums; }
     .fb-shot-link img { max-width: 220px; max-height: 150px; border: 1px solid var(--line); border-radius: 6px; margin: 6px 0; display: block; }
-    #topFeedbackBtn.nudge { color: var(--gold-soft); animation: fb-pulse 2s ease-in-out 2; }
-    @keyframes fb-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(208,168,83,0); } 50% { box-shadow: 0 0 0 4px rgba(208,168,83,0.28); } }
+    /* Right-edge Feedback tab — always visible, out of the content, above the wolf. */
+    #feedbackTab {
+      position: fixed; top: 50%; right: 0; transform: translateY(-50%); z-index: 80;
+      display: inline-flex; flex-direction: column; align-items: center; gap: 7px;
+      writing-mode: vertical-rl; padding: 15px 9px;
+      background: var(--gold); color: #0d1923; border: none; border-radius: 9px 0 0 9px;
+      font: 700 12px var(--font-display); letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer; box-shadow: -3px 0 14px rgba(0,0,0,0.32);
+      transition: padding-right .15s ease, background .15s ease;
+    }
+    #feedbackTab .icon-sm { transform: rotate(90deg); }
+    #feedbackTab:hover { background: var(--gold-soft); padding-right: 14px; }
+    #feedbackTab.active { background: var(--gold-soft); }
+    #feedbackTab.nudge { animation: fb-pulse 2s ease-in-out 3; }
+    /* Don't let the tab float over an open dialog. */
+    body.modal-open #feedbackTab { opacity: 0; pointer-events: none; }
+    @keyframes fb-pulse { 0%,100% { box-shadow: -3px 0 14px rgba(0,0,0,0.32); } 50% { box-shadow: -3px 0 0 5px rgba(208,168,83,0.55), -3px 0 14px rgba(0,0,0,0.32); } }
+    @media (max-width: 560px) { #feedbackTab { padding: 12px 7px; font-size: 11px; } }
     .check-line { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
     .check-line input { width: 15px; height: 15px; accent-color: var(--gold); }
     .field-hint { display: block; margin-top: 4px; color: var(--faint); font-size: 11px; line-height: 1.45; }
@@ -708,7 +724,6 @@
         <button class="icon-button" id="fontUp" aria-label="Larger text" title="Larger text" style="font:700 15px var(--font-display)">A+</button>
         <button class="icon-button" id="syncBtn" aria-label="Sync to repository" title="Sync now — pull latest and push to GitHub"><i data-lucide="refresh-cw" class="icon"></i></button>
         <button class="icon-button" id="searchBtn" aria-label="Search" title="Search (⌘/Ctrl-K)"><i data-lucide="search" class="icon"></i></button>
-        <button class="icon-button" id="topFeedbackBtn" aria-label="Report a bug or suggest something" title="Report a bug / suggest something"><i data-lucide="message-square-warning" class="icon"></i></button>
         <div class="bell-wrap">
           <button class="icon-button" id="bellBtn" aria-label="Notifications" title="Notifications"><i data-lucide="bell" class="icon"></i><span class="bell-dot hidden" id="bellDot"></span></button>
           <div class="bell-menu hidden" id="bellMenu"></div>
@@ -742,7 +757,6 @@
       <button class="nav-button" data-view="journal"><i data-lucide="notebook-pen" class="icon"></i>Daily Journal</button>
       <button class="nav-button" data-view="chat"><i data-lucide="message-square-text" class="icon"></i>CWD Brain Chat</button>
       <button class="nav-button" data-view="tutorial"><i data-lucide="graduation-cap" class="icon"></i>Tutorial</button>
-      <button class="nav-button" id="feedbackNav" data-view="feedback"><i data-lucide="message-square-warning" class="icon"></i>Feedback</button>
       <button class="nav-button hidden" id="adminNav" data-view="admin"><i data-lucide="shield-check" class="icon"></i>Super Admin</button>
     </nav>
     <div class="sidebar-footer">
@@ -953,7 +967,7 @@
 
       <div class="tut-section">Finding your way</div>
       <div class="grid tutorial-grid">
-        <article class="card tut-card"><div class="tut-num">5</div><h3>The sidebar</h3><p>Everything lives in the left sidebar. <b>Overview</b> is today's brief. <b>Businesses</b>, <b>Projects</b>, <b>Clients</b>, and <b>Staff</b> are your portfolio. <b>Productivity</b> reports on your time. <b>Daily Journal</b>, <b>CWD Brain Chat</b>, and <b>Daily Rotation</b> support the daily flow. <b>Feedback</b> sends us bugs and ideas.</p></article>
+        <article class="card tut-card"><div class="tut-num">5</div><h3>The sidebar</h3><p>Everything lives in the left sidebar. <b>Overview</b> is today's brief. <b>Businesses</b>, <b>Projects</b>, <b>Clients</b>, and <b>Staff</b> are your portfolio. <b>Productivity</b> reports on your time. <b>Daily Journal</b>, <b>CWD Brain Chat</b>, and <b>Daily Rotation</b> support the daily flow. To report a bug or idea, use the <b>Feedback</b> tab on the right edge of the screen (above the chat wolf).</p></article>
         <article class="card tut-card"><div class="tut-num">6</div><h3>Pin your favorites</h3><p>Open any business, project, campaign, or client and tap the <b>★ star</b> to pin it to a <b>Pinned</b> section at the top of the sidebar (up to 5). Tap the star again to unpin. Great for the handful of things you touch every day.</p></article>
         <article class="card tut-card"><div class="tut-num">7</div><h3>Quick tools</h3><p>The <b>Overview</b> page has one-click shortcuts to ChatGPT, Claude, Grok, OpenClaw, and Hermes, plus your upcoming <b>Google Calendar</b> events (once your Drive is connected). The top bar has a <b>Sync</b> button (⟳) that pushes your latest to the shared brain, and a <b>What's new</b> button that shows the latest release notes — use <b>← →</b> to browse past updates.</p></article>
       </div>
@@ -2395,19 +2409,20 @@
       else if (card) { const c = clients.find(x => String(x.id) === card.dataset.clientOpen); if (c) openClientDetail(c); }
     });
     $("#openFeedbackBtn").addEventListener("click", openFeedback);
-    // Always-visible entry point — the sidebar's Feedback item can scroll out of
-    // reach on a phone, which is how a tester lost the bug reporter entirely.
-    $("#topFeedbackBtn").addEventListener("click", openFeedback);
-    // One-time nudge toward the top-bar feedback button, so first-time users learn
-    // the in-app path instead of defaulting to email. Fades after they open it once.
+    // Feedback lives on a right-edge tab now (out of the left nav, above the wolf),
+    // so it's always visible and can't scroll out of reach on a phone. The tab opens
+    // the Feedback view, where "New feedback" launches the report modal.
+    $("#feedbackTab").addEventListener("click", () => { dismissFbNudge(); showView("feedback"); });
+    // One-time nudge toward the Feedback tab, so first-time users learn the in-app
+    // path instead of defaulting to email. Fades after they open it once.
     function dismissFbNudge() {
       try { localStorage.setItem("sb-fb-nudged", "1"); } catch (e) {}
-      const b = $("#topFeedbackBtn"); if (b) { b.classList.remove("nudge"); b.title = "Report a bug / suggest something"; }
+      const b = $("#feedbackTab"); if (b) { b.classList.remove("nudge"); b.title = "Report a bug or suggestion"; }
     }
     (function maybeNudge() {
       let seen = true; try { seen = localStorage.getItem("sb-fb-nudged") === "1"; } catch (e) {}
       if (seen) return;
-      const b = $("#topFeedbackBtn"); if (!b) return;
+      const b = $("#feedbackTab"); if (!b) return;
       b.classList.add("nudge"); b.title = "Found a bug or have an idea? Report it here — screenshots welcome.";
     })();
     // Screenshot: pick, drag-drop, paste (Ctrl/⌘V), or clear.
@@ -3085,6 +3100,7 @@
     function showView(id) {
       $$(".view").forEach(view => view.classList.toggle("active", view.id === id));
       $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === id));
+      const ft = $("#feedbackTab"); if (ft) ft.classList.toggle("active", id === "feedback");
       if (id === "reports") loadReport();
       if (id === "admin") loadAdminUsers().then(renderAdmin);
       if (id === "feedback") renderFeedback();
@@ -3304,9 +3320,9 @@
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
       { version: "2.5", date: "Jul 16, 2026", items: [
+        "Feedback moved to an always-visible tab on the right edge of the screen (above the chat wolf) — out of the left menu, so it's one click from anywhere.",
         "Feedback now takes screenshots — paste (Ctrl/⌘V), drop, or attach an image right in the report. A picture tells us far more than words.",
         "Every report auto-captures the page, browser, device and screen size, so you don't have to describe your setup.",
-        "New here? A gentle highlight points you to the feedback button (top bar) the first time — no more hunting for it.",
       ] },
       { version: "2.4", date: "Jul 15, 2026", items: [
         "Passkeys: sign in with Face ID, Touch ID, or Windows Hello — no authenticator app needed.",
@@ -3552,7 +3568,7 @@
       { view: "overview", sel: "#dashCal", title: "Team Calendar", body: "Your day, right on the Overview. Switch the dropdown to any teammate, or hit New meeting to create a Google event and send invites. Collapse it with the chevron if you don't need it." },
       { view: "overview", sel: "#userAvatar", title: "Skip the authenticator", body: "Click your initials to add a passkey — then sign in with Face ID, Touch ID, or Windows Hello instead of a 6-digit code. Your authenticator stays as a backup." },
       { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
-      { view: "overview", sel: "#topFeedbackBtn", title: "Feedback", body: "Found a bug or have an idea? This button (always in the top bar) sends it straight to the team — paste or drop a screenshot right into the report, and we auto-capture your page and browser." },
+      { view: "overview", sel: "#feedbackTab", title: "Feedback", body: "Found a bug or have an idea? This tab is always here on the right edge — it opens your feedback, where you can file a report with a screenshot (paste or drop it in) and track its status." },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },
     ];
     let tourI = 0, tourActive = false;
@@ -3647,6 +3663,7 @@
       #cwdChatInput{font-size:16px}
     }
   </style>
+  <button id="feedbackTab" aria-label="Report a bug or suggestion" title="Report a bug or suggestion"><i data-lucide="message-square-warning" class="icon-sm"></i><span>Feedback</span></button>
   <button id="cwdChatBtn" aria-label="Open CWD Brain Chat" title="CWD Brain Chat">
     <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true">
       <path d="M13 7 L23 25 L15 21 Z" fill="#20406a"/>
