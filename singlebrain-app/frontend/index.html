@@ -3073,6 +3073,11 @@
       renderIcons();
     }
     function showView(id) {
+      // Navigating must never leave a modal's full-screen overlay capturing clicks
+      // over the new view. Opening Feedback (or any dialog) and then clicking a nav
+      // item / the Feedback tab without closing it used to wedge the whole page.
+      $$(".modal-overlay:not(.hidden)").forEach(m => { m.classList.add("hidden"); m.setAttribute("aria-hidden", "true"); });
+      document.body.classList.remove("modal-open");
       $$(".view").forEach(view => view.classList.toggle("active", view.id === id));
       $$(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === id));
       const ft = $("#feedbackTab"); if (ft) ft.classList.toggle("active", id === "feedback");
