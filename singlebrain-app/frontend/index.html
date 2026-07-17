@@ -2384,10 +2384,9 @@
       else if (card) { const c = clients.find(x => String(x.id) === card.dataset.clientOpen); if (c) openClientDetail(c); }
     });
     $("#openFeedbackBtn").addEventListener("click", openFeedback);
-    // Feedback lives on a right-edge tab now (out of the left nav, above the wolf),
-    // so it's always visible and can't scroll out of reach on a phone. The tab opens
-    // the Feedback view, where "New feedback" launches the report modal.
-    $("#feedbackTab").addEventListener("click", () => { dismissFbNudge(); showView("feedback"); });
+    // The right-edge Feedback tab was removed (it was rendered after this script, so
+    // wiring it here threw null and broke the whole app). Remaining #feedbackTab refs
+    // below are all null-guarded, so they safely no-op with the tab gone.
     // One-time nudge toward the Feedback tab, so first-time users learn the in-app
     // path instead of defaulting to email. Fades after they open it once.
     function dismissFbNudge() {
@@ -3546,7 +3545,6 @@
       { view: "overview", sel: "#dashCal", title: "Team Calendar", body: "Your day, right on the Overview. Switch the dropdown to any teammate, or hit New meeting to create a Google event and send invites. Collapse it with the chevron if you don't need it." },
       { view: "overview", sel: "#userAvatar", title: "Skip the authenticator", body: "Click your initials to add a passkey — then sign in with Face ID, Touch ID, or Windows Hello instead of a 6-digit code. Your authenticator stays as a backup." },
       { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
-      { view: "overview", sel: "#feedbackTab", title: "Feedback", body: "Found a bug or have an idea? This tab is always here on the right edge — it opens your feedback, where you can file a report with a screenshot (paste or drop it in) and track its status." },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },
     ];
     let tourI = 0, tourActive = false;
@@ -3641,7 +3639,6 @@
       #cwdChatInput{font-size:16px}
     }
   </style>
-  <button id="feedbackTab" aria-label="Report a bug or suggestion" title="Report a bug or suggestion"><i data-lucide="message-square-warning" class="icon-sm"></i><span>Feedback</span></button>
   <button id="cwdChatBtn" aria-label="Open CWD Brain Chat" title="CWD Brain Chat">
     <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true">
       <path d="M13 7 L23 25 L15 21 Z" fill="#20406a"/>
