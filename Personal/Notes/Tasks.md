@@ -20,6 +20,7 @@ _Source of truth for dashboard tasks. Auto-generated from the Single Brain dashb
 | Purchase Domain for CleverWolf.ai | CleverWolf.ai | Operations | High | 2026-07-15 | open | 30m | — |
 | Need to create videos for singles and shorts | Guns A Blazin' | Other | High | 2026-07-18 | open | — | — |
 | Close a warm lead | Clever Wolf Digital | Sales | High | 2026-07-16 | open | — | — |
+| Back to School campaign ads | Clever Wolf Digital | Operations | Medium | 2026-08-03 | open | — | — |
 | test test | Clever Wolf Digital | Legal | Medium | 2026-07-17 | open | 60m | — |
 | fix the ezytire purchase complete tracking using ai | Clever Wolf Digital | Tech | Medium | 2026-07-15 | open | — | — |
 | work with Jordan to reach out to see what our capbilities are | Clever Wolf Digital | Tech | Medium | 2026-07-17 | open | — | — |
