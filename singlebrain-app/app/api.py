@@ -100,15 +100,58 @@ def _require_admin(request):
 
 
 def _visible_tasks(email, tasks):
-    """Filter a task list to what a viewer may see: their assigned tasks plus any
-    task tied to a business they've been granted. Admins see everything."""
+    """Filter a task list to what a viewer may see: their assigned tasks (they may be
+    one of several assignees, or a member of a team the task went to) plus any task
+    tied to a business they've been granted. Admins see everything."""
     if _is_admin(email):
         return tasks
     biz, _ = _access_lists(email)
     allowed = set(biz or [])
     me = (email or "").strip().lower()
+    mine_ids = {r["task_id"] for r in
+                db.query("SELECT task_id FROM task_assignees WHERE lower(email)=?", (me,))}
     return [t for t in tasks
-            if (t.get("assignee") or "").strip().lower() == me or (t.get("business") or "") in allowed]
+            if t.get("id") in mine_ids
+            or (t.get("assignee") or "").strip().lower() == me
+            or (t.get("business") or "") in allowed]
+
+
+# ---------- Team / multi-assignee helpers ----------
+def _team_member_emails(team_id):
+    if not team_id:
+        return []
+    return [(r["email"] or "").strip().lower()
+            for r in db.query("SELECT email FROM team_members WHERE team_id=?", (team_id,))
+            if (r["email"] or "").strip()]
+
+
+def _clean_emails(emails):
+    out, seen = [], set()
+    for e in emails or []:
+        e = (e or "").strip().lower()
+        if e and "@" in e and e not in seen:
+            seen.add(e)
+            out.append(e)
+    return out
+
+
+def _set_task_assignees(task_id, emails, team_id=None):
+    """Replace a task's assignee set. If a team is given, its current members are folded
+    in (snapshot). tasks.assignee holds the first person for backward-compatible display
+    and legacy filters; tasks.team_id records the team. Returns the final email list."""
+    people = _clean_emails(emails)
+    seen = set(people)
+    for e in _team_member_emails(team_id):
+        if e not in seen:
+            seen.add(e)
+            people.append(e)
+    db.execute("DELETE FROM task_assignees WHERE task_id=?", (task_id,))
+    for e in people:
+        db.execute("INSERT OR IGNORE INTO task_assignees(task_id,email) VALUES(?,?)", (task_id, e))
+    primary = people[0] if people else None
+    db.execute("UPDATE tasks SET assignee=?, team_id=? WHERE id=?",
+               (primary, team_id or None, task_id))
+    return people
 
 
 @app.middleware("http")
@@ -180,8 +223,15 @@ def _tasks_with_deps(viewer=None):
     by_task = {}
     for d in deps:
         by_task.setdefault(d["task_id"], []).append(d["depends_on"])
+    amap = {}
+    for r in db.query("SELECT task_id, email FROM task_assignees"):
+        amap.setdefault(r["task_id"], []).append(r["email"])
+    team_names = {r["id"]: r["name"] for r in db.query("SELECT id, name FROM teams")}
     for t in tasks:
         t["dependencies"] = by_task.get(t["id"], [])
+        # Full assignee set (falls back to the legacy single assignee for old rows).
+        t["assignees"] = amap.get(t["id"]) or ([t["assignee"]] if t.get("assignee") else [])
+        t["team"] = team_names.get(t.get("team_id")) if t.get("team_id") else None
         _apply_timing(t)
     if viewer is not None:
         tasks = _visible_tasks(viewer, tasks)
@@ -255,7 +305,9 @@ class TaskIn(BaseModel):
     due: Optional[str] = None
     notes: Optional[str] = None
     estimate_min: Optional[int] = None
-    assignee: Optional[str] = None
+    assignee: Optional[str] = None            # legacy single assignee (still honored)
+    assignees: List[str] = Field(default_factory=list)  # assign to several people at once
+    team_id: Optional[int] = None             # assign to a whole team (its members are added)
     client: Optional[str] = None
     dependencies: List[int] = Field(default_factory=list)
 
@@ -273,24 +325,29 @@ def create_task(t: TaskIn, request: Request):
     if t.priority not in ("High", "Medium", "Low"):
         raise HTTPException(422, "Priority must be High, Medium, or Low.")
     est = t.estimate_min if (t.estimate_min and t.estimate_min > 0) else None
-    # Admins may assign to anyone; staff-created tasks belong to the creator so
-    # they remain visible to them under access filtering.
+    # Admins (and can-assign staff) may assign to anyone / any team; other staff-created
+    # tasks belong to the creator so they stay visible to them under access filtering.
     current = auth.current_user(request)
     if _can_assign(current):
-        assignee = (t.assignee or "").strip().lower() or None
+        people = _clean_emails(([t.assignee] if t.assignee else []) + list(t.assignees or []))
+        team_id = t.team_id or None
     else:
-        assignee = (current or "").strip().lower() or None
+        people = _clean_emails([current])
+        team_id = None
     # Remember WHO assigned it — that's who hears about it when it's completed.
     tid = db.execute(
-        "INSERT INTO tasks(business,name,category,priority,due,notes,status,estimate_min,actual_sec,assignee,assigned_by,client) "
-        "VALUES(?,?,?,?,?,?,'open',?,0,?,?,?)",
-        (t.business, name, t.category, t.priority, t.due, t.notes, est, assignee,
+        "INSERT INTO tasks(business,name,category,priority,due,notes,status,estimate_min,actual_sec,assigned_by,client) "
+        "VALUES(?,?,?,?,?,?,'open',?,0,?,?)",
+        (t.business, name, t.category, t.priority, t.due, t.notes, est,
          (current or "").strip().lower() or None, (t.client or "").strip() or None),
     )
+    final = _set_task_assignees(tid, people, team_id)
     for dep in t.dependencies:
         db.execute("INSERT OR IGNORE INTO task_dependencies(task_id,depends_on) VALUES(?,?)", (tid, dep))
+    # Tell everyone newly put on the task (never the person creating it).
+    notified = _notify_task_assigned(_get_task(tid), current, final, [])
     pushed = _sync_tasks_to_repo()
-    return {"id": tid, "ok": True, "pushed": pushed}
+    return {"id": tid, "ok": True, "pushed": pushed, "notified": notified, "assignees": final}
 
 
 @app.delete("/api/tasks/{task_id}")
@@ -531,9 +588,13 @@ XAI_MODEL = os.environ.get("XAI_MODEL", "grok-4")
 # about the app itself. Keep this in sync with the tutorial, guided tour, and patch notes.
 DASHBOARD_FEATURES = (
     "=== What the Single Brain dashboard can do (so you can guide users on HOW, not just WHAT) ===\n"
-    "- Tasks: Quick Add creates tasks (business, category, priority, due, estimate, assignee, client, "
-    "dependencies). Each task has a live timer (start/pause/complete) and syncs to Tasks.md in the repo. "
-    "'My Tasks' shows what's assigned to the current user.\n"
+    "- Tasks: Quick Add creates tasks (business, category, priority, due, estimate, assignees, client, "
+    "dependencies). A task can be assigned to a whole TEAM, to several PEOPLE at once, or both (use the "
+    "'Assign to' picker). Each task has a live timer (start/pause/complete) and syncs to Tasks.md in the "
+    "repo. 'My Tasks' shows every task the current user is on (as an individual or via a team).\n"
+    "- Teams: reusable named groups of people (e.g. Design, Dev), managed in Super Admin (New team -> name "
+    "+ members). Assigning a task to a team includes all its current members, who each see the task and are "
+    "emailed. Deleting a team keeps existing tasks' people, just drops the team label.\n"
     "- Businesses/Projects/Campaigns/Clients: browsed as cards; click one for a detail overlay with its "
     "tasks. Admins can add/edit/delete them and set clients' recurring monthly tasks. Sub-businesses roll "
     "up under a parent. Pin up to 5 items to the sidebar with the star.\n"
@@ -553,11 +614,13 @@ DASHBOARD_FEATURES = (
     "emails invites to the teammates/clients added as guests. Requires full Google Calendar access "
     "(one-time reconnect).\n"
     "- Productivity reports roll up completed work + tracked time by day/week/month/quarter/year.\n"
-    "- Notifications: when a task is completed, the person who ASSIGNED it (plus admins) gets an email — "
-    "never the person who completed it. When a file is added to a task, the assignee + assigner are emailed "
+    "- Notifications: when a task is ASSIGNED, everyone newly put on it is emailed (never the assigner). "
+    "When a task is completed, the person who ASSIGNED it (plus admins) gets an email — never the person "
+    "who completed it. When a file is added to a task, EVERYONE on the task plus the assigner are emailed "
     "and the file is auto-shared with them in Drive. Files on a business/project/campaign notify nobody.\n"
     "- Assigning: Super Admins can assign work; other staff need the 'Can assign tasks' permission "
-    "(Super Admin -> edit a person). Guests can never assign. Whoever assigns is who gets the completion email.\n"
+    "(Super Admin -> edit a person). Guests can never assign. A task can go to a team and/or several people; "
+    "whoever assigns is who gets the completion email.\n"
     "- Feedback: a bug/suggestion reporter reached from the 'Feedback' tab on the right edge of every "
     "screen (above the chat wolf). It opens the Feedback view; 'New feedback' files a report. It takes "
     "a SCREENSHOT (paste/drop/attach) and auto-captures the page, browser, OS and screen size; each ticket "
@@ -658,17 +721,27 @@ def sync_now(request: Request):
 
 # ---------- Task assignment ----------
 class AssignIn(BaseModel):
-    assignee: Optional[str] = None
+    assignee: Optional[str] = None                       # legacy single assignee
+    assignees: List[str] = Field(default_factory=list)   # full set of people
+    team_id: Optional[int] = None                        # assign to a whole team
 
 
 @app.post("/api/tasks/{task_id}/assign")
 def assign_task(task_id: int, body: AssignIn, request: Request):
     actor = _require_can_assign(request)
     _get_task(task_id)
-    a = (body.assignee or "").strip().lower() or None
+    before = set(_clean_emails(
+        r["email"] for r in db.query("SELECT email FROM task_assignees WHERE task_id=?", (task_id,))))
+    people = _clean_emails(([body.assignee] if body.assignee else []) + list(body.assignees or []))
+    final = _set_task_assignees(task_id, people, body.team_id or None)
     # Whoever assigns it becomes the person notified when it's completed.
-    db.execute("UPDATE tasks SET assignee=?, assigned_by=? WHERE id=?", (a, (actor or "").strip().lower() or None, task_id))
-    return {"ok": True, "assignee": a}
+    db.execute("UPDATE tasks SET assigned_by=? WHERE id=?",
+               ((actor or "").strip().lower() or None, task_id))
+    # Only email people who are NEW on the task, and never the assigner.
+    added = [e for e in final if e not in before]
+    notified = _notify_task_assigned(_get_task(task_id), actor, added, before)
+    return {"ok": True, "assignee": (final[0] if final else None),
+            "assignees": final, "notified": notified}
 
 
 # ---------- Super Admin: users + access ----------
@@ -689,7 +762,10 @@ def _user_summary(u):
     biz = [r["business"] for r in db.query("SELECT business FROM user_business_access WHERE email=?", (email,))]
     proj = [r["project"] for r in db.query("SELECT project FROM user_project_access WHERE email=?", (email,))]
     cnt = db.query(
-        "SELECT COUNT(*) c FROM tasks WHERE lower(assignee)=? AND status!='done'", (email.lower(),)
+        "SELECT COUNT(*) c FROM tasks t WHERE t.status!='done' AND ("
+        "lower(t.assignee)=? OR EXISTS("
+        "SELECT 1 FROM task_assignees ta WHERE ta.task_id=t.id AND lower(ta.email)=?))",
+        (email.lower(), email.lower()),
     )[0]["c"]
     return {
         "email": email,
@@ -787,6 +863,7 @@ def catalog_all(request: Request):
         "recurring": db.query("SELECT * FROM recurring_tasks ORDER BY id"),
         "contacts": db.query("SELECT * FROM client_contacts ORDER BY id"),
         "client_notes": db.query("SELECT * FROM client_notes ORDER BY id DESC"),
+        "teams": _teams_with_members(),
     }
 
 
@@ -1124,10 +1201,48 @@ def _notify_task_done(t, actor):
     )
 
 
-def _notify_task_file(t, actor, name, link):
-    """A file landed on a task — tell the assignee and the assigner (not the uploader)."""
+def _task_audience(task_id):
+    """Everyone currently on a task — the full multi-assignee set (falls back to the
+    legacy single assignee for rows created before teams existed)."""
+    people = [(r["email"] or "").strip().lower()
+              for r in db.query("SELECT email FROM task_assignees WHERE task_id=?", (task_id,))]
+    return {e for e in people if e}
+
+
+def _notify_task_assigned(t, actor, added, before):
+    """Someone was put on a task — email the people who are NEW on it (never the person
+    doing the assigning). `before` lets us stay quiet about people who were already on it,
+    so re-saving an assignment doesn't re-spam the whole group."""
     actor = (actor or "").strip().lower()
-    audience = {(t.get("assignee") or "").strip().lower(), (t.get("assigned_by") or "").strip().lower()}
+    audience = {(e or "").strip().lower() for e in (added or [])}
+    audience.discard(actor)
+    audience = {e for e in audience if e and "@" in e}
+    if not audience:
+        return 0
+    others = [e for e in _task_audience(t["id"]) if e not in audience]
+    team = f"\nTeam:     {t.get('team')}" if t.get("team") else ""
+    also = (f"\nAlso on it: {', '.join(sorted(others))}" if others else "")
+    return _notify(
+        audience,
+        f"[Single Brain] Assigned to you: {t.get('name')}",
+        f"{actor or 'Someone'} assigned you a task.\n\n"
+        f"Task:     {t.get('name')}\n"
+        f"Business: {t.get('business') or '—'}\n"
+        f"Priority: {t.get('priority') or '—'}\n"
+        f"Due:      {t.get('due') or '—'}"
+        + team
+        + (f"\nEstimate: {t['estimate_min']}m" if t.get("estimate_min") else "")
+        + also
+        + (f"\n\nNotes:\n{t['notes']}\n" if t.get("notes") else "")
+        + f"\n\nOpen the dashboard: {APP_URL}\n",
+    )
+
+
+def _notify_task_file(t, actor, name, link):
+    """A file landed on a task — tell everyone on the task and the assigner (not the uploader)."""
+    actor = (actor or "").strip().lower()
+    audience = _task_audience(t["id"])
+    audience.add((t.get("assigned_by") or "").strip().lower())
     audience.discard(actor)
     if not audience:
         return 0
@@ -1518,6 +1633,73 @@ def update_staff(sid: int, s: StaffIn, request: Request):
 def delete_staff(sid: int, request: Request):
     _require_admin(request)
     db.execute("DELETE FROM staff WHERE id=?", (sid,))
+    return {"ok": True}
+
+
+# ---------- Teams (reusable groups you can assign a whole task to) ----------
+def _teams_with_members():
+    teams = db.query("SELECT * FROM teams ORDER BY name")
+    members = {}
+    for r in db.query("SELECT team_id, email FROM team_members"):
+        members.setdefault(r["team_id"], []).append(r["email"])
+    for t in teams:
+        t["members"] = sorted(members.get(t["id"], []))
+    return teams
+
+
+class TeamIn(BaseModel):
+    name: str
+    members: List[str] = Field(default_factory=list)
+
+
+@app.get("/api/teams")
+def list_teams(request: Request):
+    auth.current_user(request)
+    return _teams_with_members()
+
+
+def _save_team_members(team_id, members):
+    db.execute("DELETE FROM team_members WHERE team_id=?", (team_id,))
+    for e in _clean_emails(members):
+        db.execute("INSERT OR IGNORE INTO team_members(team_id,email) VALUES(?,?)", (team_id, e))
+
+
+@app.post("/api/teams")
+def create_team(body: TeamIn, request: Request):
+    _require_admin(request)
+    name = (body.name or "").strip()
+    if not name:
+        raise HTTPException(422, "Team name is required.")
+    if db.query("SELECT 1 FROM teams WHERE lower(name)=?", (name.lower(),)):
+        raise HTTPException(422, "A team with that name already exists.")
+    tid = db.execute("INSERT INTO teams(name) VALUES(?)", (name,))
+    _save_team_members(tid, body.members)
+    return {"ok": True, "id": tid}
+
+
+@app.put("/api/teams/{team_id}")
+def update_team(team_id: int, body: TeamIn, request: Request):
+    _require_admin(request)
+    if not db.query("SELECT 1 FROM teams WHERE id=?", (team_id,)):
+        raise HTTPException(404, "Team not found.")
+    name = (body.name or "").strip()
+    if not name:
+        raise HTTPException(422, "Team name is required.")
+    dup = db.query("SELECT 1 FROM teams WHERE lower(name)=? AND id!=?", (name.lower(), team_id))
+    if dup:
+        raise HTTPException(422, "A team with that name already exists.")
+    db.execute("UPDATE teams SET name=? WHERE id=?", (name, team_id))
+    _save_team_members(team_id, body.members)
+    return {"ok": True}
+
+
+@app.delete("/api/teams/{team_id}")
+def delete_team(team_id: int, request: Request):
+    _require_admin(request)
+    db.execute("DELETE FROM team_members WHERE team_id=?", (team_id,))
+    # Tasks keep their expanded assignees; they just lose the team label.
+    db.execute("UPDATE tasks SET team_id=NULL WHERE team_id=?", (team_id,))
+    db.execute("DELETE FROM teams WHERE id=?", (team_id,))
     return {"ok": True}
 
 

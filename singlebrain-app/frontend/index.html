@@ -335,6 +335,15 @@
     .period-tabs, .period-nav { display: flex; align-items: center; gap: 6px; }
     .period-nav strong { min-width: 190px; text-align: center; font: 600 12px var(--font-display); color: var(--gold-soft); }
     .task-assignee { color: var(--blue); font-weight: 700; }
+    .ap-people { display: flex; flex-direction: column; gap: 2px; max-height: 230px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.10); border-radius: 8px; padding: 6px; background: rgba(255,255,255,0.02); }
+    .ap-person { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+    .ap-person:hover { background: rgba(255,255,255,0.04); }
+    .ap-person input { margin: 0; }
+    .ap-person.locked { opacity: 0.7; cursor: default; }
+    .ap-person .ap-tag { margin-left: auto; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .assign-btn { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+    .assign-btn .team-badge { color: var(--gold-soft); font-weight: 700; }
+    .task-team { color: var(--gold-soft); font-weight: 700; }
     .admin-user-card { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
     .admin-user-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .admin-user-top h3 { margin: 0; font: 600 13px var(--font-display); }
@@ -782,7 +791,7 @@
       </div>
       <article class="card patch-notice hidden" id="patchNotice">
         <div class="patch-head">
-          <div><span class="patch-badge" id="patchVersion">v1.9</span> <strong>What's new</strong> <span class="patch-date" id="patchDate"></span> <span class="patch-new hidden" id="patchNew"></span></div>
+          <div><span class="patch-badge" id="patchVersion">v2.6</span> <strong>What's new</strong> <span class="patch-date" id="patchDate"></span> <span class="patch-new hidden" id="patchNew"></span></div>
           <div class="patch-nav">
             <button class="icon-button" id="patchPrev" aria-label="Older update" title="Older update"><i data-lucide="chevron-left" class="icon-sm"></i></button>
             <span class="patch-count" id="patchCount"></span>
@@ -944,8 +953,12 @@
     <section class="view" id="admin">
       <div class="view-header"><div><div class="eyebrow">Access Control</div><h1>Super Admin</h1><p>Control who sees which businesses and projects, and assign tasks to your team.</p></div><button class="button" id="addUserBtn"><i data-lucide="user-plus" class="icon-sm"></i>Add team member</button></div>
       <div class="grid" id="adminUsersGrid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))"></div>
+      <section class="task-board" aria-labelledby="teamsTitle">
+        <div class="task-board-header"><div><div class="eyebrow">Groups</div><h2 id="teamsTitle">Teams</h2><p>Reusable groups of people. Assign a task to a whole team and every member sees it and is notified.</p></div><button class="button" id="addTeamBtn"><i data-lucide="users" class="icon-sm"></i>New team</button></div>
+        <div class="grid" id="adminTeamsGrid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))"></div>
+      </section>
       <section class="task-board" aria-labelledby="assignTitle">
-        <div class="task-board-header"><div><div class="eyebrow">Task assignment</div><h2 id="assignTitle">Assign tasks</h2><p>Set who owns each open task. Assignees see their tasks even without full business access.</p></div></div>
+        <div class="task-board-header"><div><div class="eyebrow">Task assignment</div><h2 id="assignTitle">Assign tasks</h2><p>Set who owns each open task — a whole team, one or more people, or both. They see their tasks even without full business access.</p></div></div>
         <div class="card"><div class="panel-body table-wrap" id="adminTaskTable"></div></div>
       </section>
     </section>
@@ -990,7 +1003,8 @@
       <div class="tut-section" data-admin-only>Team &amp; admin</div>
       <div class="grid tutorial-grid" data-admin-only>
         <article class="card tut-card"><div class="tut-num">19</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
-        <article class="card tut-card"><div class="tut-num">20</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table lets you set who owns each open task. Assignees always see their tasks, even without full business access. You can promote up to <b>2</b> people to Super Admin.</p></article>
+        <article class="card tut-card"><div class="tut-num">20</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table sets who owns each open task — a whole <b>team</b>, one or more <b>people</b>, or both. Assignees always see their tasks, even without full business access, and are <b>emailed when they're added</b>. You can promote up to <b>2</b> people to Super Admin.</p></article>
+        <article class="card tut-card"><div class="tut-num">21</div><h3>Teams</h3><p>Create reusable <b>teams</b> in Super Admin — name a group (Design, Dev, Content…) and pick its members. When you assign a task to a team, <b>every member</b> sees it and gets an email. You can add extra individuals on top of a team, and Quick Add's <b>Assign to</b> picker does the same.</p></article>
         <article class="card tut-card"><div class="tut-num">21</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
       </div>
     </section>
@@ -1121,8 +1135,8 @@
             <span class="field-error"></span>
           </div>
           <div class="field hidden" data-field="assignee" id="assigneeField">
-            <label for="taskAssignee">Assign to</label>
-            <select class="input" id="taskAssignee" name="assignee"><option value="">Unassigned</option></select>
+            <label>Assign to</label>
+            <button type="button" class="input assign-btn" id="taskAssignBtn" style="text-align:left;justify-content:flex-start"><i data-lucide="users" class="icon-sm"></i><span id="taskAssignSummary">Unassigned</span></button>
             <span class="field-error"></span>
           </div>
           <div class="field field-full">
@@ -1192,6 +1206,34 @@
         <div class="field"><label for="newUserName">Name</label><input class="input" id="newUserName" type="text" placeholder="Full name" autocomplete="off"></div>
         <div class="field" id="canAssignField"><label class="check-line" for="newUserCanAssign"><input type="checkbox" id="newUserCanAssign"> Can assign tasks to other people</label><span class="field-hint">They'll be emailed when work they assigned is completed. Doesn't grant Super Admin.</span></div>
         <div class="modal-actions"><button class="button secondary" type="button" data-close-user>Cancel</button><button class="button" type="button" id="userSave"><i data-lucide="user-plus" class="icon-sm"></i>Add member</button></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay hidden" id="assignPickerModal" role="dialog" aria-modal="true" aria-labelledby="assignPickerTitle" aria-hidden="true">
+    <section class="task-modal">
+      <header class="modal-header">
+        <div><div class="eyebrow">Assign</div><h2 id="assignPickerTitle">Assign task</h2><p>Pick a whole team, one or more people, or both. Everyone on it can see it and is emailed when they're added.</p></div>
+        <button class="icon-button modal-close" type="button" data-close-assign aria-label="Close" title="Close"><i data-lucide="x" class="icon"></i></button>
+      </header>
+      <div class="task-form">
+        <div class="field"><label for="apTeam">Team</label><select class="input" id="apTeam"><option value="">No team</option></select><span class="field-hint">Assigning a team includes all its current members automatically.</span></div>
+        <div class="field"><label>People</label><div id="apPeople" class="ap-people"></div><span class="field-hint">Team members are locked on; add anyone else here.</span></div>
+        <div class="modal-actions"><button class="button secondary" type="button" data-close-assign>Cancel</button><button class="button" type="button" id="apSave"><i data-lucide="check" class="icon-sm"></i>Done</button></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay hidden" id="teamModal" role="dialog" aria-modal="true" aria-labelledby="teamModalTitle" aria-hidden="true">
+    <section class="task-modal">
+      <header class="modal-header">
+        <div><div class="eyebrow">Team</div><h2 id="teamModalTitle">New team</h2><p>Name the group and choose its members. You can assign whole tasks to it.</p></div>
+        <button class="icon-button modal-close" type="button" data-close-team aria-label="Close" title="Close"><i data-lucide="x" class="icon"></i></button>
+      </header>
+      <div class="task-form">
+        <div class="field"><label for="teamName">Team name <span class="required-mark">*</span></label><input class="input" id="teamName" type="text" placeholder="e.g. Design, Dev, Content" autocomplete="off"><span class="field-error" id="teamError"></span></div>
+        <div class="field"><label>Members</label><div id="teamMembersList" class="ap-people"></div></div>
+        <div class="modal-actions"><button class="button secondary hidden" type="button" id="teamDelete"><i data-lucide="trash-2" class="icon-sm"></i>Delete</button><button class="button secondary" type="button" data-close-team>Cancel</button><button class="button" type="button" id="teamSave"><i data-lucide="save" class="icon-sm"></i>Save team</button></div>
       </div>
     </section>
   </div>
@@ -1404,7 +1446,7 @@
     // Access context (from /api/me). Until it loads, assume full access so nothing flickers hidden.
     let ME = { email: "", role: "staff", is_super_admin: false, can_assign: false, businesses: null, projects: null };
     let adminUsers = [];
-    let clients = [], recurring = [], staffList = [], pins = [], clientContacts = [], clientNotes = [];
+    let clients = [], recurring = [], staffList = [], pins = [], clientContacts = [], clientNotes = [], teams = [];
     const canSeeBusiness = name => ME.is_super_admin || ME.businesses == null || ME.businesses.includes(name);
     const canSeeProject = name => ME.is_super_admin || ME.projects == null || ME.projects.includes(name);
     const visibleBusinesses = () => businesses.filter(b => canSeeBusiness(b.name));
@@ -1436,6 +1478,7 @@
         recurring = c.recurring || [];
         clientContacts = c.contacts || [];
         clientNotes = c.client_notes || [];
+        teams = c.teams || [];
       } catch (e) { /* keep seed arrays */ }
     }
     async function loadPins() {
@@ -1588,7 +1631,7 @@
     }
     let tasks = [];
     function mapTask(t) {
-      return { id: String(t.id), task: t.name || "", business: t.business || "", category: t.category || "", priority: t.priority || "Medium", dueDate: t.due || "", notes: t.notes || "", dependencies: (t.dependencies || []).map(String), status: t.status || "open", estimateMin: t.estimate_min || null, actualSec: t.actual_sec_effective != null ? t.actual_sec_effective : (t.actual_sec || 0), running: !!t.running, assignee: t.assignee || "", client: t.client || "" };
+      return { id: String(t.id), task: t.name || "", business: t.business || "", category: t.category || "", priority: t.priority || "Medium", dueDate: t.due || "", notes: t.notes || "", dependencies: (t.dependencies || []).map(String), status: t.status || "open", estimateMin: t.estimate_min || null, actualSec: t.actual_sec_effective != null ? t.actual_sec_effective : (t.actual_sec || 0), running: !!t.running, assignee: t.assignee || "", assignees: t.assignees || (t.assignee ? [t.assignee] : []), team_id: t.team_id || null, team: t.team || "", client: t.client || "" };
     }
     async function loadTasks() {
       try {
@@ -1617,7 +1660,7 @@
       const dueTxt = task.dueDate ? formatTaskDate(task.dueDate) : "—";
       const timerAttrs = task.running ? ` data-base="${task.actualSec}" data-start="${Date.now()}"` : "";
       const timerCls = task.running ? "task-timer running" : "task-timer";
-      const meta = [task.business, task.category, task.client ? "◆ " + task.client : "", task.assignee ? '<span class="task-assignee">@' + escapeHTML(emailName(task.assignee)) + "</span>" : "", attachBadge("task", task.id)].filter(Boolean);
+      const meta = [task.business, task.category, task.client ? "◆ " + task.client : "", assigneeMeta(task), attachBadge("task", task.id)].filter(Boolean);
       const filesBtn = `<button class="task-btn" data-act="files" aria-label="Files" title="Files"><i data-lucide="paperclip" class="icon-sm"></i></button>`;
       const actions = done
         ? `<span class="task-done-badge"><i data-lucide="circle-check-big" class="icon-sm"></i>Done</span>${filesBtn}<button class="task-btn" data-act="reopen" aria-label="Reopen task" title="Reopen"><i data-lucide="rotate-ccw" class="icon-sm"></i></button><button class="task-btn" data-act="delete" aria-label="Delete task" title="Delete"><i data-lucide="trash-2" class="icon-sm"></i></button>`
@@ -1643,7 +1686,7 @@
       const list = $("#myTaskList");
       if (!list) return;
       const me = (ME.email || "").toLowerCase();
-      const mine = tasks.filter(t => (t.assignee || "").toLowerCase() === me);
+      const mine = tasks.filter(t => onTask(t, me));
       const open = mine.filter(t => t.status !== "done").length;
       const label = $("#myTaskCount");
       if (label) label.textContent = `${open} open · ${mine.length} total`;
@@ -1753,6 +1796,7 @@
       $("#taskModal").setAttribute("aria-hidden", "true");
       document.body.classList.remove("modal-open");
       $("#quickTaskForm").reset();
+      quickAssign = { team_id: null, people: [] };
       $("#dependencySearch").value = "";
       clearTaskErrors();
       renderDependencyOptions();
@@ -1817,7 +1861,8 @@
         due: $("#taskDueDate").value,
         notes: $("#taskNotes").value.trim(),
         estimate_min: Number.isFinite(estimateMin) && estimateMin > 0 ? estimateMin : null,
-        assignee: ME.can_assign ? ($("#taskAssignee").value || null) : null,
+        assignees: ME.can_assign ? quickAssign.people.slice() : [],
+        team_id: ME.can_assign ? quickAssign.team_id : null,
         client: $("#taskClient").value || null,
         dependencies: selectedDependencyIds().map(Number).filter(n => !isNaN(n))
       };
@@ -2058,6 +2103,18 @@
       const u = assignableUsers().find(x => x.email === email.toLowerCase());
       return u ? u.name : emailName(email);
     }
+    // Task-row assignment label: a team badge and/or the people on it.
+    function assigneeMeta(task) {
+      const bits = [];
+      if (task.team) bits.push(`<span class="task-team" title="Assigned to the ${escapeHTML(task.team)} team">◆ ${escapeHTML(task.team)}</span>`);
+      const people = (task.assignees && task.assignees.length ? task.assignees : (task.assignee ? [task.assignee] : []));
+      const named = people.slice(0, 2).map(e => '@' + escapeHTML(emailName(e))).join(", ");
+      const more = people.length - 2;
+      if (named) bits.push(`<span class="task-assignee">${named}${more > 0 ? " +" + more : ""}</span>`);
+      return bits.join(" ");
+    }
+    const onTask = (task, me) => (task.assignees || []).map(e => (e || "").toLowerCase()).includes(me)
+      || (task.assignee || "").toLowerCase() === me;
     function renderClientsView() {
       const grid = $("#clientsGrid");
       if (!grid) return;
@@ -2577,16 +2634,91 @@
         if (res.ok) adminUsers = await res.json();
       } catch (e) { /* ignore */ }
     }
+    // ---------- Assignee picker (teams + multiple people), shared by Quick Add and the admin table ----------
+    let quickAssign = { team_id: null, people: [] };   // Quick Add's pending selection
+    let AP = { taskId: null, team_id: null, people: [], onSave: null };
+
+    const teamById = id => teams.find(t => String(t.id) === String(id)) || null;
+    const teamMembers = id => (teamById(id)?.members || []).map(e => (e || "").toLowerCase());
+
+    function assignSummary(team_id, people) {
+      const parts = [];
+      const t = teamById(team_id);
+      if (t) parts.push(`<span class="team-badge">◆ ${escapeHTML(t.name)}</span>`);
+      const extra = (people || []).filter(e => !teamMembers(team_id).includes(e.toLowerCase()));
+      extra.slice(0, 3).forEach(e => parts.push(escapeHTML(assigneeName(e))));
+      const overflow = extra.length - 3;
+      if (overflow > 0) parts.push(`+${overflow}`);
+      return parts.length ? parts.join(", ") : "Unassigned";
+    }
+
     function refreshAssigneeField() {
       const field = $("#assigneeField");
       if (!field) return;
       if (!ME.can_assign) { field.classList.add("hidden"); return; }   // admins + anyone granted "can assign"
       field.classList.remove("hidden");
-      const sel = $("#taskAssignee");
-      const cur = sel.value;
-      sel.innerHTML = '<option value="">Unassigned</option>' + assignableUsers().map(u => `<option value="${escapeHTML(u.email)}">${escapeHTML(u.name)}</option>`).join("");
-      if (cur) sel.value = cur;
+      $("#taskAssignSummary").innerHTML = assignSummary(quickAssign.team_id, quickAssign.people);
     }
+
+    function openAssignPicker(opts) {
+      // people = explicit individuals only (team members are added by the team itself).
+      const team_id = opts.team_id || null;
+      const locked = teamMembers(team_id);
+      AP = {
+        taskId: opts.taskId || null,
+        team_id,
+        people: (opts.people || []).map(e => e.toLowerCase()).filter(e => !locked.includes(e)),
+        onSave: opts.onSave,
+      };
+      const teamSel = $("#apTeam");
+      teamSel.innerHTML = '<option value="">No team</option>' +
+        teams.map(t => `<option value="${t.id}">${escapeHTML(t.name)} (${(t.members || []).length})</option>`).join("");
+      teamSel.value = team_id ? String(team_id) : "";
+      apRenderPeople();
+      const m = $("#assignPickerModal");
+      m.classList.remove("hidden"); m.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+      renderIcons();
+    }
+    function apRenderPeople() {
+      const locked = teamMembers(AP.team_id);
+      const picked = new Set(AP.people);
+      $("#apPeople").innerHTML = assignableUsers().map(u => {
+        const isLocked = locked.includes(u.email);
+        const checked = isLocked || picked.has(u.email);
+        return `<label class="ap-person${isLocked ? " locked" : ""}">
+          <input type="checkbox" value="${escapeHTML(u.email)}" ${checked ? "checked" : ""} ${isLocked ? "disabled" : ""}>
+          <span>${escapeHTML(u.name)}</span>${isLocked ? '<span class="ap-tag">team</span>' : ""}</label>`;
+      }).join("") || '<div class="task-empty" style="padding:10px">No assignable people yet.</div>';
+    }
+    function closeAssignPicker() {
+      const m = $("#assignPickerModal");
+      m.classList.add("hidden"); m.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    }
+    $("#apTeam").addEventListener("change", e => {
+      // Keep explicit picks that aren't part of the newly chosen team.
+      const newLocked = teamMembers(e.target.value || null);
+      AP.people = AP.people.filter(p => !newLocked.includes(p));
+      AP.team_id = e.target.value ? Number(e.target.value) : null;
+      apRenderPeople();
+    });
+    $("#apPeople").addEventListener("change", e => {
+      const cb = e.target.closest('input[type=checkbox]');
+      if (!cb || cb.disabled) return;
+      const email = cb.value.toLowerCase();
+      AP.people = AP.people.filter(p => p !== email);
+      if (cb.checked) AP.people.push(email);
+    });
+    $("#apSave").addEventListener("click", async () => {
+      if (AP.onSave) await AP.onSave({ team_id: AP.team_id, people: AP.people.slice() });
+      closeAssignPicker();
+    });
+    $$("[data-close-assign]").forEach(b => b.addEventListener("click", closeAssignPicker));
+    $("#taskAssignBtn").addEventListener("click", () => openAssignPicker({
+      team_id: quickAssign.team_id, people: quickAssign.people,
+      onSave: ({ team_id, people }) => { quickAssign = { team_id, people }; refreshAssigneeField(); },
+    }));
     function renderAdminUsers() {
       const grid = $("#adminUsersGrid");
       if (!adminUsers.length) { grid.innerHTML = '<div class="task-empty">No team members yet. Add one to grant access.</div>'; return; }
@@ -2611,10 +2743,75 @@
     function renderAdminTaskTable() {
       const open = tasks.filter(t => t.status !== "done");
       if (!open.length) { $("#adminTaskTable").innerHTML = '<div class="task-empty" style="margin:14px">No open tasks to assign.</div>'; return; }
-      const opts = sel => '<option value="">Unassigned</option>' + assignableUsers().map(u => `<option value="${escapeHTML(u.email)}" ${sel === u.email ? "selected" : ""}>${escapeHTML(u.name)}</option>`).join("");
-      $("#adminTaskTable").innerHTML = `<table class="table"><thead><tr><th>Task</th><th>Business</th><th>Priority</th><th>Assignee</th></tr></thead><tbody>${open.map(t => `<tr><td class="item-name">${escapeHTML(t.task)}</td><td>${escapeHTML(t.business || "—")}</td><td><span class="task-priority ${escapeHTML(t.priority.toLowerCase())}">${escapeHTML(t.priority)}</span></td><td><select class="assign-select" data-assign="${escapeHTML(t.id)}">${opts(t.assignee)}</select></td></tr>`).join("")}</tbody></table>`;
+      $("#adminTaskTable").innerHTML = `<table class="table"><thead><tr><th>Task</th><th>Business</th><th>Priority</th><th>Assigned to</th></tr></thead><tbody>${open.map(t => `<tr><td class="item-name">${escapeHTML(t.task)}</td><td>${escapeHTML(t.business || "—")}</td><td><span class="task-priority ${escapeHTML(t.priority.toLowerCase())}">${escapeHTML(t.priority)}</span></td><td><button type="button" class="task-btn assign-btn" data-assign-open="${escapeHTML(t.id)}"><i data-lucide="user-plus" class="icon-sm"></i><span>${assignSummary(t.team_id, t.assignees || [])}</span></button></td></tr>`).join("")}</tbody></table>`;
+      renderIcons();
     }
-    function renderAdmin() { renderAdminUsers(); renderAdminTaskTable(); }
+    function renderAdminTeams() {
+      const grid = $("#adminTeamsGrid");
+      if (!grid) return;
+      if (!teams.length) { grid.innerHTML = '<div class="task-empty" style="margin:6px">No teams yet. Create one to assign work to a whole group.</div>'; return; }
+      grid.innerHTML = teams.map(t => {
+        const members = (t.members || []);
+        const chips = members.length ? members.map(e => `<span class="chip">${escapeHTML(assigneeName(e))}</span>`).join("") : '<span class="chip muted">No members</span>';
+        return `<article class="card admin-user-card editable" data-team-edit="${t.id}" role="button" tabindex="0">
+          <div class="admin-user-top"><div><h3>◆ ${escapeHTML(t.name)}</h3><small>${members.length} member${members.length === 1 ? "" : "s"}</small></div></div>
+          <div class="chip-row">${chips}</div>
+          <div class="card-open-hint"><i data-lucide="pencil" class="icon-sm"></i>Edit</div>
+        </article>`;
+      }).join("");
+      renderIcons();
+    }
+    let teamEditId = null;
+    function openTeamModal(team) {
+      teamEditId = team ? team.id : null;
+      $("#teamModalTitle").textContent = team ? "Edit team" : "New team";
+      $("#teamName").value = team ? team.name : "";
+      $("#teamError").textContent = "";
+      $("#teamDelete").classList.toggle("hidden", !team);
+      const members = new Set((team?.members || []).map(e => e.toLowerCase()));
+      $("#teamMembersList").innerHTML = assignableUsers().map(u =>
+        `<label class="ap-person"><input type="checkbox" value="${escapeHTML(u.email)}" ${members.has(u.email) ? "checked" : ""}><span>${escapeHTML(u.name)}</span></label>`
+      ).join("") || '<div class="task-empty" style="padding:10px">Add staff first.</div>';
+      const m = $("#teamModal");
+      m.classList.remove("hidden"); m.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+      renderIcons(); $("#teamName").focus();
+    }
+    function closeTeamModal() {
+      const m = $("#teamModal");
+      m.classList.add("hidden"); m.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+    }
+    async function saveTeam() {
+      const name = $("#teamName").value.trim();
+      if (!name) { $("#teamError").textContent = "A team name is required."; return; }
+      const members = $$("#teamMembersList input:checked").map(c => c.value);
+      const url = teamEditId ? `/api/teams/${teamEditId}` : "/api/teams";
+      try {
+        const res = await fetch(url, { method: teamEditId ? "PUT" : "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, members }) });
+        const d = await res.json().catch(() => ({}));
+        if (res.ok) { showToast("Team saved"); closeTeamModal(); await loadCatalog(); renderAdminTeams(); refreshAssigneeField(); }
+        else { $("#teamError").textContent = d.detail || ("Couldn't save (" + res.status + ")"); }
+      } catch (e) { $("#teamError").textContent = "Couldn't reach the server."; }
+    }
+    async function deleteTeam() {
+      if (!teamEditId) return;
+      try {
+        const res = await fetch(`/api/teams/${teamEditId}`, { method: "DELETE", credentials: "same-origin" });
+        if (res.ok) { showToast("Team deleted"); closeTeamModal(); await loadCatalog(); await loadTasks(); renderAdmin(); }
+        else { const d = await res.json().catch(() => ({})); showToast("Couldn't delete: " + (d.detail || res.status)); }
+      } catch (e) { showToast("Couldn't reach the server."); }
+    }
+    $("#addTeamBtn")?.addEventListener("click", () => openTeamModal(null));
+    $("#adminTeamsGrid")?.addEventListener("click", e => {
+      const card = e.target.closest("[data-team-edit]");
+      if (card) openTeamModal(teamById(card.dataset.teamEdit));
+    });
+    $("#teamSave")?.addEventListener("click", saveTeam);
+    $("#teamDelete")?.addEventListener("click", deleteTeam);
+    $$("[data-close-team]").forEach(b => b.addEventListener("click", closeTeamModal));
+
+    function renderAdmin() { renderAdminUsers(); renderAdminTeams(); renderAdminTaskTable(); }
 
     let accessEmail = null;
     function openAccessModal(email) {
@@ -2700,18 +2897,27 @@
       if (ed) openAccessModal(ed.dataset.adminEdit);
       else if (del) removeUser(del.dataset.adminDel);
     });
-    $("#adminTaskTable").addEventListener("change", async e => {
-      const sel = e.target.closest("[data-assign]");
-      if (!sel) return;
-      try {
-        const res = await fetch(`/api/tasks/${sel.dataset.assign}/assign`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assignee: sel.value || null }) });
-        if (res.ok) { showToast("Assignment updated"); await loadTasks(); await loadAdminUsers(); renderAdmin(); }
-        else { const d = await res.json().catch(() => ({})); showToast("Couldn't assign: " + (d.detail || res.status)); }
-      } catch (err) { showToast("Couldn't reach the server: " + err.message); }
+    $("#adminTaskTable").addEventListener("click", e => {
+      const btn = e.target.closest("[data-assign-open]");
+      if (!btn) return;
+      const t = tasks.find(x => String(x.id) === String(btn.dataset.assignOpen));
+      if (!t) return;
+      openAssignPicker({
+        taskId: t.id, team_id: t.team_id, people: t.assignees || [],
+        onSave: async ({ team_id, people }) => {
+          try {
+            const res = await fetch(`/api/tasks/${t.id}/assign`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assignees: people, team_id }) });
+            if (res.ok) { const d = await res.json().catch(() => ({})); showToast(d.notified ? `Assignment updated — ${d.notified} notified` : "Assignment updated"); await loadTasks(); await loadAdminUsers(); renderAdmin(); }
+            else { const d = await res.json().catch(() => ({})); showToast("Couldn't assign: " + (d.detail || res.status)); }
+          } catch (err) { showToast("Couldn't reach the server: " + err.message); }
+        },
+      });
     });
     document.addEventListener("keydown", e => {
       if (e.key !== "Escape") return;
-      if (!$("#accessModal").classList.contains("hidden")) closeAccessModal();
+      if (!$("#assignPickerModal").classList.contains("hidden")) closeAssignPicker();
+      else if (!$("#teamModal").classList.contains("hidden")) closeTeamModal();
+      else if (!$("#accessModal").classList.contains("hidden")) closeAccessModal();
       else if (!$("#userModal").classList.contains("hidden")) closeUserModal();
     });
 
@@ -3296,6 +3502,13 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.6", date: "Jul 21, 2026", items: [
+        "Teams: create reusable groups of people in Super Admin (e.g. Design, Dev, Content).",
+        "Assign a task to a whole team — every member sees it and gets an email the moment they're added.",
+        "Assign a task to several people at once, a team, or a team plus a few extra people — the new 'Assign to' picker does all three.",
+        "You now get an email as soon as a task is assigned to you (before, notifications only fired on completion and file uploads).",
+        "Everyone on a task — not just one assignee — is now notified when a file is added to it.",
+      ] },
       { version: "2.5", date: "Jul 16, 2026", items: [
         "Feedback moved to an always-visible tab on the right edge of the screen (above the chat wolf) — out of the left menu, so it's one click from anywhere.",
         "Feedback now takes screenshots — paste (Ctrl/⌘V), drop, or attach an image right in the report. A picture tells us far more than words.",
@@ -3456,7 +3669,7 @@
     function buildNotifications() {
       const me = (ME.email || "").toLowerCase();
       const today = todayString();
-      const mine = tasks.filter(t => (t.assignee || "").toLowerCase() === me && t.status !== "done");
+      const mine = tasks.filter(t => onTask(t, me) && t.status !== "done");
       const notes = [];
       mine.filter(t => t.dueDate && t.dueDate < today).forEach(t => notes.push({ icon: "alarm-clock", text: "Overdue: " + t.task, sub: t.business, view: "mytasks" }));
       mine.filter(t => t.dueDate === today).forEach(t => notes.push({ icon: "calendar-clock", text: "Due today: " + t.task, sub: t.business, view: "mytasks" }));
@@ -3545,6 +3758,7 @@
       { view: "overview", sel: "#dashCal", title: "Team Calendar", body: "Your day, right on the Overview. Switch the dropdown to any teammate, or hit New meeting to create a Google event and send invites. Collapse it with the chevron if you don't need it." },
       { view: "overview", sel: "#userAvatar", title: "Skip the authenticator", body: "Click your initials to add a passkey — then sign in with Face ID, Touch ID, or Windows Hello instead of a 6-digit code. Your authenticator stays as a backup." },
       { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
+      { title: "Teams & assigning work", body: "Assign a task to a whole team, one or more people, or both — use the Assign to picker in Quick Add. Everyone on a task sees it and is emailed the moment they're added. Admins build reusable teams in Super Admin.", sel: null },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },
     ];
     let tourI = 0, tourActive = false;

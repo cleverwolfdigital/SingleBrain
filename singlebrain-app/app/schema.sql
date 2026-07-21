@@ -187,3 +187,27 @@ CREATE TABLE IF NOT EXISTS attachments (
   created_at TEXT DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_attachments_entity ON attachments(entity_type, entity_id);
+
+-- Named teams, managed in Super Admin. A team is just a reusable group of people so
+-- work can be handed to a whole group at once instead of one person at a time.
+CREATE TABLE IF NOT EXISTS teams (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS team_members (
+  team_id INTEGER NOT NULL,
+  email TEXT NOT NULL,
+  PRIMARY KEY (team_id, email)
+);
+
+-- The full set of people a task is assigned to (a task can have many assignees, or
+-- be assigned to a team whose members are materialized in here). tasks.assignee still
+-- holds a single representative for backward-compatible display/filters; this table is
+-- the source of truth for "who's on this task" for visibility and notifications.
+CREATE TABLE IF NOT EXISTS task_assignees (
+  task_id INTEGER NOT NULL,
+  email TEXT NOT NULL,
+  PRIMARY KEY (task_id, email)
+);
+CREATE INDEX IF NOT EXISTS idx_task_assignees_email ON task_assignees(email);

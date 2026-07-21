@@ -30,6 +30,7 @@ _COLUMN_MIGRATIONS = {
         "assigned_by": "TEXT",    # email of whoever created/assigned it — who to notify on completion
         "client": "TEXT",
         "recurring_id": "INTEGER",
+        "team_id": "INTEGER",     # optional team this task is assigned to (members expanded into task_assignees)
     },
     "businesses": {
         "initials": "TEXT",
