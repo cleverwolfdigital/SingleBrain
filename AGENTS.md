@@ -33,7 +33,8 @@ All other files are secondary. Prioritize revenue actions over new builds.
   the cloud. Local save = backed up. It does NOT reach GitHub until committed + pushed.
 - **GitHub** — `github.com/cleverwolfdigital/SingleBrain`. Reached only via `git commit` + `push`.
 - **Production dashboard app** — `singlebrain-app/` (FastAPI + single-file frontend), LIVE at
-  `brain.cleverwolfdigital.com` on the Hostinger VPS. Its user-facing capabilities (tasks + timers,
+  `brain.cleverwolfdigital.com` on the Hostinger VPS. Its user-facing capabilities (tasks + timers
+  + **editing any task**, teams/multi-assignee,
   businesses/projects/clients, **file attachments + Google Drive**, calendar, reports, journal) are
   listed canonically in `singlebrain-app/app/api.py` (`DASHBOARD_FEATURES`). When a feature changes,
   update that list **plus** the tutorial, guided tour, and patch notes together, then deploy

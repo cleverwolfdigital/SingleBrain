@@ -350,9 +350,69 @@ def create_task(t: TaskIn, request: Request):
     return {"id": tid, "ok": True, "pushed": pushed, "notified": notified, "assignees": final}
 
 
+def _can_edit_task(email, t):
+    """Who may change a task: admins, whoever handed it out, and anyone on it.
+    Editing is deliberately open to the people doing the work — they're the ones who
+    notice a wrong due date — but it stays off-limits to bystanders."""
+    if _is_admin(email):
+        return True
+    me = (email or "").strip().lower()
+    if not me:
+        return False
+    return me == (t.get("assigned_by") or "").strip().lower() or me in _task_audience(t["id"])
+
+
+def _require_task_edit(request, t):
+    email = auth.current_user(request)
+    if not _can_edit_task(email, t):
+        raise HTTPException(403, "You can only change tasks you assigned or are on.")
+    return email
+
+
+@app.put("/api/tasks/{task_id}")
+def update_task(task_id: int, t: TaskIn, request: Request):
+    """Edit an existing task in place. Same shape as Quick Add — the dashboard reuses the
+    one form for both — so this is a full replace of the editable fields, not a patch."""
+    before = _get_task(task_id)
+    actor = _require_task_edit(request, before)
+    name = (t.name or "").strip()
+    if len(name) < 5:
+        raise HTTPException(422, "Task name must be at least 5 characters.")
+    if t.priority not in ("High", "Medium", "Low"):
+        raise HTTPException(422, "Priority must be High, Medium, or Low.")
+    est = t.estimate_min if (t.estimate_min and t.estimate_min > 0) else None
+    db.execute(
+        "UPDATE tasks SET name=?, business=?, category=?, priority=?, due=?, notes=?, "
+        "estimate_min=?, client=? WHERE id=?",
+        (name, t.business, t.category, t.priority, t.due, t.notes, est,
+         (t.client or "").strip() or None, task_id),
+    )
+    # Dependencies are a full replace too (a task can't depend on itself).
+    db.execute("DELETE FROM task_dependencies WHERE task_id=?", (task_id,))
+    for dep in t.dependencies:
+        if int(dep) != task_id:
+            db.execute("INSERT OR IGNORE INTO task_dependencies(task_id,depends_on) VALUES(?,?)", (task_id, dep))
+    # Only people allowed to delegate can change WHO is on it; for everyone else the
+    # existing assignee set is left exactly as it was.
+    people_before = _task_audience(task_id)
+    added = []
+    if _can_assign(actor):
+        people = _clean_emails(([t.assignee] if t.assignee else []) + list(t.assignees or []))
+        final = _set_task_assignees(task_id, people, t.team_id or None)
+        added = [e for e in final if e not in people_before]
+    after = _get_task(task_id)
+    notified = _notify_task_assigned(after, actor, added, people_before)
+    notified += _notify_task_updated(after, actor, _task_changes(before, after), set(added))
+    pushed = _sync_tasks_to_repo()
+    return {"ok": True, "pushed": pushed, "notified": notified,
+            "task": _apply_timing(after), "assignees": sorted(_task_audience(task_id))}
+
+
 @app.delete("/api/tasks/{task_id}")
-def delete_task(task_id: int):
+def delete_task(task_id: int, request: Request):
+    _require_task_edit(request, _get_task(task_id))
     db.execute("DELETE FROM task_dependencies WHERE task_id=? OR depends_on=?", (task_id, task_id))
+    db.execute("DELETE FROM task_assignees WHERE task_id=?", (task_id,))
     db.execute("DELETE FROM tasks WHERE id=?", (task_id,))
     _sync_tasks_to_repo()
     return {"ok": True}
@@ -592,6 +652,11 @@ DASHBOARD_FEATURES = (
     "dependencies). A task can be assigned to a whole TEAM, to several PEOPLE at once, or both (use the "
     "'Assign to' picker). Each task has a live timer (start/pause/complete) and syncs to Tasks.md in the "
     "repo. 'My Tasks' shows every task the current user is on (as an individual or via a team).\n"
+    "- Editing a task: click the pencil (edit) button on any task row — or click a task inside a "
+    "business/project detail view — to reopen the same form and change name, business, client, category, "
+    "priority, due date, estimate, notes, dependencies, and (if you may assign) who's on it. Allowed for "
+    "Super Admins, whoever assigned the task, and anyone on it; the same rule governs deleting a task. "
+    "Editing an already-overdue task doesn't force its due date forward.\n"
     "- Teams: reusable named groups of people (e.g. Design, Dev), managed in Super Admin (New team -> name "
     "+ members). Assigning a task to a team includes all its current members, who each see the task and are "
     "emailed. Deleting a team keeps existing tasks' people, just drops the team label.\n"
@@ -614,7 +679,9 @@ DASHBOARD_FEATURES = (
     "emails invites to the teammates/clients added as guests. Requires full Google Calendar access "
     "(one-time reconnect).\n"
     "- Productivity reports roll up completed work + tracked time by day/week/month/quarter/year.\n"
-    "- Notifications: when a task is ASSIGNED, everyone newly put on it is emailed (never the assigner). "
+    "- Notifications: when a task is EDITED, everyone on it plus the assigner get an email listing each "
+    "changed field as 'old -> new' (never the editor; anyone just added gets the fuller 'assigned to you' "
+    "email instead). When a task is ASSIGNED, everyone newly put on it is emailed (never the assigner). "
     "When a task is completed, the person who ASSIGNED it (plus admins) gets an email — never the person "
     "who completed it. When a file is added to a task, EVERYONE on the task plus the assigner are emailed "
     "and the file is auto-shared with them in Drive. Files on a business/project/campaign notify nobody.\n"
@@ -1235,6 +1302,52 @@ def _notify_task_assigned(t, actor, added, before):
         + also
         + (f"\n\nNotes:\n{t['notes']}\n" if t.get("notes") else "")
         + f"\n\nOpen the dashboard: {APP_URL}\n",
+    )
+
+
+EDIT_WATCHED_FIELDS = [
+    ("name", "Task"), ("business", "Business"), ("client", "Client"), ("category", "Category"),
+    ("priority", "Priority"), ("due", "Due"), ("estimate_min", "Estimate (min)"), ("notes", "Notes"),
+]
+
+
+def _task_changes(before, after):
+    """Human-readable 'old → new' lines for the fields worth telling people about.
+    Timer/status columns are excluded — those have their own emails."""
+    out = []
+    for key, label in EDIT_WATCHED_FIELDS:
+        old, new = before.get(key), after.get(key)
+        if (old or "") == (new or ""):
+            continue
+        fmt = lambda v: (str(v).strip() or "—") if v not in (None, "") else "—"
+        out.append(f"{label}: {fmt(old)} → {fmt(new)}")
+    return out
+
+
+def _notify_task_updated(t, actor, changes, skip):
+    """A task's details changed — tell the people living with it (everyone on it plus
+    whoever assigned it), never the editor, and never anyone who's just been added
+    (they're getting the fuller 'assigned to you' email instead)."""
+    if not changes:
+        return 0
+    actor = (actor or "").strip().lower()
+    audience = _task_audience(t["id"])
+    audience.add((t.get("assigned_by") or "").strip().lower())
+    audience -= {(e or "").strip().lower() for e in (skip or set())}
+    audience.discard(actor)
+    audience = {e for e in audience if e and "@" in e}
+    if not audience:
+        return 0
+    return _notify(
+        audience,
+        f"[Single Brain] Updated: {t.get('name')}",
+        f"{actor or 'Someone'} edited a task you're on.\n\n"
+        + "\n".join(f"  • {c}" for c in changes)
+        + f"\n\nTask:     {t.get('name')}\n"
+        f"Business: {t.get('business') or '—'}\n"
+        f"Priority: {t.get('priority') or '—'}\n"
+        f"Due:      {t.get('due') or '—'}\n"
+        f"\nOpen the dashboard: {APP_URL}\n",
     )
 
 

@@ -678,6 +678,10 @@
     .kim-list { list-style: none; margin: 0; padding: 0; }
     .kim-list li { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
     .kim-list li .icon-sm { color: var(--faint); flex: none; }
+    .kim-list li.kim-editable { cursor: pointer; }
+    .kim-list li.kim-editable:hover, .kim-list li.kim-editable:focus-visible { color: var(--text); outline: none; }
+    .kim-edit-icon { opacity: 0; transition: opacity .12s ease; }
+    .kim-list li.kim-editable:hover .kim-edit-icon, .kim-list li.kim-editable:focus-visible .kim-edit-icon { opacity: 1; color: var(--gold-soft) !important; }
     .kim-tbd { margin-left: auto; color: var(--faint); font-size: 9px; letter-spacing: .1em; }
     .rotation-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .rotation-table th { text-align: left; color: var(--faint); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid var(--line); }
@@ -993,19 +997,20 @@
       <div class="grid tutorial-grid">
         <article class="card tut-card"><div class="tut-num">12</div><h3>Quick Add</h3><p>The <b>Quick add</b> button (top bar) is a menu: <b>Add a Business, Campaign, Project, Employee,</b> or <b>Task</b>. Everyone can add tasks; the catalog items are admin-only. On a task, pick a business, category, priority, due date, estimate, and link <b>dependencies</b>.</p></article>
         <article class="card tut-card"><div class="tut-num">13</div><h3>Timers &amp; the Action Queue</h3><p>Tasks live in the <b>Action Queue</b> (Projects page). Hit <b>▶ Start</b> to run a live timer, <b>⏸ Pause</b> to bank time, and <b>✓</b> to complete. Each task shows tracked-time / estimate so you can see where the hours go.</p></article>
-        <article class="card tut-card"><div class="tut-num">14</div><h3>Productivity reports</h3><p><b>Productivity</b> rolls up completed work by <b>Day / Week / Month / Quarter / Year</b> — tasks completed, time tracked, estimate accuracy, and breakdowns by business and category. Use ‹ › to move between periods.</p></article>
-        <article class="card tut-card"><div class="tut-num">15</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
-        <article class="card tut-card"><div class="tut-num">16</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
-        <article class="card tut-card"><div class="tut-num">17</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. Each file has two removal options: the <b>✕</b> takes it off this item but keeps it in Drive, and <b>🗑 Delete from Google Drive</b> moves the actual file to your Drive trash. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
-        <article class="card tut-card"><div class="tut-num">18</div><h3>Team Calendar &amp; scheduling</h3><p>The <b>Team Calendar</b> sits right on your <b>Overview</b> — it opens on your own day; the dropdown switches to any teammate, and you can switch between <b>Day</b> and <b>Week</b>. Collapse it with the chevron if you'd rather not see it, or hit <b>Full view</b> (or the sidebar's <b>Team Calendar</b>) for the big version. The first time, click <b>Reconnect Google</b> (we added calendar access). To see someone's events, they share their Google Calendar with you first (Google Calendar → Settings → Share with specific people → "See all event details"). Click <b>New meeting</b> to create a Google Calendar event and email invites to teammates and clients you add.</p></article>
+        <article class="card tut-card"><div class="tut-num">14</div><h3>Editing a task</h3><p>Got something wrong? Click the <b>✎ pencil</b> on any task row to reopen it and change the <b>name, business, client, category, priority, due date, estimate, notes, dependencies</b> — or <b>who's on it</b>. Tasks listed inside a business or project also open for editing when you click them. Everyone on the task (and whoever assigned it) is emailed a short summary of exactly what changed. You can edit a task if you <b>assigned it</b>, you're <b>on it</b>, or you're a <b>Super Admin</b>.</p></article>
+        <article class="card tut-card"><div class="tut-num">15</div><h3>Productivity reports</h3><p><b>Productivity</b> rolls up completed work by <b>Day / Week / Month / Quarter / Year</b> — tasks completed, time tracked, estimate accuracy, and breakdowns by business and category. Use ‹ › to move between periods.</p></article>
+        <article class="card tut-card"><div class="tut-num">16</div><h3>Daily Journal</h3><p>Open <b>Daily Journal</b> each morning to set your one focus and top 3 priorities, and at end of day to log wins, decisions, and tomorrow's first action.</p></article>
+        <article class="card tut-card"><div class="tut-num">17</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
+        <article class="card tut-card"><div class="tut-num">18</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. Each file has two removal options: the <b>✕</b> takes it off this item but keeps it in Drive, and <b>🗑 Delete from Google Drive</b> moves the actual file to your Drive trash. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
+        <article class="card tut-card"><div class="tut-num">19</div><h3>Team Calendar &amp; scheduling</h3><p>The <b>Team Calendar</b> sits right on your <b>Overview</b> — it opens on your own day; the dropdown switches to any teammate, and you can switch between <b>Day</b> and <b>Week</b>. Collapse it with the chevron if you'd rather not see it, or hit <b>Full view</b> (or the sidebar's <b>Team Calendar</b>) for the big version. The first time, click <b>Reconnect Google</b> (we added calendar access). To see someone's events, they share their Google Calendar with you first (Google Calendar → Settings → Share with specific people → "See all event details"). Click <b>New meeting</b> to create a Google Calendar event and email invites to teammates and clients you add.</p></article>
       </div>
 
       <div class="tut-section" data-admin-only>Team &amp; admin</div>
       <div class="grid tutorial-grid" data-admin-only>
-        <article class="card tut-card"><div class="tut-num">19</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
-        <article class="card tut-card"><div class="tut-num">20</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table sets who owns each open task — a whole <b>team</b>, one or more <b>people</b>, or both. Assignees always see their tasks, even without full business access, and are <b>emailed when they're added</b>. You can promote up to <b>2</b> people to Super Admin.</p></article>
-        <article class="card tut-card"><div class="tut-num">21</div><h3>Teams</h3><p>Create reusable <b>teams</b> in Super Admin — name a group (Design, Dev, Content…) and pick its members. When you assign a task to a team, <b>every member</b> sees it and gets an email. You can add extra individuals on top of a team, and Quick Add's <b>Assign to</b> picker does the same.</p></article>
-        <article class="card tut-card"><div class="tut-num">21</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
+        <article class="card tut-card"><div class="tut-num">20</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
+        <article class="card tut-card"><div class="tut-num">21</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table sets who owns each open task — a whole <b>team</b>, one or more <b>people</b>, or both. Assignees always see their tasks, even without full business access, and are <b>emailed when they're added</b>. You can promote up to <b>2</b> people to Super Admin.</p></article>
+        <article class="card tut-card"><div class="tut-num">22</div><h3>Teams</h3><p>Create reusable <b>teams</b> in Super Admin — name a group (Design, Dev, Content…) and pick its members. When you assign a task to a team, <b>every member</b> sees it and gets an email. You can add extra individuals on top of a team, and Quick Add's <b>Assign to</b> picker does the same.</p></article>
+        <article class="card tut-card"><div class="tut-num">23</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
       </div>
     </section>
 
@@ -1153,7 +1158,7 @@
             <span class="field-error"></span>
           </div>
         </div>
-        <div class="modal-actions"><button class="button secondary" type="button" id="clearTaskForm"><i data-lucide="eraser" class="icon-sm"></i>Clear</button><button class="button" type="submit"><i data-lucide="save" class="icon-sm"></i>Save task</button></div>
+        <div class="modal-actions"><button class="button secondary" type="button" id="clearTaskForm"><i data-lucide="eraser" class="icon-sm"></i>Clear</button><button class="button" type="submit" id="taskModalSubmit"><i data-lucide="save" class="icon-sm"></i>Save task</button></div>
       </form>
     </section>
   </div>
@@ -1631,7 +1636,15 @@
     }
     let tasks = [];
     function mapTask(t) {
-      return { id: String(t.id), task: t.name || "", business: t.business || "", category: t.category || "", priority: t.priority || "Medium", dueDate: t.due || "", notes: t.notes || "", dependencies: (t.dependencies || []).map(String), status: t.status || "open", estimateMin: t.estimate_min || null, actualSec: t.actual_sec_effective != null ? t.actual_sec_effective : (t.actual_sec || 0), running: !!t.running, assignee: t.assignee || "", assignees: t.assignees || (t.assignee ? [t.assignee] : []), team_id: t.team_id || null, team: t.team || "", client: t.client || "" };
+      return { id: String(t.id), task: t.name || "", business: t.business || "", category: t.category || "", priority: t.priority || "Medium", dueDate: t.due || "", notes: t.notes || "", dependencies: (t.dependencies || []).map(String), status: t.status || "open", estimateMin: t.estimate_min || null, actualSec: t.actual_sec_effective != null ? t.actual_sec_effective : (t.actual_sec || 0), running: !!t.running, assignee: t.assignee || "", assignees: t.assignees || (t.assignee ? [t.assignee] : []), team_id: t.team_id || null, team: t.team || "", client: t.client || "", assignedBy: t.assigned_by || "" };
+    }
+    // You can edit a task if you're an admin, you handed it out, or you're on it.
+    // Mirrors _can_edit_task() on the server — the server is what actually enforces it.
+    function canEditTask(t) {
+      if (!t) return false;
+      if (ME.is_super_admin) return true;
+      const me = (ME.email || "").toLowerCase();
+      return !!me && ((t.assignedBy || "").toLowerCase() === me || onTask(t, me));
     }
     async function loadTasks() {
       try {
@@ -1662,9 +1675,12 @@
       const timerCls = task.running ? "task-timer running" : "task-timer";
       const meta = [task.business, task.category, task.client ? "◆ " + task.client : "", assigneeMeta(task), attachBadge("task", task.id)].filter(Boolean);
       const filesBtn = `<button class="task-btn" data-act="files" aria-label="Files" title="Files"><i data-lucide="paperclip" class="icon-sm"></i></button>`;
+      const editBtn = canEditTask(task)
+        ? `<button class="task-btn" data-act="edit" aria-label="Edit task" title="Edit task"><i data-lucide="pencil" class="icon-sm"></i></button>`
+        : "";
       const actions = done
-        ? `<span class="task-done-badge"><i data-lucide="circle-check-big" class="icon-sm"></i>Done</span>${filesBtn}<button class="task-btn" data-act="reopen" aria-label="Reopen task" title="Reopen"><i data-lucide="rotate-ccw" class="icon-sm"></i></button><button class="task-btn" data-act="delete" aria-label="Delete task" title="Delete"><i data-lucide="trash-2" class="icon-sm"></i></button>`
-        : `<button class="task-btn ${task.running ? "running" : "start"}" data-act="${task.running ? "pause" : "start"}" aria-label="${task.running ? "Pause timer" : "Start timer"}" title="${task.running ? "Pause timer" : "Start timer"}"><i data-lucide="${task.running ? "pause" : "play"}" class="icon-sm"></i></button>${filesBtn}<button class="task-btn complete" data-act="complete" aria-label="Mark complete" title="Mark complete"><i data-lucide="check" class="icon-sm"></i></button>`;
+        ? `<span class="task-done-badge"><i data-lucide="circle-check-big" class="icon-sm"></i>Done</span>${editBtn}${filesBtn}<button class="task-btn" data-act="reopen" aria-label="Reopen task" title="Reopen"><i data-lucide="rotate-ccw" class="icon-sm"></i></button><button class="task-btn" data-act="delete" aria-label="Delete task" title="Delete"><i data-lucide="trash-2" class="icon-sm"></i></button>`
+        : `<button class="task-btn ${task.running ? "running" : "start"}" data-act="${task.running ? "pause" : "start"}" aria-label="${task.running ? "Pause timer" : "Start timer"}" title="${task.running ? "Pause timer" : "Start timer"}"><i data-lucide="${task.running ? "pause" : "play"}" class="icon-sm"></i></button>${editBtn}${filesBtn}<button class="task-btn complete" data-act="complete" aria-label="Mark complete" title="Mark complete"><i data-lucide="check" class="icon-sm"></i></button>`;
       return `
         <article class="task-row ${done ? "is-done" : ""} ${task.running ? "is-running" : ""}" data-task-id="${escapeHTML(task.id)}">
           <div class="task-main"><span class="task-state"></span><div><strong title="${escapeHTML(task.notes)}">${escapeHTML(task.task)}</strong><small>${meta.map(m => m.startsWith("<") ? m : escapeHTML(m)).join(" · ")}</small></div></div>
@@ -1721,7 +1737,8 @@
 
     function renderDependencyOptions(selected = [], query = "") {
       const normalizedQuery = query.trim().toLowerCase();
-      const matches = tasks.filter(task => task.task.toLowerCase().includes(normalizedQuery) || task.business.toLowerCase().includes(normalizedQuery));
+      const matches = tasks.filter(task => (task.task.toLowerCase().includes(normalizedQuery) || task.business.toLowerCase().includes(normalizedQuery))
+        && String(task.id) !== String(editingTaskId));   // a task can't depend on itself
       $("#dependencyOptions").innerHTML = matches.length ? matches.map(task => `
         <label class="dependency-option"><input type="checkbox" value="${escapeHTML(task.id)}" ${selected.includes(task.id) ? "checked" : ""}><span>${escapeHTML(task.task)} / ${escapeHTML(task.business)}</span></label>`).join("") : '<div class="dependency-empty">No matching tasks</div>';
     }
@@ -1753,18 +1770,23 @@
       // guard, and checks what's actually OFFERED (visible to this user) rather than
       // the full set — the two used to disagree.
       if (!bizVal) { setTaskError("business", "Choose a business."); valid = false; }
-      else if (!visibleBusinesses().some(b => b.name === bizVal)) { setTaskError("business", "That business isn't available to you — pick one from the list."); valid = false; }
+      // Assignees can be on a task for a business they don't otherwise have access to —
+      // editing it must not force them to re-pick a business they can't see.
+      else if (bizVal !== editingTaskBiz && !visibleBusinesses().some(b => b.name === bizVal)) { setTaskError("business", "That business isn't available to you — pick one from the list."); valid = false; }
       if (!$("#taskCategory").value) { setTaskError("category", "Category is required."); valid = false; }
       if (!$("#taskPriority").value) { setTaskError("priority", "Priority is required."); valid = false; }
       if (!dueDate) { setTaskError("dueDate", "Due date is required."); valid = false; }
-      else if (dueDate < todayString()) { setTaskError("dueDate", "Due date cannot be in the past."); valid = false; }
+      // Editing an older task shouldn't force you to move its (already overdue) date —
+      // only a date you actually changed has to be in the future.
+      else if (dueDate < todayString() && dueDate !== editingTaskDue) { setTaskError("dueDate", "Due date cannot be in the past."); valid = false; }
       return valid;
     }
 
     let taskModalOpener = null;
+    let editingTaskId = null, editingTaskDue = "", editingTaskBiz = "";
     function openTaskModal(event) {
       taskModalOpener = event?.currentTarget || null;
-      $("#taskDueDate").min = todayString();
+      setTaskModalMode(null);
       renderDependencyOptions();
       refreshAssigneeField();
       renderTaskClientDropdown();
@@ -1779,12 +1801,64 @@
       taskModalOpener = null;
       $("#quickTaskForm").reset();
       clearTaskErrors();
-      $("#taskDueDate").min = todayString();
+      setTaskModalMode(null);
       renderDependencyOptions();
       refreshAssigneeField();
       renderTaskClientDropdown();
       if (business) $("#taskBusiness").value = business;
       if (client) $("#taskClient").value = client;
+      $("#taskModal").classList.remove("hidden");
+      $("#taskModal").setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+      $("#taskName").focus();
+    }
+
+    // ---------- Edit an existing task (same form, save mode swapped) ----------
+    function setTaskModalMode(editing) {
+      editingTaskId = editing ? String(editing.id) : null;
+      editingTaskDue = editing ? (editing.dueDate || "") : "";
+      editingTaskBiz = editing ? (editing.business || "") : "";
+      $("#taskModalTitle").textContent = editing ? "Edit Task" : "Quick Add Task";
+      $("#taskModalTitle").nextElementSibling.textContent = editing
+        ? "Change any detail / everyone on the task is told what changed"
+        : "Local task entry / stored on this device";
+      $("#taskModalSubmit").innerHTML = editing
+        ? '<i data-lucide="save" class="icon-sm"></i>Save changes'
+        : '<i data-lucide="save" class="icon-sm"></i>Save task';
+      $("#clearTaskForm").classList.toggle("hidden", !!editing);
+      // An overdue task keeps its date selectable; new ones can't start in the past.
+      $("#taskDueDate").min = (editing && editingTaskDue && editingTaskDue < todayString()) ? editingTaskDue : todayString();
+    }
+    function openTaskEdit(id) {
+      const t = tasks.find(x => String(x.id) === String(id));
+      if (!t) return;
+      if (!canEditTask(t)) { showToast("You can only edit tasks you assigned or are on."); return; }
+      closeDetail();
+      taskModalOpener = null;
+      $("#quickTaskForm").reset();
+      clearTaskErrors();
+      renderTaskClientDropdown();
+      renderBusinessDropdown();
+      setTaskModalMode(t);
+      $("#taskName").value = t.task;
+      // The task's own business may not be one this person can normally pick (assignees
+      // see tasks outside their access) — keep it in the list so it survives the edit.
+      const bizSel = $("#taskBusiness");
+      if (t.business && ![...bizSel.options].some(o => o.value === t.business)) {
+        bizSel.insertAdjacentHTML("beforeend", `<option value="${escapeHTML(t.business)}">${escapeHTML(t.business)}</option>`);
+      }
+      bizSel.value = t.business;
+      $("#taskClient").value = t.client || "";
+      $("#taskCategory").value = t.category || "";
+      $("#taskPriority").value = t.priority || "Medium";
+      $("#taskDueDate").value = t.dueDate || "";
+      $("#taskEstimate").value = t.estimateMin || "";
+      $("#taskNotes").value = t.notes || "";
+      // Individuals only — team members ride along with the team itself.
+      quickAssign = { team_id: t.team_id || null, people: (t.assignees || []).map(e => (e || "").toLowerCase()) };
+      refreshAssigneeField();
+      $("#dependencySearch").value = "";
+      renderDependencyOptions((t.dependencies || []).map(String));
       $("#taskModal").classList.remove("hidden");
       $("#taskModal").setAttribute("aria-hidden", "false");
       document.body.classList.add("modal-open");
@@ -1798,6 +1872,7 @@
       $("#quickTaskForm").reset();
       quickAssign = { team_id: null, people: [] };
       $("#dependencySearch").value = "";
+      setTaskModalMode(null);
       clearTaskErrors();
       renderDependencyOptions();
       taskModalOpener?.focus();
@@ -1866,13 +1941,15 @@
         client: $("#taskClient").value || null,
         dependencies: selectedDependencyIds().map(Number).filter(n => !isNaN(n))
       };
+      const editing = editingTaskId;
       try {
-        const res = await fetch("/api/tasks", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        const res = await fetch(editing ? `/api/tasks/${editing}` : "/api/tasks", { method: editing ? "PUT" : "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
           await loadTasks();
           closeTaskModal();
-          showToast(data.pushed ? "Task saved to the repo (synced to GitHub)" : "Task saved (repo sync pending)");
+          if (editing) showToast(data.notified ? `Task updated — ${data.notified} notified` : "Task updated");
+          else showToast(data.pushed ? "Task saved to the repo (synced to GitHub)" : "Task saved (repo sync pending)");
         } else {
           showToast("Couldn't save: " + (data.detail || res.status));
         }
@@ -1896,6 +1973,7 @@
         openFilesModal("task", id, t ? t.task : "Task");
         return;
       }
+      if (act === "edit") { openTaskEdit(id); return; }
       button.disabled = true;
       const isDelete = act === "delete";
       try {
@@ -2200,6 +2278,8 @@
       const cAdd = e.target.closest("[data-contact-add]"), cEdit = e.target.closest("[data-contact-edit]"), cDel = e.target.closest("[data-contact-del]");
       const nAdd = e.target.closest("[data-note-add]"), nDel = e.target.closest("[data-note-del]"), rAdd = e.target.closest("[data-recurring-add]");
       const rEdit = e.target.closest("[data-recurring-edit]");
+      const tEdit = e.target.closest("[data-task-edit]");
+      if (tEdit) { openTaskEdit(tEdit.dataset.taskEdit); return; }
       if (rEdit) { const r = recurring.find(x => String(x.id) === rEdit.dataset.recurringEdit); if (r) openEntityEditor("recurring", r); return; }
       if (cAdd) openEntityEditor("contact", { client_id: Number(cAdd.dataset.contactAdd) });
       else if (cEdit) { const ct = clientContacts.find(x => String(x.id) === cEdit.dataset.contactEdit); if (ct) openEntityEditor("contact", ct); }
@@ -2210,6 +2290,8 @@
     });
     $("#detailGrid").addEventListener("keydown", e => {
       if (e.key === "Enter" && e.target.id === "clientNoteInput") { e.preventDefault(); const btn = $("[data-note-add]"); if (btn) addClientNote(btn.dataset.noteAdd); }
+      const tEdit = (e.key === "Enter" || e.key === " ") ? e.target.closest?.("[data-task-edit]") : null;
+      if (tEdit) { e.preventDefault(); openTaskEdit(tEdit.dataset.taskEdit); }
     });
 
     // ---------- Generic entity editor (business / project / campaign / staff / client / recurring) ----------
@@ -3319,7 +3401,11 @@
       const priority = t.priority || "—";
       const cls = priority.toLowerCase();
       const due = t.dueDate ? formatTaskDate(t.dueDate) : "—";
-      return `<li${t.notes ? ` title="${escapeHTML(t.notes)}"` : ""}><i data-lucide="square" class="icon-sm"></i><span class="kim-name">${escapeHTML(t.task)}</span><span class="kim-meta"><span class="task-priority ${escapeHTML(cls)}">${escapeHTML(priority)}</span><span class="kim-due">${escapeHTML(due)}</span></span></li>`;
+      // Editable rows open the same edit form the Action Queue uses.
+      const canEdit = canEditTask(t);
+      const edit = canEdit ? ` data-task-edit="${escapeHTML(String(t.id))}" role="button" tabindex="0" class="kim-editable"` : "";
+      const tip = t.notes || (canEdit ? "Edit this task" : "");
+      return `<li${edit}${tip ? ` title="${escapeHTML(tip)}"` : ""}><i data-lucide="square" class="icon-sm"></i><span class="kim-name">${escapeHTML(t.task)}</span><span class="kim-meta"><span class="task-priority ${escapeHTML(cls)}">${escapeHTML(priority)}</span><span class="kim-due">${escapeHTML(due)}</span>${edit ? '<i data-lucide="pencil" class="icon-sm kim-edit-icon"></i>' : ""}</span></li>`;
     }
     function overviewCard(rows) {
       return `<article class="card"><h3 style="margin-bottom:12px">Overview</h3>${rows.filter(([, v]) => v && v !== "—").map(([k, v]) => `<div class="kim-row"><span>${escapeHTML(k)}</span><b>${escapeHTML(v)}</b></div>`).join("")}</article>`;
@@ -3427,6 +3513,10 @@
       renderClientsView();
       renderBusinessDropdown();
       renderTaskClientDropdown();
+      // Task rows are role-dependent now (the ✎ edit button), and they're first drawn
+      // before /api/me answers — so they have to be redrawn once we know who's looking.
+      renderTaskList();
+      renderMyTasks();
       renderPins();
       if (ME.is_super_admin) loadAdminUsers().then(refreshAssigneeField);
       else refreshAssigneeField();
@@ -3502,6 +3592,13 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.7", date: "Jul 23, 2026", items: [
+        "Edit any task: hit the ✎ pencil on a task row to change its name, business, client, category, priority, due date, estimate, notes, dependencies — or who's on it.",
+        "Tasks in a business or project detail view are clickable now — click one to edit it in place.",
+        "Everyone on a task (plus whoever assigned it) gets an email listing exactly what changed — old value → new value. The person doing the editing is never emailed.",
+        "You can edit a task if you're a Super Admin, you assigned it, or you're on it — and the same rule now guards deleting, which anyone signed in could previously do to any task.",
+        "Editing an already-overdue task no longer forces you to move its due date.",
+      ] },
       { version: "2.6", date: "Jul 21, 2026", items: [
         "Teams: create reusable groups of people in Super Admin (e.g. Design, Dev, Content).",
         "Assign a task to a whole team — every member sees it and gets an email the moment they're added.",
@@ -3750,6 +3847,7 @@
       { view: "overview", sel: "#fontUp", title: "Text size", body: "Too small? Grow or shrink the whole dashboard with A− and A+. Your choice is remembered." },
       { view: "businesses", sel: "#businessGrid .business-card", title: "Businesses", body: "Your portfolio by tier. Click any card to open its profile, where you can add tasks, pin it, and (admins) edit it." },
       { view: "projects", sel: "#projectGrid", title: "Projects & the Action Queue", body: "Active work with next actions. Scroll down for the Action Queue, where you start timers and complete tasks." },
+      { view: "projects", sel: "#taskList", title: "Change any task", body: "Wrong date, wrong person, better wording? Click the ✎ pencil on a task to edit everything about it — including who's on it. People on the task get an email showing exactly what changed." },
       { view: "clients", sel: "#clientsGrid", title: "Clients & retainers", body: "Track monthly retainers and the recurring tasks they generate for your team." },
       { view: "reports", sel: "#reportMetrics", title: "Productivity", body: "See completed work and tracked time by day, week, month, quarter, or year." },
       { view: "journal", sel: ".journal-grid", title: "Daily Journal", body: "Set your focus each morning; log wins and tomorrow's first move each evening." },
