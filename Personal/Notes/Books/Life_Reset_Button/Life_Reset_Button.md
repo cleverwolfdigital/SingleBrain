@@ -1,7 +1,10 @@
 # Life Reset: Button
 
 **Type:** Non-fiction — personal systems / productivity
-**Status:** 🔴 **No manuscript content exists yet.** Positioning copy only.
+**Goal:** A comprehensive, referenceable guide to building a personal operating system across
+health, wealth, relationships, work, and energy.
+**Timeline:** 3 months maximum — from 2026-07-28, so **due 2026-10-28**.
+**Status:** 🟡 Chapter 3 drafted (~2,900 words). Introduction, Ch. 1, and Ch. 2 still missing.
 **Project created:** 2026-07-28
 
 ---
@@ -64,10 +67,26 @@ Extracted from the above — these are the promises the manuscript has to keep:
 | — | Introduction | ⬜ Not started | [00](Chapters/00_Introduction.md) |
 | 1 | Why You Need a Reset Button | ⬜ Not started | [01](Chapters/01_Why_You_Need_a_Reset_Button.md) |
 | 2 | The Life Reset Philosophy | ⬜ Not started | [02](Chapters/02_The_Life_Reset_Philosophy.md) |
-| 3 | Your Current State Audit | ⬜ Not started | [03](Chapters/03_Your_Current_State_Audit.md) |
-| 4+ | Unplanned — the four pillars presumably map here | ⬜ Not started | — |
+| 3 | Your Current State Audit | ✅ Draft 1 (~2,900 w) | [03](Chapters/03_Your_Current_State_Audit.md) |
+| 4 | *Untitled* — builds the system for the constraint Ch. 3 identifies | ⬜ Not started | — |
+| 5+ | Unplanned — the five pillars presumably map here | ⬜ Not started | — |
 
-Chapter titles 1–3 are as given; the files are stubs holding those titles and nothing more.
+Chapters 0–2 are empty stubs holding titles and nothing more. Chapter 3 is real prose.
+
+**Ch. 3 → Ch. 4 handoff (already committed in the text):** Chapter 3 ends by having the reader
+identify exactly **one** constraint domain and explicitly promises that Chapter 4 builds the system
+for *that domain only*. It also argues at length against multi-front resets. Chapter 4 has to honour
+both or Chapter 3's central argument breaks.
+
+## ⚠️ Pillar count discrepancy — unresolved
+
+The positioning copy names **four** pillars: health, wealth, relationships, **time**.
+The project brief names **five**: health, wealth, relationships, **work**, **energy**.
+
+Chapter 3 was written against the **five**, treating "time" as split across work and energy, and it
+justifies energy-as-separate-from-health explicitly in the text. If the four-pillar version is
+canonical, the back-cover copy and Ch. 3's domain sweep both need reconciling — and it's a
+one-or-the-other call, not a merge.
 
 ## Open decisions before drafting
 
@@ -84,7 +103,16 @@ Chapter titles 1–3 are as given; the files are stubs holding those titles and 
 
 ## Next actions
 
-- [ ] **Recover the existing Introduction / Ch. 1 / Ch. 2 if they exist elsewhere** — or confirm they don't
-- [ ] Build the full table of contents before writing more prose
-- [ ] Write the Introduction
-- [ ] Write Chapter 1, then 2, then 3
+- [ ] **Recover the existing Introduction / Ch. 1 / Ch. 2 if they exist elsewhere** — or accept they don't
+      and draft them. Ch. 3 currently leans on both: it references Ch. 1's decision-load thesis and
+      Ch. 2's "simple, visible, automated" by name.
+- [ ] Settle the four-vs-five pillar question (see above)
+- [ ] Build the full table of contents — still no TOC beyond Ch. 4
+- [ ] Draft Chapter 4 against the constraint handoff Ch. 3 sets up
+- [x] ~~Write Chapter 3~~ — done 2026-07-28
+
+## Session log
+
+**2026-07-28** — Project scaffolded. Verified Intro/Ch.1/Ch.2 do not exist on disk, in Google Drive,
+or in repo history. Recorded positioning copy. Drafted Ch. 3 (~2,900 words) against the five-pillar
+brief. Flagged the pillar-count discrepancy and the Ch.3→Ch.4 structural commitment.

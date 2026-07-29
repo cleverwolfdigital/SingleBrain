@@ -11,7 +11,7 @@ Created 2026-07-28.
 
 | Book | Type | Status | Real words drafted |
 |---|---|---|---|
-| [Life Reset: Button](Life_Reset_Button/Life_Reset_Button.md) | Non-fiction — personal systems | 🔴 Scaffold only — **no manuscript exists** | 0 |
+| [Life Reset: Button](Life_Reset_Button/Life_Reset_Button.md) | Non-fiction — personal systems | 🟡 Ch. 3 drafted; Intro/Ch.1/Ch.2 still missing · **due 2026-10-28** | ~2,900 |
 | [The Eldoria Odyssey](The_Eldoria_Odyssey/The_Eldoria_Odyssey.md) *(working title)* | Fiction — cosmic fantasy | 🟡 5 of 15 chapters drafted | ~4,700 |
 | [Science and Progress](Science_and_Progress/Science_and_Progress.md) | Fiction — science-fantasy, Hawaii | 🟡 Ch. 1 + Ch. 25 ending, no middle | ~1,065 |
 
