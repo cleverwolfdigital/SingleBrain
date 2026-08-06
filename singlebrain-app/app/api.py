@@ -172,6 +172,8 @@ def _startup():
     seed.seed()
     catalog.seed_catalog()
     catalog.generate_recurring()
+    catalog.generate_invoices()
+    _sweep_overdue_invoices()
     auth.init_auth_db()
     google_int.init_db()
     passkeys.init_passkey_db()   # must follow init_auth_db — it extends auth_users
@@ -663,6 +665,18 @@ DASHBOARD_FEATURES = (
     "- Businesses/Projects/Campaigns/Clients: browsed as cards; click one for a detail overlay with its "
     "tasks. Admins can add/edit/delete them and set clients' recurring monthly tasks. Sub-businesses roll "
     "up under a parent. Pin up to 5 items to the sidebar with the star.\n"
+    "- Billing (Super Admins only — it doesn't appear in the sidebar for anyone else): tracks whether "
+    "each client's retainer got invoiced and paid. On the 1st of every month a DRAFT invoice is created "
+    "automatically for each active client with a monthly retainer, dated due on the 15th. The Billing "
+    "view shows Billed / Collected / Outstanding / Overdue for a chosen month (or all time), and a table "
+    "where each row moves draft -> sent -> paid with one click; 'Mark paid' stamps today's date. "
+    "'+ New invoice' adds a one-off (client, period, amount, due date, reference, notes) and the pencil "
+    "edits any invoice — including the invoice number/reference from whatever tool actually issues it. "
+    "Each client's detail overlay has an Invoices card with the same rows. Single Brain does NOT create "
+    "or send the invoice document to the client — it tracks the status; the invoice itself still goes "
+    "out from wherever it goes today. Invoices that are marked sent and past their due date show as "
+    "OVERDUE, and the staffer who owns that client (plus admins) gets a reminder email — at most one "
+    "per invoice per day, and never to the client.\n"
     "- Files & attachments: any business, campaign, project, or task can have files attached (reference, "
     "review, retrieval, storage). Open the item and click 'Files', or use the paperclip on a task row. "
     "The first time, click 'Connect Your Drive' — a popup authorizes Google, then closes itself. Users "
@@ -931,6 +945,9 @@ def catalog_all(request: Request):
         "contacts": db.query("SELECT * FROM client_contacts ORDER BY id"),
         "client_notes": db.query("SELECT * FROM client_notes ORDER BY id DESC"),
         "teams": _teams_with_members(),
+        # Billing is money — admins only. Everyone else gets an empty list and the
+        # frontend hides the Billing view for them.
+        "invoices": _invoices_for(auth.current_user(request)),
     }
 
 
@@ -1936,6 +1953,191 @@ def recurring_generate(request: Request):
     if created:
         _sync_tasks_to_repo()
     return {"ok": True, "created": created}
+
+
+# ================= Client billing (invoices) =================
+# Single Brain tracks whether a retainer was billed and paid; it does not issue the
+# invoice document. Monthly rows are drafted from each client's retainer at boot
+# (catalog.generate_invoices) and moved draft -> sent -> paid here.
+INVOICE_STATUSES = ("draft", "sent", "paid", "void")
+
+
+def _today():
+    return datetime.now(HST).strftime("%Y-%m-%d")
+
+
+def _decorate_invoice(inv):
+    """Add the derived fields the UI needs. Overdue is computed, never stored, so a
+    row can't sit marked 'overdue' after someone pays it."""
+    inv = dict(inv)
+    status = (inv.get("status") or "draft").lower()
+    due = inv.get("due_on") or ""
+    inv["overdue"] = bool(status == "sent" and due and due < _today())
+    inv["days_overdue"] = _days_between(due, _today()) if inv["overdue"] else 0
+    return inv
+
+
+def _days_between(start, end):
+    try:
+        a = datetime.strptime(start, "%Y-%m-%d")
+        b = datetime.strptime(end, "%Y-%m-%d")
+        return max((b - a).days, 0)
+    except (ValueError, TypeError):
+        return 0
+
+
+def _invoices_for(email):
+    """Every invoice, newest period first — but only for admins. Billing is the one
+    surface where a staff grant to a business is NOT enough."""
+    if not _is_admin(email):
+        return []
+    rows = db.query("SELECT * FROM invoices ORDER BY COALESCE(period,'') DESC, id DESC")
+    return [_decorate_invoice(r) for r in rows]
+
+
+def _invoice_owners(inv):
+    """Who hears about this invoice: the staffer who owns the client, plus admins."""
+    who = set(_admin_emails())
+    rows = db.query("SELECT assignee FROM clients WHERE id=?", (inv.get("client_id"),))
+    if rows and (rows[0].get("assignee") or "").strip():
+        who.add(rows[0]["assignee"].strip().lower())
+    return who
+
+
+def _money(v):
+    try:
+        return "$" + f"{float(v):,.2f}".rstrip("0").rstrip(".")
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _sweep_overdue_invoices():
+    """Email the client's owner (and admins) about invoices that have gone past due.
+    Internal only — nothing here ever mails the client. Capped at one nudge per
+    invoice per day via reminded_on, so a restart loop can't turn into a mail storm."""
+    today = _today()
+    sent = 0
+    for row in db.query("SELECT * FROM invoices WHERE lower(COALESCE(status,'draft'))='sent'"):
+        inv = _decorate_invoice(row)
+        if not inv["overdue"] or (inv.get("reminded_on") or "") == today:
+            continue
+        db.execute("UPDATE invoices SET reminded_on=? WHERE id=?", (today, inv["id"]))
+        sent += _notify(
+            _invoice_owners(inv),
+            f"[Single Brain] Overdue: {inv.get('client_name') or 'client'} — {_money(inv.get('amount'))}",
+            f"An invoice is past due and still marked sent.\n\n"
+            f"Client:  {inv.get('client_name') or '—'}\n"
+            f"Period:  {inv.get('period') or '—'}\n"
+            f"Amount:  {_money(inv.get('amount'))}\n"
+            f"Due:     {inv.get('due_on')} ({inv['days_overdue']} days ago)\n"
+            + (f"Ref:     {inv['reference']}\n" if inv.get("reference") else "")
+            + f"\nMark it paid in Billing once the money lands: {APP_URL}\n",
+        )
+    return sent
+
+
+class InvoiceIn(BaseModel):
+    client_id: int
+    period: Optional[str] = None
+    amount: Optional[float] = None
+    status: Optional[str] = "draft"
+    issued_on: Optional[str] = None
+    due_on: Optional[str] = None
+    paid_on: Optional[str] = None
+    reference: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class InvoiceStatusIn(BaseModel):
+    status: str
+    paid_on: Optional[str] = None
+
+
+def _client_or_422(cid):
+    rows = db.query("SELECT * FROM clients WHERE id=?", (cid,))
+    if not rows:
+        raise HTTPException(422, "A valid client is required.")
+    return rows[0]
+
+
+@app.get("/api/invoices")
+def list_invoices(request: Request):
+    email = _require_admin(request)
+    return {"invoices": _invoices_for(email)}
+
+
+@app.post("/api/invoices")
+def create_invoice(inv: InvoiceIn, request: Request):
+    _require_admin(request)
+    c = _client_or_422(inv.client_id)
+    status = (inv.status or "draft").lower()
+    if status not in INVOICE_STATUSES:
+        raise HTTPException(422, "Status must be draft, sent, paid, or void.")
+    iid = db.execute(
+        "INSERT INTO invoices(client_id,client_name,business,period,amount,status,issued_on,due_on,paid_on,reference,notes,auto) "
+        "VALUES(?,?,?,?,?,?,?,?,?,?,?,0)",
+        (c["id"], c.get("name"), c.get("business"), (inv.period or "").strip() or None, inv.amount,
+         status, inv.issued_on, inv.due_on, inv.paid_on, inv.reference, inv.notes),
+    )
+    return {"ok": True, "id": iid}
+
+
+@app.put("/api/invoices/{iid}")
+def update_invoice(iid: int, inv: InvoiceIn, request: Request):
+    _require_admin(request)
+    if not db.query("SELECT 1 FROM invoices WHERE id=?", (iid,)):
+        raise HTTPException(404, "Invoice not found.")
+    c = _client_or_422(inv.client_id)
+    status = (inv.status or "draft").lower()
+    if status not in INVOICE_STATUSES:
+        raise HTTPException(422, "Status must be draft, sent, paid, or void.")
+    db.execute(
+        "UPDATE invoices SET client_id=?,client_name=?,business=?,period=?,amount=?,status=?,"
+        "issued_on=?,due_on=?,paid_on=?,reference=?,notes=? WHERE id=?",
+        (c["id"], c.get("name"), c.get("business"), (inv.period or "").strip() or None, inv.amount,
+         status, inv.issued_on, inv.due_on, inv.paid_on, inv.reference, inv.notes, iid),
+    )
+    return {"ok": True}
+
+
+@app.post("/api/invoices/{iid}/status")
+def set_invoice_status(iid: int, body: InvoiceStatusIn, request: Request):
+    """One-click draft -> sent -> paid from the Billing table. Stamps the matching
+    date automatically so nobody has to type today's date to say 'this is paid'."""
+    _require_admin(request)
+    rows = db.query("SELECT * FROM invoices WHERE id=?", (iid,))
+    if not rows:
+        raise HTTPException(404, "Invoice not found.")
+    status = (body.status or "").strip().lower()
+    if status not in INVOICE_STATUSES:
+        raise HTTPException(422, "Status must be draft, sent, paid, or void.")
+    cur = rows[0]
+    issued = cur.get("issued_on") or (_today() if status in ("sent", "paid") else None)
+    paid = None
+    if status == "paid":
+        paid = (body.paid_on or "").strip() or cur.get("paid_on") or _today()
+    db.execute(
+        "UPDATE invoices SET status=?, issued_on=?, paid_on=? WHERE id=?",
+        (status, issued, paid, iid),
+    )
+    return {"ok": True, "status": status, "issued_on": issued, "paid_on": paid}
+
+
+@app.delete("/api/invoices/{iid}")
+def delete_invoice(iid: int, request: Request):
+    _require_admin(request)
+    db.execute("DELETE FROM invoices WHERE id=?", (iid,))
+    return {"ok": True}
+
+
+@app.post("/api/invoices/generate")
+def invoices_generate(request: Request):
+    """Draft any missing retainer invoices for the current month, then nudge on
+    anything overdue. Runs at boot too — this is the manual 'do it now' button."""
+    _require_admin(request)
+    created = catalog.generate_invoices()
+    nudged = _sweep_overdue_invoices()
+    return {"ok": True, "created": created, "nudged": nudged}
 
 
 # ================= Sidebar pins (per-user, max 5) =================

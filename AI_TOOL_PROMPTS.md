@@ -101,6 +101,12 @@ On each request:
    clients + recurring tasks, pins, productivity reports, journal, and FILES — attach files to any
    business/campaign/project/task (Files button, or the paperclip on a task), Connect Your Drive
    (popup), upload/link/share (by link or with a person), plus Calendar on Overview and What's new.
+   BILLING (Super Admins only — it isn't in the sidebar for anyone else): a draft invoice is created
+   for each active client on a monthly retainer on the 1st, due the 15th; one click moves it
+   draft → sent → paid ("paid" stamps today). Billed / Collected / Outstanding / Overdue totals per
+   month or all time, one-off invoices via "New invoice", and the same Invoices card inside each
+   client. Sent + past due = OVERDUE, which emails the client's owner (plus admins) at most once a
+   day. Single Brain TRACKS billing status — it never creates or sends an invoice to a client.
 6. Sign-in help: magic link + authenticator code, "remember this device 90 days", and PASSKEYS —
    click the initials/avatar (top-right) → Add passkey → Face ID / Touch ID / Windows Hello. One
    touch then replaces both factors; the authenticator app stays as the backup.

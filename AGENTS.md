@@ -35,7 +35,9 @@ All other files are secondary. Prioritize revenue actions over new builds.
 - **Production dashboard app** — `singlebrain-app/` (FastAPI + single-file frontend), LIVE at
   `brain.cleverwolfdigital.com` on the Hostinger VPS. Its user-facing capabilities (tasks + timers
   + **editing any task**, teams/multi-assignee,
-  businesses/projects/clients, **file attachments + Google Drive**, calendar, reports, journal) are
+  businesses/projects/clients, **client billing** (admin-only invoice tracking: auto-drafted monthly
+  retainer invoices, draft→sent→paid, overdue reminders to the client's owner — it never invoices the
+  client itself), **file attachments + Google Drive**, calendar, reports, journal) are
   listed canonically in `singlebrain-app/app/api.py` (`DASHBOARD_FEATURES`). When a feature changes,
   update that list **plus** the tutorial, guided tour, and patch notes together, then deploy
   (git push + `scp` to the VPS). Old Cloudflare site + `website/ai/index.html` are retired.

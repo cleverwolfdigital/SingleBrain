@@ -1,11 +1,13 @@
 """DB-backed catalog: businesses (with parent/sub-business hierarchy), projects,
-campaigns, staff, clients (monthly retainers), and recurring monthly tasks.
+campaigns, staff, clients (monthly retainers), recurring monthly tasks, and the
+monthly retainer invoices those clients generate.
 
 seed_catalog() performs a ONE-TIME migration of the previously-hardcoded frontend
 arrays into the DB, guarded by an app_meta flag so later edits in the UI persist.
 It only rewrites catalog metadata (businesses/projects/staff) — never user tasks,
 which reference businesses by name string, not by id.
 """
+import os
 from datetime import datetime, timezone, timedelta
 from . import db
 
@@ -152,5 +154,34 @@ def generate_recurring(month=None):
              due, note, rt.get("estimate_min"), rt.get("assignee"), rt.get("client_name"), rt["id"]),
         )
         db.execute("UPDATE recurring_tasks SET last_generated=? WHERE id=?", (month, rt["id"]))
+        created += 1
+    return created
+
+
+# Day of the month a generated retainer invoice falls due (net-15 from the 1st).
+INVOICE_DUE_DAY = int(os.environ.get("SB_INVOICE_DUE_DAY", "15") or "15")
+
+
+def generate_invoices(month=None):
+    """Draft this month's invoice for every active client on a monthly retainer.
+    Idempotent per (client, period) — an existing row for the period is left alone,
+    so a rerun never duplicates and never overwrites hand-edited amounts. Only the
+    CURRENT month is ever generated; history is not backfilled. Returns the count."""
+    month = current_month(month)
+    y, m = int(month[:4]), int(month[5:7])
+    created = 0
+    for c in db.query("SELECT * FROM clients WHERE lower(COALESCE(status,'active'))='active'"):
+        if not c.get("retainer_amount"):
+            continue
+        if (c.get("cadence") or "monthly").strip().lower() != "monthly":
+            continue
+        if db.query("SELECT 1 FROM invoices WHERE client_id=? AND period=?", (c["id"], month)):
+            continue
+        db.execute(
+            "INSERT INTO invoices(client_id,client_name,business,period,amount,status,due_on,auto) "
+            "VALUES(?,?,?,?,?,'draft',?,1)",
+            (c["id"], c.get("name"), c.get("business"), month, c.get("retainer_amount"),
+             f"{y:04d}-{m:02d}-{INVOICE_DUE_DAY:02d}"),
+        )
         created += 1
     return created

@@ -352,6 +352,16 @@
     .role-badge.super_admin { color: var(--gold-soft); background: rgba(208,168,83,0.12); border: 1px solid rgba(208,168,83,0.28); }
     .role-badge.staff { color: var(--blue); background: rgba(74,145,216,0.12); border: 1px solid rgba(74,145,216,0.24); }
     .role-badge.guest { color: var(--cyan); background: rgba(69,189,196,0.12); border: 1px solid rgba(69,189,196,0.26); }
+    /* Billing: invoice status pills. Same shape as .role-badge so the two read as
+       one family; overdue borrows the red the app already uses for "act now". */
+    .inv-pill { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 8px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; }
+    .inv-pill.draft { color: var(--faint); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
+    .inv-pill.sent { color: var(--blue); background: rgba(74,145,216,0.12); border: 1px solid rgba(74,145,216,0.24); }
+    .inv-pill.paid { color: var(--green); background: rgba(66,201,141,0.12); border: 1px solid rgba(66,201,141,0.26); }
+    .inv-pill.overdue { color: var(--red); background: rgba(234,114,114,0.12); border: 1px solid rgba(234,114,114,0.3); }
+    .inv-pill.void { color: var(--faint); background: transparent; border: 1px dashed rgba(255,255,255,0.18); }
+    .inv-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .inv-actions { display: flex; gap: 5px; justify-content: flex-end; white-space: nowrap; }
     .chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
     .chip { padding: 3px 8px; color: var(--muted); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 5px; font-size: 9px; }
     .chip.muted { color: var(--faint); }
@@ -758,6 +768,7 @@
       <button class="nav-button" data-view="businesses"><i data-lucide="building-2" class="icon"></i>Businesses</button>
       <button class="nav-button" data-view="projects"><i data-lucide="folder-kanban" class="icon"></i>Projects</button>
       <button class="nav-button" data-view="clients"><i data-lucide="handshake" class="icon"></i>Clients</button>
+      <button class="nav-button hidden" data-admin-only data-view="billing"><i data-lucide="receipt" class="icon"></i>Billing</button>
       <button class="nav-button" data-view="staff"><i data-lucide="users" class="icon"></i>Staff</button>
       <button class="nav-button" data-view="blockers"><i data-lucide="triangle-alert" class="icon"></i>Blockers<span class="nav-badge">3</span></button>
       <button class="nav-button" data-view="recommendations"><i data-lucide="route" class="icon"></i>Recommendations</button>
@@ -909,6 +920,34 @@
       <div class="grid" id="clientsGrid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
     </section>
 
+    <section class="view" id="billing">
+      <div class="view-header">
+        <div><div class="eyebrow">Money</div><h1>Billing</h1><p>Whether each client retainer got invoiced and paid. A draft appears here on the 1st of every month — Single Brain tracks the status; the invoice itself still goes out from wherever you send it.</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="button secondary" type="button" id="billingGenerate"><i data-lucide="refresh-cw" class="icon-sm"></i>Draft this month</button>
+          <button class="button" type="button" data-add-entity="invoice"><i data-lucide="plus" class="icon-sm"></i>New invoice</button>
+        </div>
+      </div>
+      <div class="report-controls">
+        <div class="period-tabs">
+          <button class="filter active" data-billing-filter="all">All</button>
+          <button class="filter" data-billing-filter="draft">Draft</button>
+          <button class="filter" data-billing-filter="sent">Sent</button>
+          <button class="filter" data-billing-filter="overdue">Overdue</button>
+          <button class="filter" data-billing-filter="paid">Paid</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select class="input" id="billingMonth" style="max-width:200px"></select>
+          <input class="input" id="billingSearch" placeholder="Search clients…" autocomplete="off" style="max-width:220px">
+        </div>
+      </div>
+      <div class="grid metrics" id="billingMetrics" style="grid-template-columns:repeat(4,1fr)"></div>
+      <article class="card">
+        <div class="panel-header"><h2>Invoices</h2><span id="billingCount"></span></div>
+        <div class="panel-body table-wrap" id="billingTable"></div>
+      </article>
+    </section>
+
     <section class="view" id="blockers">
       <div class="view-header"><div><div class="eyebrow">Attention Required</div><h1>Blockers & Risks</h1><p>Constraints that threaten revenue, execution, or system reliability.</p></div></div>
       <div class="grid risk-grid" id="riskGrid"></div>
@@ -1011,6 +1050,7 @@
         <article class="card tut-card"><div class="tut-num">21</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table sets who owns each open task — a whole <b>team</b>, one or more <b>people</b>, or both. Assignees always see their tasks, even without full business access, and are <b>emailed when they're added</b>. You can promote up to <b>2</b> people to Super Admin.</p></article>
         <article class="card tut-card"><div class="tut-num">22</div><h3>Teams</h3><p>Create reusable <b>teams</b> in Super Admin — name a group (Design, Dev, Content…) and pick its members. When you assign a task to a team, <b>every member</b> sees it and gets an email. You can add extra individuals on top of a team, and Quick Add's <b>Assign to</b> picker does the same.</p></article>
         <article class="card tut-card"><div class="tut-num">23</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
+        <article class="card tut-card"><div class="tut-num">24</div><h3>Billing</h3><p><b>Billing</b> (sidebar, admins only) answers one question per client: <b>did we invoice it, and did they pay?</b> On the <b>1st of every month</b> a <b>draft</b> invoice appears for each active client with a monthly retainer, due on the 15th. Move it along with one click — <b>Sent</b> when it goes out, <b>Paid</b> when the money lands (today's date is stamped for you; <b>Undo</b> reverses it). The tiles show <b>Billed / Collected / Outstanding / Overdue</b> for the month you pick, or all time. Anything marked sent and past its due date turns <b>Overdue</b>, and whoever owns that client gets a reminder email — at most once a day, and <b>never sent to the client</b>. Use <b>New invoice</b> for one-offs, and the <b>✎</b> to record the real invoice number. Single Brain <b>tracks</b> billing; it doesn't issue the invoice — that still goes out from wherever it does today. Each client's detail view has the same <b>Invoices</b> card.</p></article>
       </div>
     </section>
 
@@ -1451,7 +1491,7 @@
     // Access context (from /api/me). Until it loads, assume full access so nothing flickers hidden.
     let ME = { email: "", role: "staff", is_super_admin: false, can_assign: false, businesses: null, projects: null };
     let adminUsers = [];
-    let clients = [], recurring = [], staffList = [], pins = [], clientContacts = [], clientNotes = [], teams = [];
+    let clients = [], recurring = [], staffList = [], pins = [], clientContacts = [], clientNotes = [], teams = [], invoices = [];
     const canSeeBusiness = name => ME.is_super_admin || ME.businesses == null || ME.businesses.includes(name);
     const canSeeProject = name => ME.is_super_admin || ME.projects == null || ME.projects.includes(name);
     const visibleBusinesses = () => businesses.filter(b => canSeeBusiness(b.name));
@@ -1484,6 +1524,7 @@
         clientContacts = c.contacts || [];
         clientNotes = c.client_notes || [];
         teams = c.teams || [];
+        invoices = c.invoices || [];   // admins only; [] for everyone else
       } catch (e) { /* keep seed arrays */ }
     }
     async function loadPins() {
@@ -2226,6 +2267,142 @@
     }));
     $("#clientSearch").addEventListener("input", e => { clientQuery = e.target.value; renderClientsView(); });
     $("#clientBizFilter").addEventListener("change", e => { clientBizFilter = e.target.value; renderClientsView(); });
+    // ---------- Billing (invoices) ----------
+    // Admin-only. The server decides what lands in `invoices` (staff get an empty
+    // list), and `overdue` / `days_overdue` are computed server-side so the badge
+    // can never disagree with the reminder emails.
+    let billingFilter = "all", billingMonth = "", billingQuery = "";
+    const fmtMoney = v => (v == null || v === "" || isNaN(Number(v)))
+      ? "—" : "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    const invStatus = inv => inv.overdue ? "overdue" : ((inv.status || "draft").toLowerCase());
+    const invClientName = inv => {
+      const c = clients.find(x => String(x.id) === String(inv.client_id));
+      return (c && c.name) || inv.client_name || "—";
+    };
+    function invPill(inv) {
+      const s = invStatus(inv);
+      const label = s === "overdue" ? `Overdue ${inv.days_overdue}d` : s;
+      return `<span class="inv-pill ${s}">${escapeHTML(label)}</span>`;
+    }
+    function thisMonth() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }
+    // A one-off has no period, so it falls back to the month of its due date (then
+    // sent/paid/created). Without this it would vanish from every month view and only
+    // reappear under "All time" — which is exactly where you'd stop looking for it.
+    const invoiceMonth = inv => inv.period
+      || String(inv.due_on || inv.issued_on || inv.paid_on || inv.created_at || "").slice(0, 7)
+      || "";
+    function invoiceMonths() {
+      const set = new Set(invoices.map(invoiceMonth).filter(Boolean));
+      set.add(thisMonth());
+      return [...set].sort().reverse();
+    }
+    function monthLabel(p) {
+      if (!p) return "No period";
+      const [y, m] = p.split("-").map(Number);
+      if (!y || !m) return p;
+      return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    }
+    function filteredInvoices() {
+      let list = invoices.slice();
+      if (billingMonth && billingMonth !== "all") list = list.filter(i => invoiceMonth(i) === billingMonth);
+      if (billingFilter !== "all") list = list.filter(i => invStatus(i) === billingFilter
+        // "Sent" means outstanding, so it keeps counting the ones that went overdue.
+        || (billingFilter === "sent" && i.overdue));
+      const q = billingQuery.trim().toLowerCase();
+      if (q) list = list.filter(i => invClientName(i).toLowerCase().includes(q)
+        || (i.business || "").toLowerCase().includes(q)
+        || (i.reference || "").toLowerCase().includes(q));
+      return list.sort((a, b) => invoiceMonth(b).localeCompare(invoiceMonth(a)) || (b.id - a.id));
+    }
+    function invoiceActions(inv) {
+      const s = invStatus(inv);
+      const bits = [];
+      if (s === "draft") bits.push(`<button class="task-btn" type="button" data-inv-status="${inv.id}" data-to="sent" title="Mark as sent">Sent</button>`);
+      if (s === "sent" || s === "overdue") bits.push(`<button class="task-btn" type="button" data-inv-status="${inv.id}" data-to="paid" title="Mark as paid">Paid</button>`);
+      if (s === "paid") bits.push(`<button class="task-btn" type="button" data-inv-status="${inv.id}" data-to="sent" title="Not actually paid — put it back">Undo</button>`);
+      bits.push(`<button class="task-btn" type="button" data-inv-edit="${inv.id}" aria-label="Edit invoice" title="Edit or delete"><i data-lucide="pencil" class="icon-sm"></i></button>`);
+      return `<div class="inv-actions">${bits.join("")}</div>`;
+    }
+    function renderBilling() {
+      const table = $("#billingTable");
+      if (!table) return;
+      const sel = $("#billingMonth");
+      if (sel) {
+        const months = invoiceMonths();
+        if (!billingMonth) billingMonth = months.includes(thisMonth()) ? thisMonth() : "all";
+        sel.innerHTML = `<option value="all" ${billingMonth === "all" ? "selected" : ""}>All time</option>`
+          + months.map(p => `<option value="${escapeHTML(p)}" ${billingMonth === p ? "selected" : ""}>${escapeHTML(monthLabel(p))}</option>`).join("");
+      }
+      // Totals are scoped to the chosen month but NOT to the status tab — the tab
+      // filters the table; the tiles always describe the whole month, which is what
+      // "how are we doing this month" actually means.
+      const scope = invoices.filter(i => (billingMonth === "all" || invoiceMonth(i) === billingMonth)
+        && invStatus(i) !== "void");
+      const sum = list => list.reduce((n, i) => n + (Number(i.amount) || 0), 0);
+      const paid = scope.filter(i => invStatus(i) === "paid");
+      const outstanding = scope.filter(i => ["sent", "overdue"].includes(invStatus(i)));
+      const overdue = scope.filter(i => i.overdue);
+      const drafts = scope.filter(i => invStatus(i) === "draft");
+      $("#billingMetrics").innerHTML = [
+        metricCard("Billed", fmtMoney(sum(scope)), `${scope.length} invoice${scope.length === 1 ? "" : "s"}${drafts.length ? ` · ${drafts.length} still draft` : ""}`),
+        metricCard("Collected", fmtMoney(sum(paid)), `${paid.length} paid`),
+        metricCard("Outstanding", fmtMoney(sum(outstanding)), `${outstanding.length} awaiting payment`),
+        metricCard("Overdue", fmtMoney(sum(overdue)), overdue.length ? `${overdue.length} past due — owners emailed` : "Nothing past due"),
+      ].join("");
+      const list = filteredInvoices();
+      const count = $("#billingCount");
+      if (count) count.textContent = `${list.length} shown · ${fmtMoney(sum(list.filter(i => invStatus(i) !== "void")))}`;
+      table.innerHTML = list.length ? `<table class="table"><thead><tr><th>Client</th><th>Period</th><th>Amount</th><th>Status</th><th>Due</th><th>Ref</th><th></th></tr></thead><tbody>${list.map(inv => `<tr>
+        <td class="item-name">${escapeHTML(invClientName(inv))}${inv.business ? `<br><small style="color:var(--faint)">${escapeHTML(inv.business)}</small>` : ""}</td>
+        <td>${escapeHTML(inv.period ? monthLabel(inv.period) : "One-off")}</td>
+        <td class="inv-amount">${escapeHTML(fmtMoney(inv.amount))}</td>
+        <td>${invPill(inv)}</td>
+        <td>${escapeHTML(inv.paid_on ? "paid " + inv.paid_on : (inv.due_on || "—"))}</td>
+        <td>${escapeHTML(inv.reference || "—")}</td>
+        <td>${invoiceActions(inv)}</td></tr>`).join("")}</tbody></table>`
+        : `<div class="task-empty">${invoices.length ? "No invoices match this filter." : "No invoices yet. Give a client a monthly retainer and a draft appears here on the 1st — or add a one-off with “New invoice”."}</div>`;
+      renderIcons();
+    }
+    async function setInvoiceStatus(id, status) {
+      try {
+        const res = await fetch(`/api/invoices/${id}/status`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); showToast("Couldn't update: " + (d.detail || res.status)); return; }
+        await loadCatalog();
+        renderBilling();
+        const cc = clients.find(x => String(x.id) === String(detailClientId));
+        if (cc && !$("#detailModal").classList.contains("hidden")) openClientDetail(cc);
+        showToast(status === "paid" ? "Marked paid" : status === "sent" ? "Marked sent" : "Invoice updated");
+      } catch (e) { showToast("Couldn't reach the server."); }
+    }
+    $("#billingTable").addEventListener("click", e => {
+      const st = e.target.closest("[data-inv-status]"), ed = e.target.closest("[data-inv-edit]");
+      if (st) return setInvoiceStatus(st.dataset.invStatus, st.dataset.to);
+      if (ed) { const inv = invoices.find(x => String(x.id) === ed.dataset.invEdit); if (inv) openEntityEditor("invoice", inv); }
+    });
+    $$("[data-billing-filter]").forEach(b => b.addEventListener("click", () => {
+      $$("[data-billing-filter]").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      billingFilter = b.dataset.billingFilter;
+      renderBilling();
+    }));
+    $("#billingMonth").addEventListener("change", e => { billingMonth = e.target.value; renderBilling(); });
+    $("#billingSearch").addEventListener("input", e => { billingQuery = e.target.value; renderBilling(); });
+    $("#billingGenerate").addEventListener("click", async () => {
+      const btn = $("#billingGenerate"); btn.disabled = true;
+      try {
+        const res = await fetch("/api/invoices/generate", { method: "POST", credentials: "same-origin" });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { showToast("Couldn't generate: " + (d.detail || res.status)); return; }
+        await loadCatalog();
+        renderBilling();
+        showToast(d.created ? `${d.created} draft${d.created === 1 ? "" : "s"} created` : "Every retainer is already drafted this month");
+      } catch (e) { showToast("Couldn't reach the server."); }
+      finally { btn.disabled = false; }
+    });
+
     let detailClientId = null;
     function openClientDetail(c) {
       detailClientId = c.id;
@@ -2246,9 +2423,19 @@
       // entity editor already existed, the rows just never offered a way in.
       const recEdit = r => ME.is_super_admin ? `<button class="task-btn" type="button" data-recurring-edit="${r.id}" aria-label="Edit recurring task" title="Edit or delete"><i data-lucide="pencil" class="icon-sm"></i></button>` : "";
       const recCard = `<article class="card"><div class="kim-group-head"><h3>Recurring monthly tasks</h3><span>${rec.length}${recAdd}</span></div>${rec.length ? `<ul class="kim-list">${rec.map(r => `<li><i data-lucide="repeat" class="icon-sm"></i><span class="kim-name">${escapeHTML(r.name)}</span><span class="kim-meta"><span class="task-priority ${(r.priority || "").toLowerCase()}">${escapeHTML(r.priority || "")}</span><span class="kim-due">day ${r.day_of_month || 1}${r.assignee ? " · @" + escapeHTML(emailName(r.assignee)) : ""}</span>${recEdit(r)}</span></li>`).join("")}</ul>` : '<div class="dependency-empty" style="padding:16px 4px">No recurring tasks yet.</div>'}</article>`;
+      // Billing sits inside the client, not just in the Billing view, so "how is this
+      // client doing" and "have they paid" are one screen. Admins only — `invoices` is
+      // empty for everyone else, so the card simply doesn't render.
+      const inv = invoices.filter(i => String(i.client_id) === String(c.id));
+      const invAdd = ME.is_super_admin ? ` · <button class="mini-add" type="button" data-invoice-add="${c.id}">+ Add</button>` : "";
+      const unpaid = inv.filter(i => ["sent", "overdue"].includes(invStatus(i)));
+      const owed = unpaid.reduce((n, i) => n + (Number(i.amount) || 0), 0);
+      const invCard = ME.is_super_admin ? `<article class="card"><div class="kim-group-head"><h3>Invoices</h3><span>${inv.length ? (owed ? fmtMoney(owed) + " outstanding" : "all paid") : "0"}${invAdd}</span></div>${inv.length
+        ? `<ul class="kim-list" id="clientInvoiceList">${inv.slice(0, 12).map(i => `<li><i data-lucide="receipt" class="icon-sm"></i><span class="kim-name">${escapeHTML(i.period ? monthLabel(i.period) : "One-off")}${i.reference ? " · " + escapeHTML(i.reference) : ""}</span><span class="kim-meta"><span class="inv-amount">${escapeHTML(fmtMoney(i.amount))}</span>${invPill(i)}${invoiceActions(i)}</span></li>`).join("")}</ul>`
+        : '<div class="dependency-empty" style="padding:16px 4px">No invoices yet. Set a monthly retainer and one is drafted on the 1st.</div>'}</article>` : "";
       const mine = tasks.filter(t => (t.client || "") === c.name);
       const taskCard = groupCard("Tasks for this client", mine, "No tasks generated yet.");
-      showDetail("Client", c.name, `${c.business || ""} · ${c.status || ""}`, overviewCard(rows) + contactsCard + notesCard + recCard + taskCard, c.business, { kind: "client", ref: c.name }, { type: "client", item: c });
+      showDetail("Client", c.name, `${c.business || ""} · ${c.status || ""}`, overviewCard(rows) + contactsCard + notesCard + recCard + invCard + taskCard, c.business, { kind: "client", ref: c.name }, { type: "client", item: c });
     }
     async function removeContact(id) {
       try {
@@ -2279,8 +2466,12 @@
       const nAdd = e.target.closest("[data-note-add]"), nDel = e.target.closest("[data-note-del]"), rAdd = e.target.closest("[data-recurring-add]");
       const rEdit = e.target.closest("[data-recurring-edit]");
       const tEdit = e.target.closest("[data-task-edit]");
+      const iAdd = e.target.closest("[data-invoice-add]"), iStatus = e.target.closest("[data-inv-status]"), iEdit = e.target.closest("[data-inv-edit]");
       if (tEdit) { openTaskEdit(tEdit.dataset.taskEdit); return; }
       if (rEdit) { const r = recurring.find(x => String(x.id) === rEdit.dataset.recurringEdit); if (r) openEntityEditor("recurring", r); return; }
+      if (iStatus) { setInvoiceStatus(iStatus.dataset.invStatus, iStatus.dataset.to); return; }
+      if (iEdit) { const iv = invoices.find(x => String(x.id) === iEdit.dataset.invEdit); if (iv) openEntityEditor("invoice", iv); return; }
+      if (iAdd) { const c = clients.find(x => String(x.id) === iAdd.dataset.invoiceAdd); if (c) openEntityEditor("invoice", { client_id: c.id, period: thisMonth() }); return; }
       if (cAdd) openEntityEditor("contact", { client_id: Number(cAdd.dataset.contactAdd) });
       else if (cEdit) { const ct = clientContacts.find(x => String(x.id) === cEdit.dataset.contactEdit); if (ct) openEntityEditor("contact", ct); }
       else if (cDel) removeContact(cDel.dataset.contactDel);
@@ -2360,6 +2551,18 @@
         { k: "estimate_min", label: "Est. minutes", type: "number" },
         { k: "assignee", label: "Assign to", type: "assignee-select" },
       ] },
+      // An invoice has no `name`, so it opts out of the shared name-required check.
+      invoice: { title: "Invoice", ep: "invoices", noName: true, fields: [
+        { k: "client_id", label: "Client", type: "client-select", req: true, full: true },
+        { k: "period", label: "Period (YYYY-MM, blank = one-off)" },
+        { k: "amount", label: "Amount ($)", type: "number" },
+        { k: "status", label: "Status", type: "select", opts: [["draft", "Draft"], ["sent", "Sent"], ["paid", "Paid"], ["void", "Void"]] },
+        { k: "due_on", label: "Due (YYYY-MM-DD)" },
+        { k: "issued_on", label: "Sent on (YYYY-MM-DD)" },
+        { k: "paid_on", label: "Paid on (YYYY-MM-DD)" },
+        { k: "reference", label: "Invoice # / reference" },
+        { k: "notes", label: "Notes", type: "textarea", full: true },
+      ] },
       contact: { title: "Contact", ep: "contacts", fields: [
         { k: "name", label: "Name", full: true },
         { k: "title", label: "Title / role" },
@@ -2392,7 +2595,7 @@
     }
     async function reloadCatalogAndRender() {
       await loadCatalog();
-      renderBusinessGrid(); renderProjectGrid(); renderCampaignGrid(); renderTeam(); renderClientsView(); renderBusinessDropdown(); renderTaskClientDropdown(); renderPins();
+      renderBusinessGrid(); renderProjectGrid(); renderCampaignGrid(); renderTeam(); renderClientsView(); renderBilling(); renderBusinessDropdown(); renderTaskClientDropdown(); renderPins();
       renderIcons();
     }
     async function saveEntity() {
@@ -2415,9 +2618,16 @@
         if (c) { payload.client_name = c.name; if (!payload.business) payload.business = c.business; }
       }
       if (entityType === "contact") payload.client_id = entityItem && entityItem.client_id ? Number(entityItem.client_id) : null;
+      if (entityType === "invoice") {
+        if (!payload.client_id) { $("#entityError").textContent = "Pick a client."; return; }
+        payload.client_id = Number(payload.client_id);
+        for (const k of ["period", "issued_on", "due_on", "paid_on", "reference"]) {
+          payload[k] = String(payload[k] || "").trim() || null;
+        }
+      }
       if (entityType === "contact") {
         if (!String(payload.name || "").trim() && !String(payload.email || "").trim()) { $("#entityError").textContent = "Add a name or an email."; return; }
-      } else if (!String(payload.name || "").trim()) { $("#entityError").textContent = "Name is required."; return; }
+      } else if (!spec.noName && !String(payload.name || "").trim()) { $("#entityError").textContent = "Name is required."; return; }
       const editing = entityItem && entityItem.id;
       const url = editing ? `/api/${spec.ep}/${entityItem.id}` : `/api/${spec.ep}`;
       const btn = $("#entitySave"); btn.disabled = true;
@@ -2427,7 +2637,7 @@
         if (res.ok) {
           hideModal("#entityModal");
           await reloadCatalogAndRender();
-          if (spec.ep === "contacts") { const cc = clients.find(x => String(x.id) === String(detailClientId)); if (cc) openClientDetail(cc); }
+          if (spec.ep === "contacts" || spec.ep === "invoices") { const cc = clients.find(x => String(x.id) === String(detailClientId)); if (cc && !$("#detailModal").classList.contains("hidden")) openClientDetail(cc); }
           showToast(spec.title + (editing ? " updated" : " added"));
         }
         else $("#entityError").textContent = d.detail || ("Error " + res.status);
@@ -2443,7 +2653,7 @@
         if (res.ok) {
           hideModal("#entityModal");
           await reloadCatalogAndRender();
-          if (spec.ep === "contacts") { const cc = clients.find(x => String(x.id) === String(detailClientId)); if (cc) openClientDetail(cc); }
+          if (spec.ep === "contacts" || spec.ep === "invoices") { const cc = clients.find(x => String(x.id) === String(detailClientId)); if (cc && !$("#detailModal").classList.contains("hidden")) openClientDetail(cc); }
           showToast(spec.title + " deleted");
         }
         else { const d = await res.json().catch(() => ({})); showToast("Couldn't delete: " + (d.detail || res.status)); }
@@ -3372,6 +3582,7 @@
       if (id === "admin") loadAdminUsers().then(renderAdmin);
       if (id === "feedback") renderFeedback();
       if (id === "mytasks") renderMyTasks();
+      if (id === "billing") renderBilling();
       if (id === "overview") renderDashCalendar();
       if (id === "schedule") renderSchedule();
       $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
@@ -3511,6 +3722,7 @@
       renderCampaignGrid();
       renderTeam();
       renderClientsView();
+      renderBilling();
       renderBusinessDropdown();
       renderTaskClientDropdown();
       // Task rows are role-dependent now (the ✎ edit button), and they're first drawn
@@ -3592,6 +3804,15 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.8", date: "Aug 6, 2026", items: [
+        "New Billing view (Super Admins only): every client retainer, and whether it's been invoiced and paid.",
+        "On the 1st of each month a draft invoice appears automatically for each active client with a monthly retainer, due on the 15th.",
+        "One click moves an invoice draft → sent → paid; \"Paid\" stamps today's date for you, and \"Undo\" puts it back if you clicked too soon.",
+        "Billed, Collected, Outstanding and Overdue totals for any month — or all time.",
+        "An invoice that's marked sent and past its due date turns Overdue, and whoever owns that client (plus admins) gets a reminder email — once a day at most, and never to the client.",
+        "Each client now has an Invoices card in its detail view, so their money and their work sit on one screen.",
+        "Add one-off invoices too, and record the invoice number from whatever you actually bill with. Single Brain tracks the status — it doesn't send the invoice.",
+      ] },
       { version: "2.7", date: "Jul 23, 2026", items: [
         "Edit any task: hit the ✎ pencil on a task row to change its name, business, client, category, priority, due date, estimate, notes, dependencies — or who's on it.",
         "Tasks in a business or project detail view are clickable now — click one to edit it in place.",
@@ -3857,10 +4078,14 @@
       { view: "overview", sel: "#userAvatar", title: "Skip the authenticator", body: "Click your initials to add a passkey — then sign in with Face ID, Touch ID, or Windows Hello instead of a 6-digit code. Your authenticator stays as a backup." },
       { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
       { title: "Teams & assigning work", body: "Assign a task to a whole team, one or more people, or both — use the Assign to picker in Quick Add. Everyone on a task sees it and is emailed the moment they're added. Admins build reusable teams in Super Admin.", sel: null },
+      { view: "billing", sel: "#billingMetrics", title: "Billing", body: "Did we invoice this client, and did they pay? A draft appears for every monthly retainer on the 1st; one click marks it sent, then paid. Anything past due turns Overdue and emails whoever owns that client — never the client.", admin: true },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },
     ];
+    // Steps for admin-only surfaces (Billing) are dropped for everyone else, so the
+    // "3 / 18" counter and the Done button never count a screen they can't open.
+    let TOUR = TOUR_STEPS;
     let tourI = 0, tourActive = false;
-    function tourEl() { const s = TOUR_STEPS[tourI]; return s.sel ? document.querySelector(s.sel) : null; }
+    function tourEl() { const s = TOUR[tourI]; return s.sel ? document.querySelector(s.sel) : null; }
     function positionTour() {
       const pop = $("#tourPop"), spot = $("#tourSpot"), blocker = $("#tourBlocker");
       const el = tourEl();
@@ -3882,13 +4107,13 @@
       }
     }
     function renderTour() {
-      const step = TOUR_STEPS[tourI];
+      const step = TOUR[tourI];
       if (step.view) showView(step.view);
       $("#tourTitle").textContent = step.title;
       $("#tourBody").textContent = step.body;
-      $("#tourProgress").textContent = (tourI + 1) + " / " + TOUR_STEPS.length;
+      $("#tourProgress").textContent = (tourI + 1) + " / " + TOUR.length;
       $("#tourBack").style.visibility = tourI === 0 ? "hidden" : "visible";
-      $("#tourNext").textContent = tourI === TOUR_STEPS.length - 1 ? "Done" : "Next";
+      $("#tourNext").textContent = tourI === TOUR.length - 1 ? "Done" : "Next";
       $("#tourPop").classList.remove("hidden");
       setTimeout(() => {
         const el = tourEl();
@@ -3896,14 +4121,17 @@
         setTimeout(positionTour, 280);
       }, 70);
     }
-    function startTour() { tourActive = true; tourI = 0; $("#tourBlocker").classList.remove("hidden"); renderTour(); }
+    function startTour() {
+      TOUR = TOUR_STEPS.filter(s => !s.admin || ME.is_super_admin);
+      tourActive = true; tourI = 0; $("#tourBlocker").classList.remove("hidden"); renderTour();
+    }
     function endTour() {
       tourActive = false;
       ["#tourBlocker", "#tourSpot", "#tourPop"].forEach(s => $(s).classList.add("hidden"));
       try { localStorage.setItem("sb-tour-seen", "1"); } catch (e) {}
     }
     $("#startTourBtn").addEventListener("click", startTour);
-    $("#tourNext").addEventListener("click", () => { if (tourI >= TOUR_STEPS.length - 1) endTour(); else { tourI++; renderTour(); } });
+    $("#tourNext").addEventListener("click", () => { if (tourI >= TOUR.length - 1) endTour(); else { tourI++; renderTour(); } });
     $("#tourBack").addEventListener("click", () => { if (tourI > 0) { tourI--; renderTour(); } });
     $("#tourSkip").addEventListener("click", endTour);
     window.addEventListener("resize", () => { if (tourActive) positionTour(); });

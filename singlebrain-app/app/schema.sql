@@ -107,6 +107,36 @@ CREATE TABLE IF NOT EXISTS recurring_tasks (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Client billing. One row per invoice: monthly retainer rows are drafted
+-- automatically from the client's retainer_amount (see catalog.generate_invoices)
+-- and then walked draft -> sent -> paid by hand; one-offs are added manually.
+-- Single Brain tracks WHETHER work was billed and paid — the invoice document
+-- itself still goes out from wherever it goes today, and `reference` is where
+-- that invoice number is recorded. "Overdue" is derived (sent + due_on past),
+-- never stored, so it can't go stale.
+CREATE TABLE IF NOT EXISTS invoices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id INTEGER NOT NULL,
+  client_name TEXT,               -- denormalized for display, like recurring_tasks
+  business TEXT,
+  period TEXT,                    -- 'YYYY-MM' this invoice covers; NULL for one-offs
+  amount REAL,
+  status TEXT DEFAULT 'draft',    -- draft | sent | paid | void
+  issued_on TEXT,                 -- YYYY-MM-DD, set when it moves to 'sent'
+  due_on TEXT,                    -- YYYY-MM-DD
+  paid_on TEXT,                   -- YYYY-MM-DD, set when it moves to 'paid'
+  reference TEXT,                 -- your invoice number from wherever you bill
+  notes TEXT,
+  auto INTEGER DEFAULT 0,         -- 1 = drafted from the retainer, 0 = added by hand
+  reminded_on TEXT,               -- last overdue nudge; caps nudges at one a day
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_invoices_client ON invoices(client_id);
+-- Belt and braces on idempotent generation: a client can only ever have one
+-- auto-drafted invoice per period, no matter how often generation runs.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_auto_period
+  ON invoices(client_id, period) WHERE auto=1;
+
 CREATE TABLE IF NOT EXISTS blockers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   summary TEXT NOT NULL, area TEXT, status TEXT DEFAULT 'open',
