@@ -83,12 +83,74 @@ def _require_can_assign(request):
     return email
 
 
-def _access_lists(email):
-    """(businesses, projects) a user may view. (None, None) for admins = everything."""
+# ---------- Restricted businesses ----------
+# A business can be locked so that being a Super Admin is NOT enough to see it —
+# only people granted it explicitly, plus the configured owner in SB_SUPER_ADMINS
+# (who must keep access or nobody could administer the lock). Everything under a
+# locked business inherits the lock: its projects/campaigns, clients, tasks,
+# invoices and files. This is the one place "admins see everything" does not hold.
+def _is_owner(email):
+    """A CONFIGURED super admin (SB_SUPER_ADMINS), not merely a promoted one."""
+    return (email or "").strip().lower() in SUPER_ADMINS
+
+
+def _restricted_business_names():
+    return {r["name"] for r in db.query("SELECT name FROM businesses WHERE COALESCE(restricted,0)=1")}
+
+
+def _granted_business_names(email):
+    return {r["business"] for r in
+            db.query("SELECT business FROM user_business_access WHERE email=?", ((email or "").strip().lower(),))}
+
+
+def _hidden_businesses(email):
+    """Restricted businesses this person may not see. Empty for the owner."""
+    if _is_owner(email):
+        return set()
+    restricted = _restricted_business_names()
+    if not restricted:
+        return set()
+    return restricted - _granted_business_names(email)
+
+
+def _can_see_business(email, name):
+    """Single source of truth for 'may this person look at this business?'."""
+    if not name:
+        return True
+    if name in _hidden_businesses(email):
+        return False
     if _is_admin(email):
-        return None, None
-    biz = [r["business"] for r in db.query("SELECT business FROM user_business_access WHERE email=?", (email,))]
+        return True
+    biz, _ = _access_lists(email)
+    return biz is None or name in set(biz or [])
+
+
+def _require_business_visible(email, name):
+    if name and not _can_see_business(email, name):
+        raise HTTPException(403, "You don't have access to that business.")
+
+
+def _access_lists(email):
+    """(businesses, projects) a user may view. (None, None) for admins = everything.
+
+    An admin who is not the owner still loses any RESTRICTED business they weren't
+    granted — in that case they get explicit lists instead of None, so every caller
+    that already understood "a list means these only" keeps working unchanged."""
+    hidden = _hidden_businesses(email)
+    if _is_admin(email):
+        if not hidden:
+            return None, None
+        biz = [r["name"] for r in db.query("SELECT name FROM businesses") if r["name"] not in hidden]
+        proj = [r["name"] for r in db.query("SELECT name, business FROM projects")
+                if (r["business"] or "") not in hidden]
+        return biz, proj
+    biz = [r["business"] for r in db.query("SELECT business FROM user_business_access WHERE email=?", (email,))
+           if r["business"] not in hidden]
     proj = [r["project"] for r in db.query("SELECT project FROM user_project_access WHERE email=?", (email,))]
+    if hidden:
+        under_hidden = {r["name"] for r in db.query("SELECT name, business FROM projects")
+                        if (r["business"] or "") in hidden}
+        proj = [p for p in proj if p not in under_hidden]
     return biz, proj
 
 
@@ -102,7 +164,12 @@ def _require_admin(request):
 def _visible_tasks(email, tasks):
     """Filter a task list to what a viewer may see: their assigned tasks (they may be
     one of several assignees, or a member of a team the task went to) plus any task
-    tied to a business they've been granted. Admins see everything."""
+    tied to a business they've been granted. Admins see everything — except work under
+    a RESTRICTED business, which is hidden even if the task is assigned to them. Being
+    on the task is not a way around the lock; the fix is to grant them the business."""
+    hidden = _hidden_businesses(email)
+    if hidden:
+        tasks = [t for t in tasks if (t.get("business") or "") not in hidden]
     if _is_admin(email):
         return tasks
     biz, _ = _access_lists(email)
@@ -330,6 +397,9 @@ def create_task(t: TaskIn, request: Request):
     # Admins (and can-assign staff) may assign to anyone / any team; other staff-created
     # tasks belong to the creator so they stay visible to them under access filtering.
     current = auth.current_user(request)
+    # Filing work under a locked business you can't see would create a task that
+    # immediately vanishes from your own list — refuse it plainly instead.
+    _require_business_visible(current, t.business)
     if _can_assign(current):
         people = _clean_emails(([t.assignee] if t.assignee else []) + list(t.assignees or []))
         team_id = t.team_id or None
@@ -383,6 +453,8 @@ def update_task(task_id: int, t: TaskIn, request: Request):
     if t.priority not in ("High", "Medium", "Low"):
         raise HTTPException(422, "Priority must be High, Medium, or Low.")
     est = t.estimate_min if (t.estimate_min and t.estimate_min > 0) else None
+    _require_business_visible(actor, before.get("business"))
+    _require_business_visible(actor, t.business)
     db.execute(
         "UPDATE tasks SET name=?, business=?, category=?, priority=?, due=?, notes=?, "
         "estimate_min=?, client=? WHERE id=?",
@@ -665,6 +737,23 @@ DASHBOARD_FEATURES = (
     "- Businesses/Projects/Campaigns/Clients: browsed as cards; click one for a detail overlay with its "
     "tasks. Admins can add/edit/delete them and set clients' recurring monthly tasks. Sub-businesses roll "
     "up under a parent. Pin up to 5 items to the sidebar with the star.\n"
+    "- Campaigns (sidebar; appears for anyone who has campaigns or may create them): advertising run FOR a "
+    "client over a FLIGHT (start_on..end_on) against a BUDGET. Each card shows two bars — how much of the "
+    "flight has elapsed vs how much budget is spent — plus pacing (spend share / elapsed share; ~100 is on "
+    "plan, >115 ahead, <85 behind). A campaign holds LINE ITEMS (separate flights, creatives or markets, "
+    "each with their own dates + budget) and DELIVERY logged per period (impressions, reach, clicks, "
+    "spend). CTR, CPM and CPC are always CALCULATED from those numbers, never stored. Reach is reported as "
+    "the best single period, never summed, because the same listener is reached repeatedly. 'Client report' "
+    "builds a client-ready document — headline numbers, delivery by period, line items, work completed "
+    "during the flight, what's next — printable to PDF or copyable as plain text for an email. Campaigns "
+    "also show inside each client. You may manage campaigns for any business you've been GRANTED — Super "
+    "Admin is not required.\n"
+    "- Locked (restricted) businesses: a business can be set to Access = Locked when editing it. Then ONLY "
+    "people explicitly granted that business can see it — and unlike every other rule in this app, being a "
+    "Super Admin is NOT enough. Its clients, campaigns, tasks, invoices and files all inherit the lock, "
+    "filtered server-side rather than merely hidden on screen, and a locked business's work is hidden even "
+    "from someone it is assigned to (grant them the business instead). The configured account owner always "
+    "keeps access so a business can never be locked away from everybody.\n"
     "- Billing (Super Admins only — it doesn't appear in the sidebar for anyone else): tracks whether "
     "each client's retainer got invoiced and paid. On the 1st of every month a DRAFT invoice is created "
     "automatically for each active client with a monthly retainer, dated due on the 15th. The Billing "
@@ -723,6 +812,19 @@ class ChatIn(BaseModel):
     history: List[dict] = Field(default_factory=list)
 
 
+def _redact_hidden(text, viewer):
+    """Master_Dashboard.md lists the whole portfolio, so feeding it to Brain Chat
+    verbatim would route around a locked business. Drop any LINE naming one the
+    viewer may not see. This is line-level redaction of a prose file, not a
+    guarantee — the authoritative lock is the DB filtering everywhere else."""
+    hidden = _hidden_businesses(viewer)
+    if not hidden or not text:
+        return text
+    low = [h.lower() for h in hidden if h]
+    return "\n".join(ln for ln in text.splitlines()
+                     if not any(h in ln.lower() for h in low))
+
+
 def _state_context(viewer=None):
     """Build Grok's context from the SOURCE OF TRUTH (Master_Dashboard.md + project files)
     plus the live task list — not the stale DB seed. Tasks are scoped to the viewer."""
@@ -733,6 +835,7 @@ def _state_context(viewer=None):
     ]:
         try:
             text = (config.BRAIN_REPO / rel).read_text(encoding="utf-8")
+            text = _redact_hidden(text, viewer)
             parts.append(f"===== {label} =====\n{text[:14000]}")
         except Exception:
             pass
@@ -932,22 +1035,42 @@ def admin_set_access(email: str, body: AccessIn, request: Request):
 # ================= Catalog (businesses, projects, campaigns, staff, clients) =================
 @app.get("/api/catalog")
 def catalog_all(request: Request):
+    viewer = auth.current_user(request)
+    # A locked business is filtered out HERE, server-side. Hiding it in the frontend
+    # would leave the whole record one /api/catalog call away from anyone signed in.
+    hidden = _hidden_businesses(viewer)
     biz = db.query("SELECT * FROM businesses ORDER BY COALESCE(tier, 9), name")
     names = {b["id"]: b["name"] for b in biz}
     for b in biz:
         b["parent_name"] = names.get(b.get("parent_id"))
+    projects = db.query("SELECT * FROM projects ORDER BY id")
+    clients = db.query("SELECT * FROM clients ORDER BY name")
+    recurring = db.query("SELECT * FROM recurring_tasks ORDER BY id")
+    contacts = db.query("SELECT * FROM client_contacts ORDER BY id")
+    notes = db.query("SELECT * FROM client_notes ORDER BY id DESC")
+    if hidden:
+        hidden_ids = {b["id"] for b in biz if b["name"] in hidden}
+        biz = [b for b in biz if b["name"] not in hidden
+               and b.get("parent_id") not in hidden_ids]
+        projects = [p for p in projects if (p.get("business") or "") not in hidden]
+        gone = {c["id"] for c in clients if (c.get("business") or "") in hidden}
+        clients = [c for c in clients if c["id"] not in gone]
+        recurring = [r for r in recurring if r.get("client_id") not in gone
+                     and (r.get("business") or "") not in hidden]
+        contacts = [c for c in contacts if c.get("client_id") not in gone]
+        notes = [n for n in notes if n.get("client_id") not in gone]
     return {
         "businesses": biz,
-        "projects": db.query("SELECT * FROM projects ORDER BY id"),
+        "projects": projects,
         "staff": db.query("SELECT * FROM staff ORDER BY id"),
-        "clients": db.query("SELECT * FROM clients ORDER BY name"),
-        "recurring": db.query("SELECT * FROM recurring_tasks ORDER BY id"),
-        "contacts": db.query("SELECT * FROM client_contacts ORDER BY id"),
-        "client_notes": db.query("SELECT * FROM client_notes ORDER BY id DESC"),
+        "clients": clients,
+        "recurring": recurring,
+        "contacts": contacts,
+        "client_notes": notes,
         "teams": _teams_with_members(),
         # Billing is money — admins only. Everyone else gets an empty list and the
         # frontend hides the Billing view for them.
-        "invoices": _invoices_for(auth.current_user(request)),
+        "invoices": _invoices_for(viewer),
     }
 
 
@@ -1396,9 +1519,11 @@ def _can_access_entity(email, entity_type, entity_id):
     """Attachments inherit the SAME visibility as the thing they're attached to.
     Without this any signed-in user — including an external guest — could list, add
     to, or delete files on any business/project/task."""
-    if _is_admin(email):
-        return True
     biz, proj = _access_lists(email)
+    # _access_lists already subtracts restricted businesses, so an admin only keeps
+    # the blanket "yes" when nothing is being withheld from them.
+    if _is_admin(email) and biz is None:
+        return True
     allowed_biz, allowed_proj = set(biz or []), set(proj or [])
     if entity_type == "task":
         rows = db.query("SELECT * FROM tasks WHERE id=?", (entity_id,))
@@ -1639,6 +1764,17 @@ class BusinessIn(BaseModel):
     kind: Optional[str] = "business"
     parent_id: Optional[int] = None
     notes: Optional[str] = None
+    restricted: Optional[int] = 0
+
+
+def _guard_business(request, bid):
+    """Reading a locked business is already blocked; this stops an admin who can't
+    see one from renaming, unlocking, or deleting it through the API."""
+    email = auth.current_user(request)
+    rows = db.query("SELECT name FROM businesses WHERE id=?", (bid,))
+    if rows and not _can_see_business(email, rows[0]["name"]):
+        raise HTTPException(403, "You don't have access to that business.")
+    return email
 
 
 @app.post("/api/businesses")
@@ -1651,8 +1787,9 @@ def create_business(b: BusinessIn, request: Request):
         raise HTTPException(409, "A business with that name already exists.")
     initials = (b.initials or "").strip() or catalog._initials(name)
     bid = db.execute(
-        "INSERT INTO businesses(name,initials,tier,owner,state,status,kind,parent_id,notes) VALUES(?,?,?,?,?,?,?,?,?)",
-        (name, initials, _clamp_tier(b.tier), b.owner, b.state, b.status or "active", b.kind or "business", b.parent_id, b.notes),
+        "INSERT INTO businesses(name,initials,tier,owner,state,status,kind,parent_id,notes,restricted) VALUES(?,?,?,?,?,?,?,?,?,?)",
+        (name, initials, _clamp_tier(b.tier), b.owner, b.state, b.status or "active", b.kind or "business",
+         b.parent_id, b.notes, 1 if b.restricted else 0),
     )
     return {"ok": True, "id": bid}
 
@@ -1660,14 +1797,16 @@ def create_business(b: BusinessIn, request: Request):
 @app.put("/api/businesses/{bid}")
 def update_business(bid: int, b: BusinessIn, request: Request):
     _require_admin(request)
+    _guard_business(request, bid)
     if not db.query("SELECT 1 FROM businesses WHERE id=?", (bid,)):
         raise HTTPException(404, "Business not found.")
     name = (b.name or "").strip()
     initials = (b.initials or "").strip() or catalog._initials(name)
     parent = b.parent_id if b.parent_id != bid else None  # no self-parenting
     db.execute(
-        "UPDATE businesses SET name=?,initials=?,tier=?,owner=?,state=?,status=?,kind=?,parent_id=?,notes=? WHERE id=?",
-        (name, initials, _clamp_tier(b.tier), b.owner, b.state, b.status, b.kind, parent, b.notes, bid),
+        "UPDATE businesses SET name=?,initials=?,tier=?,owner=?,state=?,status=?,kind=?,parent_id=?,notes=?,restricted=? WHERE id=?",
+        (name, initials, _clamp_tier(b.tier), b.owner, b.state, b.status, b.kind, parent, b.notes,
+         1 if b.restricted else 0, bid),
     )
     return {"ok": True}
 
@@ -1675,6 +1814,7 @@ def update_business(bid: int, b: BusinessIn, request: Request):
 @app.delete("/api/businesses/{bid}")
 def delete_business(bid: int, request: Request):
     _require_admin(request)
+    _guard_business(request, bid)
     db.execute("UPDATE businesses SET parent_id=NULL WHERE parent_id=?", (bid,))
     db.execute("DELETE FROM businesses WHERE id=?", (bid,))
     return {"ok": True}
@@ -1695,9 +1835,10 @@ class ProjectIn(BaseModel):
 
 @app.post("/api/projects")
 def create_project(p: ProjectIn, request: Request):
-    _require_admin(request)
+    email = _require_admin(request)
     if not (p.name or "").strip():
         raise HTTPException(422, "Name is required.")
+    _require_business_visible(email, p.business)
     pid = db.execute(
         "INSERT INTO projects(name,business,owner,status,state,badge,kind,priority,next_action,due) "
         "VALUES(?,?,?,?,?,?,?,?,?,?)",
@@ -1709,9 +1850,12 @@ def create_project(p: ProjectIn, request: Request):
 
 @app.put("/api/projects/{pid}")
 def update_project(pid: int, p: ProjectIn, request: Request):
-    _require_admin(request)
-    if not db.query("SELECT 1 FROM projects WHERE id=?", (pid,)):
+    email = _require_admin(request)
+    rows = db.query("SELECT business FROM projects WHERE id=?", (pid,))
+    if not rows:
         raise HTTPException(404, "Project not found.")
+    _require_business_visible(email, rows[0].get("business"))
+    _require_business_visible(email, p.business)
     db.execute(
         "UPDATE projects SET name=?,business=?,owner=?,status=?,state=?,badge=?,kind=?,priority=?,next_action=?,due=? WHERE id=?",
         (p.name.strip(), p.business, p.owner, p.status, p.state, p.badge, p.kind, p.priority, p.next_action, p.due, pid),
@@ -1721,9 +1865,366 @@ def update_project(pid: int, p: ProjectIn, request: Request):
 
 @app.delete("/api/projects/{pid}")
 def delete_project(pid: int, request: Request):
-    _require_admin(request)
+    email = _require_admin(request)
+    rows = db.query("SELECT business FROM projects WHERE id=?", (pid,))
+    if rows:
+        _require_business_visible(email, rows[0].get("business"))
     db.execute("DELETE FROM projects WHERE id=?", (pid,))
     return {"ok": True}
+
+
+# ================= Campaigns (advertising work run for a client) =================
+# A campaign is a projects row with kind='campaign', run FOR a client over a flight
+# against a budget. It carries line items (separate flights/creatives/markets) and
+# periodic delivery metrics. Everything derived — spend to date, pacing, CTR, CPM —
+# is computed on read so it can never contradict the numbers that were entered.
+CAMPAIGN_STATUSES = ("planning", "live", "paused", "ended")
+
+
+def _can_manage_campaigns(email, business):
+    """Admins, plus any staffer explicitly granted that business. This is what lets
+    the person actually running the ads manage them without handing over Super Admin."""
+    if not _can_see_business(email, business):
+        return False
+    return _is_admin(email) or (business or "") in _granted_business_names(email)
+
+
+def _require_campaign_access(request, business):
+    email = auth.current_user(request)
+    if not _can_manage_campaigns(email, business):
+        raise HTTPException(403, "You're not allowed to manage campaigns for that business.")
+    return email
+
+
+def _num(v):
+    try:
+        return float(v or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _rates(impressions, clicks, spend):
+    """CTR / CPM / CPC, guarding every divide. Returns None where undefined rather
+    than 0 — 'no clicks yet' and 'a 0% click rate' are not the same statement."""
+    imp, clk, sp = _num(impressions), _num(clicks), _num(spend)
+    return {
+        "ctr": (clk / imp * 100) if imp else None,
+        "cpm": (sp / imp * 1000) if imp else None,
+        "cpc": (sp / clk) if clk else None,
+    }
+
+
+def _campaign_rollup(c):
+    """Attach line items, metrics and every derived total to one campaign row."""
+    c = dict(c)
+    cid = c["id"]
+    c["items"] = db.query("SELECT * FROM campaign_items WHERE campaign_id=? ORDER BY sort, id", (cid,))
+    metrics = db.query("SELECT * FROM campaign_metrics WHERE campaign_id=? ORDER BY COALESCE(period_start,''), id", (cid,))
+    for m in metrics:
+        m.update(_rates(m.get("impressions"), m.get("clicks"), m.get("spend")))
+    c["metrics"] = metrics
+    imp = sum(int(m.get("impressions") or 0) for m in metrics)
+    clk = sum(int(m.get("clicks") or 0) for m in metrics)
+    spend = sum(_num(m.get("spend")) for m in metrics)
+    budget = _num(c.get("budget"))
+    c["totals"] = {
+        "impressions": imp, "clicks": clk, "spend": spend,
+        # Reach doesn't sum across periods (the same person is reached twice), so the
+        # honest roll-up is the best single period, not a total that overstates it.
+        "reach_best_period": max([int(m.get("reach") or 0) for m in metrics], default=0),
+        "budget": budget,
+        "remaining": (budget - spend) if budget else None,
+        "spend_pct": (spend / budget * 100) if budget else None,
+        "items_budget": sum(_num(i.get("budget")) for i in c["items"]),
+        "periods": len(metrics),
+        **_rates(imp, clk, spend),
+    }
+    c["flight"] = _flight_state(c.get("start_on"), c.get("end_on"))
+    # Pacing: are we spending in step with the flight elapsing? >100 = ahead of plan.
+    el = c["flight"].get("elapsed_pct")
+    c["totals"]["pace_pct"] = (c["totals"]["spend_pct"] / el * 100) if (el and c["totals"]["spend_pct"] is not None) else None
+    return c
+
+
+def _flight_state(start, end):
+    """How far through the booked dates we are. All-None when dates aren't set yet."""
+    today = _today()
+    out = {"start_on": start, "end_on": end, "days_total": None, "days_elapsed": None,
+           "days_left": None, "elapsed_pct": None, "state": "unscheduled"}
+    if not (start and end):
+        return out
+    total = _days_between(start, end)
+    if total <= 0:
+        total = 1
+    elapsed = min(max(_days_between(start, today), 0), total) if today >= start else 0
+    out.update({
+        "days_total": total,
+        "days_elapsed": elapsed,
+        "days_left": max(_days_between(today, end), 0) if today <= end else 0,
+        "elapsed_pct": elapsed / total * 100,
+        "state": "upcoming" if today < start else ("ended" if today > end else "running"),
+    })
+    return out
+
+
+def _visible_campaigns(email):
+    hidden = _hidden_businesses(email)
+    biz, proj = _access_lists(email)
+    allowed_biz, allowed_proj = set(biz or []), set(proj or [])
+    everything = _is_admin(email) and biz is None
+    rows = db.query("SELECT * FROM projects WHERE kind='campaign' ORDER BY COALESCE(start_on,'') DESC, id DESC")
+    out = []
+    for r in rows:
+        if (r.get("business") or "") in hidden:
+            continue
+        if not everything and (r.get("business") or "") not in allowed_biz and r["name"] not in allowed_proj:
+            continue
+        out.append(r)
+    return out
+
+
+class CampaignIn(BaseModel):
+    name: str
+    business: Optional[str] = None
+    client_id: Optional[int] = None
+    status: Optional[str] = "planning"
+    owner: Optional[str] = None
+    start_on: Optional[str] = None
+    end_on: Optional[str] = None
+    budget: Optional[float] = None
+    goal: Optional[str] = None
+    channel: Optional[str] = None
+    next_action: Optional[str] = None
+
+
+class CampaignItemIn(BaseModel):
+    name: str
+    market: Optional[str] = None
+    creative: Optional[str] = None
+    start_on: Optional[str] = None
+    end_on: Optional[str] = None
+    budget: Optional[float] = None
+    notes: Optional[str] = None
+    sort: Optional[int] = 0
+
+
+class CampaignMetricIn(BaseModel):
+    item_id: Optional[int] = None
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    impressions: Optional[int] = None
+    clicks: Optional[int] = None
+    reach: Optional[int] = None
+    spend: Optional[float] = None
+    notes: Optional[str] = None
+
+
+def _campaign_or_404(cid, request, manage=False):
+    rows = db.query("SELECT * FROM projects WHERE id=? AND kind='campaign'", (cid,))
+    if not rows:
+        raise HTTPException(404, "Campaign not found.")
+    c = rows[0]
+    email = auth.current_user(request)
+    if manage:
+        _require_campaign_access(request, c.get("business"))
+    elif not _can_see_business(email, c.get("business")):
+        raise HTTPException(403, "You don't have access to that campaign.")
+    return c
+
+
+@app.get("/api/campaigns")
+def list_campaigns(request: Request):
+    email = auth.current_user(request)
+    visible = _visible_campaigns(email)
+    # Which businesses this viewer may create/edit campaigns under — the frontend
+    # uses it to decide whether to offer the buttons at all.
+    manageable = sorted({b["name"] for b in db.query("SELECT name FROM businesses")
+                         if _can_manage_campaigns(email, b["name"])})
+    return {"campaigns": [_campaign_rollup(c) for c in visible], "can_manage": manageable}
+
+
+@app.get("/api/campaigns/{cid}")
+def get_campaign(cid: int, request: Request):
+    return _campaign_rollup(_campaign_or_404(cid, request))
+
+
+@app.post("/api/campaigns")
+def create_campaign(c: CampaignIn, request: Request):
+    email = _require_campaign_access(request, c.business)
+    if not (c.name or "").strip():
+        raise HTTPException(422, "Name is required.")
+    status = (c.status or "planning").lower()
+    if status not in CAMPAIGN_STATUSES:
+        raise HTTPException(422, "Status must be planning, live, paused, or ended.")
+    client_name = None
+    if c.client_id:
+        rows = db.query("SELECT name, business FROM clients WHERE id=?", (c.client_id,))
+        if not rows:
+            raise HTTPException(422, "A valid client is required.")
+        client_name = rows[0]["name"]
+    cid = db.execute(
+        "INSERT INTO projects(name,business,owner,status,kind,next_action,client_id,client_name,"
+        "start_on,end_on,budget,goal,channel) VALUES(?,?,?,?,'campaign',?,?,?,?,?,?,?,?)",
+        (c.name.strip(), c.business, (c.owner or email), status, c.next_action, c.client_id,
+         client_name, c.start_on, c.end_on, c.budget, c.goal, c.channel),
+    )
+    return {"ok": True, "id": cid}
+
+
+@app.put("/api/campaigns/{cid}")
+def update_campaign(cid: int, c: CampaignIn, request: Request):
+    cur = _campaign_or_404(cid, request, manage=True)
+    _require_campaign_access(request, c.business or cur.get("business"))
+    status = (c.status or "planning").lower()
+    if status not in CAMPAIGN_STATUSES:
+        raise HTTPException(422, "Status must be planning, live, paused, or ended.")
+    client_name = None
+    if c.client_id:
+        rows = db.query("SELECT name FROM clients WHERE id=?", (c.client_id,))
+        if not rows:
+            raise HTTPException(422, "A valid client is required.")
+        client_name = rows[0]["name"]
+    db.execute(
+        "UPDATE projects SET name=?,business=?,owner=?,status=?,next_action=?,client_id=?,client_name=?,"
+        "start_on=?,end_on=?,budget=?,goal=?,channel=? WHERE id=?",
+        (c.name.strip(), c.business, c.owner, status, c.next_action, c.client_id, client_name,
+         c.start_on, c.end_on, c.budget, c.goal, c.channel, cid),
+    )
+    return {"ok": True}
+
+
+@app.delete("/api/campaigns/{cid}")
+def delete_campaign(cid: int, request: Request):
+    _campaign_or_404(cid, request, manage=True)
+    db.execute("DELETE FROM campaign_items WHERE campaign_id=?", (cid,))
+    db.execute("DELETE FROM campaign_metrics WHERE campaign_id=?", (cid,))
+    db.execute("DELETE FROM projects WHERE id=?", (cid,))
+    return {"ok": True}
+
+
+@app.post("/api/campaigns/{cid}/items")
+def add_campaign_item(cid: int, item: CampaignItemIn, request: Request):
+    _campaign_or_404(cid, request, manage=True)
+    if not (item.name or "").strip():
+        raise HTTPException(422, "Line item name is required.")
+    iid = db.execute(
+        "INSERT INTO campaign_items(campaign_id,name,market,creative,start_on,end_on,budget,notes,sort) "
+        "VALUES(?,?,?,?,?,?,?,?,?)",
+        (cid, item.name.strip(), item.market, item.creative, item.start_on, item.end_on,
+         item.budget, item.notes, item.sort or 0),
+    )
+    return {"ok": True, "id": iid}
+
+
+def _item_campaign(iid):
+    rows = db.query("SELECT campaign_id FROM campaign_items WHERE id=?", (iid,))
+    if not rows:
+        raise HTTPException(404, "Line item not found.")
+    return rows[0]["campaign_id"]
+
+
+@app.put("/api/campaign-items/{iid}")
+def update_campaign_item(iid: int, item: CampaignItemIn, request: Request):
+    _campaign_or_404(_item_campaign(iid), request, manage=True)
+    db.execute(
+        "UPDATE campaign_items SET name=?,market=?,creative=?,start_on=?,end_on=?,budget=?,notes=?,sort=? WHERE id=?",
+        (item.name.strip(), item.market, item.creative, item.start_on, item.end_on,
+         item.budget, item.notes, item.sort or 0, iid),
+    )
+    return {"ok": True}
+
+
+@app.delete("/api/campaign-items/{iid}")
+def delete_campaign_item(iid: int, request: Request):
+    _campaign_or_404(_item_campaign(iid), request, manage=True)
+    # Metrics logged against this line item become campaign-level rather than being
+    # destroyed — deleting a line item must never silently delete delivery history.
+    db.execute("UPDATE campaign_metrics SET item_id=NULL WHERE item_id=?", (iid,))
+    db.execute("DELETE FROM campaign_items WHERE id=?", (iid,))
+    return {"ok": True}
+
+
+@app.post("/api/campaigns/{cid}/metrics")
+def add_campaign_metric(cid: int, m: CampaignMetricIn, request: Request):
+    _campaign_or_404(cid, request, manage=True)
+    email = auth.current_user(request)
+    if m.item_id and _item_campaign(m.item_id) != cid:
+        raise HTTPException(422, "That line item belongs to a different campaign.")
+    mid = db.execute(
+        "INSERT INTO campaign_metrics(campaign_id,item_id,period_start,period_end,impressions,clicks,reach,spend,notes,recorded_by) "
+        "VALUES(?,?,?,?,?,?,?,?,?,?)",
+        (cid, m.item_id, m.period_start, m.period_end, m.impressions, m.clicks, m.reach,
+         m.spend, m.notes, email),
+    )
+    return {"ok": True, "id": mid}
+
+
+def _metric_campaign(mid):
+    rows = db.query("SELECT campaign_id FROM campaign_metrics WHERE id=?", (mid,))
+    if not rows:
+        raise HTTPException(404, "Metrics entry not found.")
+    return rows[0]["campaign_id"]
+
+
+@app.put("/api/campaign-metrics/{mid}")
+def update_campaign_metric(mid: int, m: CampaignMetricIn, request: Request):
+    cid = _metric_campaign(mid)
+    _campaign_or_404(cid, request, manage=True)
+    if m.item_id and _item_campaign(m.item_id) != cid:
+        raise HTTPException(422, "That line item belongs to a different campaign.")
+    db.execute(
+        "UPDATE campaign_metrics SET item_id=?,period_start=?,period_end=?,impressions=?,clicks=?,reach=?,spend=?,notes=? WHERE id=?",
+        (m.item_id, m.period_start, m.period_end, m.impressions, m.clicks, m.reach, m.spend, m.notes, mid),
+    )
+    return {"ok": True}
+
+
+@app.delete("/api/campaign-metrics/{mid}")
+def delete_campaign_metric(mid: int, request: Request):
+    _campaign_or_404(_metric_campaign(mid), request, manage=True)
+    db.execute("DELETE FROM campaign_metrics WHERE id=?", (mid,))
+    return {"ok": True}
+
+
+@app.get("/api/campaigns/{cid}/report")
+def campaign_report(cid: int, request: Request):
+    """Everything a client-ready report needs, assembled server-side so the document
+    and the dashboard can never tell two different stories."""
+    c = _campaign_rollup(_campaign_or_404(cid, request))
+    start, end = c.get("start_on"), c.get("end_on")
+    # Work completed for this client during the flight — proof of what was delivered
+    # beyond the media numbers. Falls back to all of the client's completed work when
+    # the campaign has no dates set yet.
+    tasks = db.query(
+        "SELECT name, business, client, completed_at, actual_sec FROM tasks "
+        "WHERE status='done' AND client IS NOT NULL AND client=? ORDER BY completed_at DESC",
+        (c.get("client_name"),),
+    ) if c.get("client_name") else []
+    done = []
+    for t in tasks:
+        when = datetime.fromtimestamp(t["completed_at"], HST).strftime("%Y-%m-%d") if t.get("completed_at") else None
+        if start and end and when and not (start <= when <= end):
+            continue
+        done.append({"name": t["name"], "completed_on": when, "tracked_sec": t.get("actual_sec") or 0})
+    by_item = {}
+    for m in c["metrics"]:
+        key = m.get("item_id") or 0
+        agg = by_item.setdefault(key, {"impressions": 0, "clicks": 0, "spend": 0.0, "reach_best_period": 0})
+        agg["impressions"] += int(m.get("impressions") or 0)
+        agg["clicks"] += int(m.get("clicks") or 0)
+        agg["spend"] += _num(m.get("spend"))
+        agg["reach_best_period"] = max(agg["reach_best_period"], int(m.get("reach") or 0))
+    for item in c["items"]:
+        agg = by_item.get(item["id"], {"impressions": 0, "clicks": 0, "spend": 0.0, "reach_best_period": 0})
+        item["delivered"] = {**agg, **_rates(agg["impressions"], agg["clicks"], agg["spend"])}
+    return {
+        "campaign": c,
+        "client": (db.query("SELECT * FROM clients WHERE id=?", (c["client_id"],)) or [None])[0] if c.get("client_id") else None,
+        "work_completed": done,
+        "unassigned_delivery": by_item.get(0),   # metrics not tied to a line item
+        "generated_on": _today(),
+        "generated_by": auth.current_user(request),
+    }
 
 
 class StaffIn(BaseModel):
@@ -1847,9 +2348,10 @@ class ClientIn(BaseModel):
 
 @app.post("/api/clients")
 def create_client(c: ClientIn, request: Request):
-    _require_admin(request)
+    email = _require_admin(request)
     if not (c.name or "").strip():
         raise HTTPException(422, "Name is required.")
+    _require_business_visible(email, c.business)
     cid = db.execute(
         "INSERT INTO clients(name,business,retainer_amount,cadence,status,contact_name,contact_email,assignee,notes) "
         "VALUES(?,?,?,?,?,?,?,?,?)",
@@ -1861,9 +2363,12 @@ def create_client(c: ClientIn, request: Request):
 
 @app.put("/api/clients/{cid}")
 def update_client(cid: int, c: ClientIn, request: Request):
-    _require_admin(request)
-    if not db.query("SELECT 1 FROM clients WHERE id=?", (cid,)):
+    email = _require_admin(request)
+    rows = db.query("SELECT business FROM clients WHERE id=?", (cid,))
+    if not rows:
         raise HTTPException(404, "Client not found.")
+    _require_business_visible(email, rows[0].get("business"))
+    _require_business_visible(email, c.business)
     db.execute(
         "UPDATE clients SET name=?,business=?,retainer_amount=?,cadence=?,status=?,contact_name=?,contact_email=?,assignee=?,notes=? WHERE id=?",
         (c.name.strip(), c.business, c.retainer_amount, c.cadence, c.status, c.contact_name, c.contact_email,
@@ -1874,7 +2379,10 @@ def update_client(cid: int, c: ClientIn, request: Request):
 
 @app.delete("/api/clients/{cid}")
 def delete_client(cid: int, request: Request):
-    _require_admin(request)
+    email = _require_admin(request)
+    rows = db.query("SELECT business FROM clients WHERE id=?", (cid,))
+    if rows:
+        _require_business_visible(email, rows[0].get("business"))
     db.execute("DELETE FROM clients WHERE id=?", (cid,))
     return {"ok": True}
 
@@ -1988,10 +2496,17 @@ def _days_between(start, end):
 
 def _invoices_for(email):
     """Every invoice, newest period first — but only for admins. Billing is the one
-    surface where a staff grant to a business is NOT enough."""
+    surface where a staff grant to a business is NOT enough. Invoices belonging to a
+    RESTRICTED business drop out even for an admin who wasn't granted it."""
     if not _is_admin(email):
         return []
     rows = db.query("SELECT * FROM invoices ORDER BY COALESCE(period,'') DESC, id DESC")
+    hidden = _hidden_businesses(email)
+    if hidden:
+        blocked = {c["id"] for c in db.query("SELECT id, business FROM clients")
+                   if (c.get("business") or "") in hidden}
+        rows = [r for r in rows if r.get("client_id") not in blocked
+                and (r.get("business") or "") not in hidden]
     return [_decorate_invoice(r) for r in rows]
 
 

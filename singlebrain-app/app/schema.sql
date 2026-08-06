@@ -11,6 +11,11 @@ CREATE TABLE IF NOT EXISTS businesses (
   state TEXT,
   kind TEXT DEFAULT 'business',   -- 'business' | 'subbusiness'
   parent_id INTEGER,              -- self-reference for sub-businesses
+  -- 1 = locked. A restricted business, and everything under it (projects,
+  -- campaigns, clients, tasks, invoices, files), is visible ONLY to people
+  -- granted it explicitly plus the configured owner (SB_SUPER_ADMINS).
+  -- A promoted Super Admin does NOT see it — that is the entire point.
+  restricted INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -30,8 +35,53 @@ CREATE TABLE IF NOT EXISTS projects (
   badge TEXT,
   kind TEXT DEFAULT 'project',    -- 'project' | 'campaign'
   priority TEXT,
+  -- Campaign fields (kind='campaign'). Null on ordinary projects. A campaign is
+  -- run FOR a client, over a flight (start_on..end_on), against a budget.
+  client_id INTEGER,
+  client_name TEXT,               -- denormalized for display, like recurring_tasks
+  start_on TEXT,                  -- flight start, YYYY-MM-DD
+  end_on TEXT,                    -- flight end, YYYY-MM-DD
+  budget REAL,                    -- total booked spend
+  goal TEXT,                      -- objective, e.g. "Reach + awareness"
+  channel TEXT,                   -- e.g. "Spotify Audio", "Spotify Video"
   created_at TEXT DEFAULT (datetime('now'))
 );
+
+-- A campaign's line items: separate flights, creatives or markets inside one
+-- campaign, each with its own dates and budget. They roll up to the campaign.
+CREATE TABLE IF NOT EXISTS campaign_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  market TEXT,                    -- e.g. Oahu, Las Vegas
+  creative TEXT,                  -- which spot/asset is running
+  start_on TEXT,
+  end_on TEXT,
+  budget REAL,
+  notes TEXT,
+  sort INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_campaign_items_campaign ON campaign_items(campaign_id);
+
+-- Delivery numbers, entered per period (weekly/monthly — whatever the platform
+-- reports). Optionally scoped to one line item. CTR/CPM/CPC are DERIVED from
+-- these on read, never stored, so they cannot drift from the numbers.
+CREATE TABLE IF NOT EXISTS campaign_metrics (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id INTEGER NOT NULL,
+  item_id INTEGER,                -- null = whole campaign
+  period_start TEXT,
+  period_end TEXT,
+  impressions INTEGER,
+  clicks INTEGER,
+  reach INTEGER,
+  spend REAL,
+  notes TEXT,
+  recorded_by TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_campaign_metrics_campaign ON campaign_metrics(campaign_id);
 
 CREATE TABLE IF NOT EXISTS app_meta (
   key TEXT PRIMARY KEY,

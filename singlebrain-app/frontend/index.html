@@ -362,6 +362,55 @@
     .inv-pill.void { color: var(--faint); background: transparent; border: 1px dashed rgba(255,255,255,0.18); }
     .inv-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
     .inv-actions { display: flex; gap: 5px; justify-content: flex-end; white-space: nowrap; }
+    /* Campaigns: status pills, and the two bars that carry the whole story — how much
+       of the flight has elapsed vs how much of the budget has been spent. */
+    .camp-pill { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 8px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap; }
+    .camp-pill.live { color: var(--green); background: rgba(66,201,141,0.12); border: 1px solid rgba(66,201,141,0.26); }
+    .camp-pill.planning { color: var(--blue); background: rgba(74,145,216,0.12); border: 1px solid rgba(74,145,216,0.24); }
+    .camp-pill.paused { color: var(--amber); background: rgba(228,173,82,0.12); border: 1px solid rgba(228,173,82,0.28); }
+    .camp-pill.ended { color: var(--faint); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
+    .camp-card { padding: 16px; display: flex; flex-direction: column; gap: 11px; cursor: pointer; }
+    .camp-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .camp-top h3 { margin: 0; font: 600 13px var(--font-display); }
+    .camp-top small { display: block; margin-top: 2px; color: var(--faint); font-size: 10px; }
+    .camp-bars { display: flex; flex-direction: column; gap: 7px; }
+    .camp-bar-row { display: flex; align-items: center; gap: 8px; font-size: 9px; color: var(--muted); }
+    .camp-bar-row .camp-bar-label { width: 46px; flex: none; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; font-size: 8px; }
+    .camp-bar { flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07); overflow: hidden; }
+    .camp-bar span { display: block; height: 100%; border-radius: 3px; background: var(--blue); }
+    .camp-bar span.spend { background: var(--gold-soft); }
+    .camp-bar span.over { background: var(--red); }
+    .camp-bar-val { width: 74px; flex: none; text-align: right; font-variant-numeric: tabular-nums; color: var(--text); }
+    .camp-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 10px; color: var(--faint); }
+    .camp-stat-row { display: flex; flex-wrap: wrap; gap: 12px; font-size: 10px; color: var(--muted); }
+    .camp-stat-row b { color: var(--text); font-variant-numeric: tabular-nums; }
+    .pace-ok { color: var(--green); font-weight: 700; }
+    .pace-warn { color: var(--amber); font-weight: 700; }
+    .pace-over { color: var(--red); font-weight: 700; }
+    /* The report is a document, not a dashboard: light, plain, printable as-is. */
+    .report-modal { max-width: 860px; width: 96vw; }
+    .report-sheet { background: #ffffff; color: #14202b; padding: 34px 38px; border-radius: 10px; max-height: 74vh; overflow: auto; font-family: var(--font-body); }
+    .report-sheet h1 { font: 700 23px var(--font-display); margin: 0 0 3px; color: #0f1b25; }
+    .report-sheet h2 { font: 700 12px var(--font-display); margin: 26px 0 9px; text-transform: uppercase; letter-spacing: 1px; color: #6b7c8b; border-bottom: 1px solid #e3e9ee; padding-bottom: 5px; }
+    .report-sheet .rp-sub { color: #6b7c8b; font-size: 12px; margin-bottom: 3px; }
+    .report-sheet table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .report-sheet th { text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #6b7c8b; padding: 7px 8px; border-bottom: 1px solid #e3e9ee; }
+    .report-sheet td { padding: 7px 8px; border-bottom: 1px solid #f0f4f7; font-variant-numeric: tabular-nums; }
+    .report-sheet tr.rp-total td { font-weight: 700; border-top: 2px solid #e3e9ee; border-bottom: none; }
+    .rp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+    .rp-kpi { background: #f5f8fa; border: 1px solid #e3e9ee; border-radius: 8px; padding: 12px 13px; }
+    .rp-kpi .rp-k { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #6b7c8b; font-weight: 700; }
+    .rp-kpi .rp-v { font: 700 19px var(--font-display); margin-top: 5px; color: #0f1b25; }
+    .rp-note { font-size: 11px; color: #6b7c8b; margin-top: 6px; }
+    .rp-foot { margin-top: 26px; padding-top: 11px; border-top: 1px solid #e3e9ee; font-size: 10px; color: #8a99a6; }
+    @media print {
+      body * { visibility: hidden !important; }
+      #reportModal, #reportModal * { visibility: visible !important; }
+      #reportModal { position: absolute; inset: 0; background: #fff; display: block !important; }
+      #reportModal .no-print { display: none !important; }
+      .report-modal { max-width: none; width: auto; box-shadow: none; }
+      .report-sheet { max-height: none; overflow: visible; padding: 0; border-radius: 0; }
+    }
     .chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
     .chip { padding: 3px 8px; color: var(--muted); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 5px; font-size: 9px; }
     .chip.muted { color: var(--faint); }
@@ -679,6 +728,9 @@
     .tier-heading h2 { font-size: 15px; }
     .tier-heading span { color: var(--faint); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
     .kim-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    /* A card that needs the whole row — the delivery table is 8 columns wide and is
+       unreadable squeezed into a third of the overlay. */
+    .kim-grid .card-wide { grid-column: 1 / -1; }
     .kim-row { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 12px; }
     .kim-row:first-of-type { border-top: 0; }
     .kim-row > span { color: var(--faint); white-space: nowrap; }
@@ -768,6 +820,7 @@
       <button class="nav-button" data-view="businesses"><i data-lucide="building-2" class="icon"></i>Businesses</button>
       <button class="nav-button" data-view="projects"><i data-lucide="folder-kanban" class="icon"></i>Projects</button>
       <button class="nav-button" data-view="clients"><i data-lucide="handshake" class="icon"></i>Clients</button>
+      <button class="nav-button hidden" id="campaignsNav" data-view="campaigns"><i data-lucide="megaphone" class="icon"></i>Campaigns</button>
       <button class="nav-button hidden" data-admin-only data-view="billing"><i data-lucide="receipt" class="icon"></i>Billing</button>
       <button class="nav-button" data-view="staff"><i data-lucide="users" class="icon"></i>Staff</button>
       <button class="nav-button" data-view="blockers"><i data-lucide="triangle-alert" class="icon"></i>Blockers<span class="nav-badge">3</span></button>
@@ -920,6 +973,28 @@
       <div class="grid" id="clientsGrid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
     </section>
 
+    <section class="view" id="campaigns">
+      <div class="view-header">
+        <div><div class="eyebrow">Advertising</div><h1>Campaigns</h1><p>What's running for each client — flight dates, budget, delivery — and a client-ready report on demand.</p></div>
+        <button class="button hidden" type="button" id="campaignAdd"><i data-lucide="plus" class="icon-sm"></i>New campaign</button>
+      </div>
+      <div class="report-controls">
+        <div class="period-tabs">
+          <button class="filter active" data-campaign-filter="all">All</button>
+          <button class="filter" data-campaign-filter="live">Live</button>
+          <button class="filter" data-campaign-filter="planning">Planning</button>
+          <button class="filter" data-campaign-filter="paused">Paused</button>
+          <button class="filter" data-campaign-filter="ended">Ended</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select class="input" id="campaignClientFilter" style="max-width:210px"><option value="all">All clients</option></select>
+          <input class="input" id="campaignSearch" placeholder="Search campaigns…" autocomplete="off" style="max-width:220px">
+        </div>
+      </div>
+      <div class="grid metrics" id="campaignMetrics" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="grid" id="campaignsGrid" style="grid-template-columns:repeat(auto-fill,minmax(340px,1fr))"></div>
+    </section>
+
     <section class="view" id="billing">
       <div class="view-header">
         <div><div class="eyebrow">Money</div><h1>Billing</h1><p>Whether each client retainer got invoiced and paid. A draft appears here on the 1st of every month — Single Brain tracks the status; the invoice itself still goes out from wherever you send it.</p></div>
@@ -1042,15 +1117,17 @@
         <article class="card tut-card"><div class="tut-num">17</div><h3>CWD Brain Chat</h3><p>Ask <b>CWD Brain Chat</b> (sidebar, or the floating wolf icon bottom-right) anything about your portfolio — priorities, a business, a project, what's overdue. It reads your live portfolio and tasks.</p></article>
         <article class="card tut-card"><div class="tut-num">18</div><h3>Files &amp; attachments</h3><p>Attach files to any <b>business, project, campaign,</b> or <b>task</b> — for reference, review, or storage. Open the item and click <b>Files</b>, or use the <b>📎</b> on a task row. The first time, click <b>Connect Your Drive</b> — a window pops up to authorize Google, then closes on its own. Then <b>upload</b> a file (or drag &amp; drop), <b>add a link</b>, or <b>share</b> any file by link or with a specific person. Each file has two removal options: the <b>✕</b> takes it off this item but keeps it in Drive, and <b>🗑 Delete from Google Drive</b> moves the actual file to your Drive trash. A <b>📎</b> badge on each card shows how many files are attached.</p></article>
         <article class="card tut-card"><div class="tut-num">19</div><h3>Team Calendar &amp; scheduling</h3><p>The <b>Team Calendar</b> sits right on your <b>Overview</b> — it opens on your own day; the dropdown switches to any teammate, and you can switch between <b>Day</b> and <b>Week</b>. Collapse it with the chevron if you'd rather not see it, or hit <b>Full view</b> (or the sidebar's <b>Team Calendar</b>) for the big version. The first time, click <b>Reconnect Google</b> (we added calendar access). To see someone's events, they share their Google Calendar with you first (Google Calendar → Settings → Share with specific people → "See all event details"). Click <b>New meeting</b> to create a Google Calendar event and email invites to teammates and clients you add.</p></article>
+        <article class="card tut-card"><div class="tut-num">20</div><h3>Campaigns</h3><p><b>Campaigns</b> (sidebar) is where advertising work lives. A campaign belongs to a <b>client</b> and runs over a <b>flight</b> (start and end dates) against a <b>budget</b>. Each card shows two bars: how much of the flight has <b>elapsed</b> and how much of the budget you've <b>spent</b> — so being ahead or behind shows up instantly, with a <b>pacing</b> read underneath. Open one to add <b>line items</b> (a separate flight, creative or market, each with its own dates and budget) and to <b>+ Log</b> delivery after each reporting period — impressions, reach, clicks and spend. <b>Click rate, CPM and CPC are worked out for you</b>. Hit <b>Client report</b> for a clean summary you can print, save as a PDF, or copy as plain text into an email. You can manage campaigns for any business you've been <b>granted</b> — you don't need to be a Super Admin.</p></article>
       </div>
 
       <div class="tut-section" data-admin-only>Team &amp; admin</div>
       <div class="grid tutorial-grid" data-admin-only>
-        <article class="card tut-card"><div class="tut-num">20</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
-        <article class="card tut-card"><div class="tut-num">21</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table sets who owns each open task — a whole <b>team</b>, one or more <b>people</b>, or both. Assignees always see their tasks, even without full business access, and are <b>emailed when they're added</b>. You can promote up to <b>2</b> people to Super Admin.</p></article>
-        <article class="card tut-card"><div class="tut-num">22</div><h3>Teams</h3><p>Create reusable <b>teams</b> in Super Admin — name a group (Design, Dev, Content…) and pick its members. When you assign a task to a team, <b>every member</b> sees it and gets an email. You can add extra individuals on top of a team, and Quick Add's <b>Assign to</b> picker does the same.</p></article>
-        <article class="card tut-card"><div class="tut-num">23</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
-        <article class="card tut-card"><div class="tut-num">24</div><h3>Billing</h3><p><b>Billing</b> (sidebar, admins only) answers one question per client: <b>did we invoice it, and did they pay?</b> On the <b>1st of every month</b> a <b>draft</b> invoice appears for each active client with a monthly retainer, due on the 15th. Move it along with one click — <b>Sent</b> when it goes out, <b>Paid</b> when the money lands (today's date is stamped for you; <b>Undo</b> reverses it). The tiles show <b>Billed / Collected / Outstanding / Overdue</b> for the month you pick, or all time. Anything marked sent and past its due date turns <b>Overdue</b>, and whoever owns that client gets a reminder email — at most once a day, and <b>never sent to the client</b>. Use <b>New invoice</b> for one-offs, and the <b>✎</b> to record the real invoice number. Single Brain <b>tracks</b> billing; it doesn't issue the invoice — that still goes out from wherever it does today. Each client's detail view has the same <b>Invoices</b> card.</p></article>
+        <article class="card tut-card"><div class="tut-num">21</div><h3>Super Admin</h3><p><b>Super Admin</b> (sidebar, admins only) manages your team. Add members or <b>guests</b> by email, set each person's <b>role</b>, and grant access to specific businesses and projects — staff only see what you share with them.</p></article>
+        <article class="card tut-card"><div class="tut-num">22</div><h3>Assigning work</h3><p>In Super Admin, the <b>Assign tasks</b> table sets who owns each open task — a whole <b>team</b>, one or more <b>people</b>, or both. Assignees always see their tasks, even without full business access, and are <b>emailed when they're added</b>. You can promote up to <b>2</b> people to Super Admin.</p></article>
+        <article class="card tut-card"><div class="tut-num">23</div><h3>Teams</h3><p>Create reusable <b>teams</b> in Super Admin — name a group (Design, Dev, Content…) and pick its members. When you assign a task to a team, <b>every member</b> sees it and gets an email. You can add extra individuals on top of a team, and Quick Add's <b>Assign to</b> picker does the same.</p></article>
+        <article class="card tut-card"><div class="tut-num">24</div><h3>One shared brain</h3><p>Everything syncs to a shared repository the whole team (and our AI tools) works from. It auto-syncs morning and evening; hit <b>Sync</b> (⟳) anytime to push immediately. Found a bug or have an idea? Use the <b>Feedback</b> tab.</p></article>
+        <article class="card tut-card"><div class="tut-num">25</div><h3>Billing</h3><p><b>Billing</b> (sidebar, admins only) answers one question per client: <b>did we invoice it, and did they pay?</b> On the <b>1st of every month</b> a <b>draft</b> invoice appears for each active client with a monthly retainer, due on the 15th. Move it along with one click — <b>Sent</b> when it goes out, <b>Paid</b> when the money lands (today's date is stamped for you; <b>Undo</b> reverses it). The tiles show <b>Billed / Collected / Outstanding / Overdue</b> for the month you pick, or all time. Anything marked sent and past its due date turns <b>Overdue</b>, and whoever owns that client gets a reminder email — at most once a day, and <b>never sent to the client</b>. Use <b>New invoice</b> for one-offs, and the <b>✎</b> to record the real invoice number. Single Brain <b>tracks</b> billing; it doesn't issue the invoice — that still goes out from wherever it does today. Each client's detail view has the same <b>Invoices</b> card.</p></article>
+        <article class="card tut-card"><div class="tut-num">26</div><h3>Locking a business</h3><p>Some work shouldn't be visible to the whole team. Edit a business and set <b>Access</b> to <b>Locked</b> — from then on <b>only people explicitly granted that business</b> can see it, and that includes Super Admins: being an admin is <b>not</b> enough. Everything under it follows the lock — its clients, campaigns, tasks, invoices and files — and it's filtered on the server, not just hidden on screen. Grant people in <b>Super Admin → edit a person → businesses</b>. The <b>account owner always keeps access</b>, so a business can never end up locked away from everyone.</p></article>
       </div>
     </section>
 
@@ -1297,6 +1374,20 @@
     </section>
   </div>
 
+  <div class="modal-overlay hidden" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportTitle" aria-hidden="true">
+    <section class="task-modal report-modal">
+      <header class="modal-header no-print">
+        <div><div class="eyebrow">Client report</div><h2 id="reportTitle">—</h2></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="button secondary" type="button" id="reportCopy"><i data-lucide="copy" class="icon-sm"></i>Copy text</button>
+          <button class="button" type="button" id="reportPrint"><i data-lucide="printer" class="icon-sm"></i>Print / PDF</button>
+          <button class="icon-button modal-close" type="button" data-close-report aria-label="Close" title="Close"><i data-lucide="x" class="icon"></i></button>
+        </div>
+      </header>
+      <div class="report-sheet" id="reportSheet"></div>
+    </section>
+  </div>
+
   <div class="modal-overlay hidden" id="feedbackModal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
     <section class="task-modal">
       <header class="modal-header">
@@ -1492,7 +1583,10 @@
     let ME = { email: "", role: "staff", is_super_admin: false, can_assign: false, businesses: null, projects: null };
     let adminUsers = [];
     let clients = [], recurring = [], staffList = [], pins = [], clientContacts = [], clientNotes = [], teams = [], invoices = [];
-    const canSeeBusiness = name => ME.is_super_admin || ME.businesses == null || ME.businesses.includes(name);
+    // A restricted business is withheld from promoted Super Admins too, and the server
+    // says so by sending an explicit list instead of null. So the list wins over the
+    // admin flag — checking is_super_admin first would show what the server withheld.
+    const canSeeBusiness = name => ME.businesses == null || ME.businesses.includes(name);
     const canSeeProject = name => ME.is_super_admin || ME.projects == null || ME.projects.includes(name);
     const visibleBusinesses = () => businesses.filter(b => canSeeBusiness(b.name));
     const visibleProjects = () => projects.filter(p => canSeeProject(p.name) && (p.kind || "project") !== "campaign");
@@ -1510,7 +1604,10 @@
         if (!res.ok) return;
         const c = await res.json();
         if (Array.isArray(c.businesses) && c.businesses.length) {
-          businesses = c.businesses.map(b => ({ id: b.id, initials: b.initials || initialsOf(b.name), name: b.name, tier: b.tier || 9, owner: b.owner || "—", state: b.state || "", status: b.status || "active", kind: b.kind || "business", parentId: b.parent_id || null, parentName: b.parent_name || null }));
+          // `restricted` must survive this mapping: the business editor round-trips
+          // whatever is here, so dropping it would silently unlock a locked business
+          // the moment anyone opened and saved it.
+          businesses = c.businesses.map(b => ({ id: b.id, initials: b.initials || initialsOf(b.name), name: b.name, tier: b.tier || 9, owner: b.owner || "—", state: b.state || "", status: b.status || "active", kind: b.kind || "business", parentId: b.parent_id || null, parentName: b.parent_name || null, restricted: b.restricted ? 1 : 0, notes: b.notes || "", parent_id: b.parent_id || null }));
         }
         if (Array.isArray(c.projects) && c.projects.length) {
           projects = c.projects.map(p => ({ id: p.id, name: p.name, business: p.business || "", state: p.state || p.status || "", badge: p.badge || "", status: p.status || "active", next: p.next_action || "", due: p.due || "—", kind: p.kind || "project" }));
@@ -2403,6 +2500,294 @@
       finally { btn.disabled = false; }
     });
 
+    // ---------- Campaigns ----------
+    // Every derived number (spend %, pacing, CTR, CPM) arrives computed from the
+    // server so the cards, the detail view and the client report can't disagree.
+    let campaigns = [], campaignManage = [], campaignFilter = "all", campaignClient = "all", campaignQuery = "";
+    async function loadCampaigns() {
+      try {
+        const res = await fetch("/api/campaigns", { credentials: "same-origin" });
+        if (!res.ok) { campaigns = []; campaignManage = []; return; }
+        const d = await res.json();
+        campaigns = d.campaigns || [];
+        campaignManage = d.can_manage || [];
+      } catch (e) { /* keep what we had */ }
+    }
+    const campStatus = c => (c.status || "planning").toLowerCase();
+    const fmtInt = n => Number(n || 0).toLocaleString();
+    const fmtPct = (v, d = 1) => (v == null ? "—" : Number(v).toFixed(d) + "%");
+    const fmtRate = (v, money) => v == null ? "—" : (money ? "$" + Number(v).toFixed(2) : Number(v).toFixed(2) + "%");
+    const campClientName = c => c.client_name || "No client";
+    function paceLabel(p, c) {
+      // Pacing = share of budget spent ÷ share of flight elapsed, as a percentage.
+      // 100 is exactly on plan; the bands are deliberately wide because ad delivery
+      // is lumpy and a 10% wobble is not news. Only meaningful while a campaign is
+      // actually running with delivery logged — calling a finished campaign with no
+      // numbers "behind plan" would be stating a judgement about nothing.
+      if (c && (c.flight || {}).state !== "running") return "";
+      if (c && !((c.totals || {}).periods)) return "";
+      if (p == null) return "";
+      const cls = p > 115 ? "pace-over" : (p < 85 ? "pace-warn" : "pace-ok");
+      const word = p > 115 ? "ahead of plan" : (p < 85 ? "behind plan" : "on pace");
+      return `<span class="${cls}">${Math.round(p)}% · ${word}</span>`;
+    }
+    function campBar(label, pct, cls, valText) {
+      const w = pct == null ? 0 : Math.max(0, Math.min(100, pct));
+      const over = pct != null && pct > 100;
+      return `<div class="camp-bar-row"><span class="camp-bar-label">${escapeHTML(label)}</span>
+        <span class="camp-bar"><span class="${cls}${over ? " over" : ""}" style="width:${w}%"></span></span>
+        <span class="camp-bar-val">${escapeHTML(valText)}</span></div>`;
+    }
+    function campaignCard(c) {
+      const t = c.totals || {}, f = c.flight || {};
+      const days = f.state === "running" ? `${f.days_left}d left`
+        : f.state === "upcoming" ? "starts " + (f.start_on || "—")
+        : f.state === "ended" ? "ended " + (f.end_on || "—") : "no dates set";
+      return `<article class="card camp-card" data-campaign-open="${c.id}" role="button" tabindex="0">
+        <div class="camp-top">
+          <div><h3>${escapeHTML(c.name)}</h3><small>${escapeHTML(campClientName(c))}${c.channel ? " · " + escapeHTML(c.channel) : ""}</small></div>
+          <span class="camp-pill ${campStatus(c)}">${escapeHTML(campStatus(c))}</span>
+        </div>
+        <div class="camp-bars">
+          ${campBar("Flight", f.elapsed_pct, "", days)}
+          ${campBar("Spend", t.spend_pct, "spend", fmtMoney(t.spend) + (t.budget ? " / " + fmtMoney(t.budget) : ""))}
+        </div>
+        <div class="camp-stat-row">
+          <span>Impressions <b>${fmtInt(t.impressions)}</b></span>
+          <span>CTR <b>${fmtRate(t.ctr)}</b></span>
+          <span>CPM <b>${fmtRate(t.cpm, true)}</b></span>
+        </div>
+        <div class="camp-foot"><span>${paceLabel(t.pace_pct, c) || escapeHTML(c.next_action || "")}</span><span>${t.periods ? t.periods + " report" + (t.periods === 1 ? "" : "s") : "no delivery logged"}</span></div>
+      </article>`;
+    }
+    function filteredCampaigns() {
+      let list = campaigns.slice();
+      if (campaignFilter !== "all") list = list.filter(c => campStatus(c) === campaignFilter);
+      if (campaignClient !== "all") list = list.filter(c => String(c.client_id || "") === campaignClient);
+      const q = campaignQuery.trim().toLowerCase();
+      if (q) list = list.filter(c => (c.name || "").toLowerCase().includes(q)
+        || campClientName(c).toLowerCase().includes(q)
+        || (c.channel || "").toLowerCase().includes(q)
+        || (c.business || "").toLowerCase().includes(q));
+      return list;
+    }
+    function renderCampaigns() {
+      const grid = $("#campaignsGrid");
+      if (!grid) return;
+      const nav = $("#campaignsNav");
+      // The whole section only exists for people with campaigns or the right to make one.
+      if (nav) nav.classList.toggle("hidden", !campaigns.length && !campaignManage.length);
+      const addBtn = $("#campaignAdd");
+      if (addBtn) addBtn.classList.toggle("hidden", !campaignManage.length);
+      const sel = $("#campaignClientFilter");
+      if (sel) {
+        const seen = new Map();
+        campaigns.forEach(c => { if (c.client_id) seen.set(String(c.client_id), campClientName(c)); });
+        sel.innerHTML = '<option value="all">All clients</option>'
+          + [...seen].sort((a, b) => a[1].localeCompare(b[1]))
+              .map(([id, nm]) => `<option value="${escapeHTML(id)}" ${campaignClient === id ? "selected" : ""}>${escapeHTML(nm)}</option>`).join("");
+      }
+      const live = campaigns.filter(c => campStatus(c) === "live");
+      const sum = (list, f) => list.reduce((n, c) => n + (Number(f(c)) || 0), 0);
+      const booked = sum(campaigns, c => (c.totals || {}).budget);
+      const spent = sum(campaigns, c => (c.totals || {}).spend);
+      $("#campaignMetrics").innerHTML = [
+        metricCard("Live now", live.length, `${campaigns.length} campaign${campaigns.length === 1 ? "" : "s"} total`),
+        metricCard("Booked", fmtMoney(booked), "across every campaign"),
+        metricCard("Spend to date", fmtMoney(spent), booked ? fmtPct(spent / booked * 100) + " of booked" : "no budgets set"),
+        metricCard("Impressions", fmtInt(sum(campaigns, c => (c.totals || {}).impressions)), `${sum(campaigns, c => (c.totals || {}).clicks).toLocaleString()} clicks`),
+      ].join("");
+      const livePaced = live.filter(c => (c.totals || {}).periods && (c.flight || {}).state === "running"
+        && (c.totals || {}).pace_pct != null);
+      const paceNote = $("#campaignMetrics .metric:nth-child(3) .metric-note");
+      if (paceNote && livePaced.length) {
+        const avg = livePaced.reduce((n, c) => n + c.totals.pace_pct, 0) / livePaced.length;
+        paceNote.innerHTML = paceLabel(avg) + " (live avg)";
+      }
+      const list = filteredCampaigns();
+      grid.innerHTML = list.length ? list.map(campaignCard).join("")
+        : `<div class="task-empty">${campaigns.length ? "No campaigns match this filter."
+            : (campaignManage.length ? "No campaigns yet. Hit “New campaign” to set one up for a client." : "No campaigns are shared with you.")}</div>`;
+      renderIcons();
+    }
+    $("#campaignsGrid").addEventListener("click", e => {
+      const card = e.target.closest("[data-campaign-open]");
+      if (card) { const c = campaigns.find(x => String(x.id) === card.dataset.campaignOpen); if (c) openCampaignDetail(c); }
+    });
+    $("#campaignsGrid").addEventListener("keydown", e => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const card = e.target.closest("[data-campaign-open]");
+      if (card) { e.preventDefault(); const c = campaigns.find(x => String(x.id) === card.dataset.campaignOpen); if (c) openCampaignDetail(c); }
+    });
+    $$("[data-campaign-filter]").forEach(b => b.addEventListener("click", () => {
+      $$("[data-campaign-filter]").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      campaignFilter = b.dataset.campaignFilter;
+      renderCampaigns();
+    }));
+    $("#campaignClientFilter").addEventListener("change", e => { campaignClient = e.target.value; renderCampaigns(); });
+    $("#campaignSearch").addEventListener("input", e => { campaignQuery = e.target.value; renderCampaigns(); });
+    $("#campaignAdd").addEventListener("click", () => openEntityEditor("campaign", { business: campaignManage[0] || "", status: "planning" }));
+
+    let detailCampaignId = null;
+    function canManageCampaign(c) { return campaignManage.includes(c.business); }
+    function openCampaignDetail(c) {
+      detailCampaignId = c.id;
+      const t = c.totals || {}, f = c.flight || {};
+      const mine = canManageCampaign(c);
+      const rows = [
+        ["Client", campClientName(c)], ["Business", c.business || "—"],
+        ["Status", campStatus(c)], ["Channel", c.channel || "—"], ["Goal", c.goal || "—"],
+        ["Flight", (c.start_on && c.end_on) ? `${c.start_on} → ${c.end_on} (${f.days_total}d, ${f.state})` : "not scheduled"],
+        ["Budget", fmtMoney(t.budget)], ["Spend to date", `${fmtMoney(t.spend)} (${fmtPct(t.spend_pct)})`],
+        ["Remaining", t.remaining == null ? "—" : fmtMoney(t.remaining)],
+        ["Pacing", paceLabel(t.pace_pct, c) || "—"],
+        ["Owner", c.owner ? assigneeName(c.owner) : "—"], ["Next action", c.next_action || "—"],
+      ];
+      const actions = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:13px">
+        <button class="button" type="button" data-camp-report="${c.id}"><i data-lucide="file-text" class="icon-sm"></i>Client report</button>
+        ${mine ? `<button class="button secondary" type="button" data-camp-edit="${c.id}"><i data-lucide="pencil" class="icon-sm"></i>Edit campaign</button>` : ""}
+      </div>`;
+      // Same .kim-row shape as overviewCard(), but hand-rolled because the pacing
+      // value is pre-rendered HTML (a coloured span) rather than plain text.
+      const overview = `<article class="card"><div class="kim-group-head"><h3>Overview</h3><span class="camp-pill ${campStatus(c)}">${escapeHTML(campStatus(c))}</span></div>
+        ${rows.filter(([, v]) => v && v !== "—").map(([k, v]) =>
+          `<div class="kim-row"><span>${escapeHTML(k)}</span><b>${String(v).startsWith("<span") ? v : escapeHTML(String(v))}</b></div>`).join("")}${actions}</article>`;
+      const itemAdd = mine ? ` · <button class="mini-add" type="button" data-camp-item-add="${c.id}">+ Add</button>` : "";
+      const items = c.items || [];
+      const itemsCard = `<article class="card"><div class="kim-group-head"><h3>Line items</h3><span>${items.length ? fmtMoney(t.items_budget) + " allocated" : "0"}${itemAdd}</span></div>${items.length
+        ? `<ul class="kim-list">${items.map(i => `<li><i data-lucide="list" class="icon-sm"></i><span class="kim-name">${escapeHTML(i.name)}${i.market ? " · " + escapeHTML(i.market) : ""}</span><span class="kim-meta"><span class="kim-due">${escapeHTML(i.start_on && i.end_on ? i.start_on + "→" + i.end_on : "no dates")}</span><span class="inv-amount">${escapeHTML(fmtMoney(i.budget))}</span>${mine ? `<button class="task-btn" type="button" data-camp-item-edit="${i.id}" aria-label="Edit line item" title="Edit or delete"><i data-lucide="pencil" class="icon-sm"></i></button>` : ""}</span></li>`).join("")}</ul>`
+        : '<div class="dependency-empty" style="padding:16px 4px">No line items. Add one per flight, market or creative.</div>'}</article>`;
+      const metAdd = mine ? ` · <button class="mini-add" type="button" data-camp-metric-add="${c.id}">+ Log</button>` : "";
+      const ms = c.metrics || [];
+      const itemName = id => (items.find(i => i.id === id) || {}).name || "whole campaign";
+      const metricsCard = `<article class="card card-wide"><div class="kim-group-head"><h3>Delivery</h3><span>${ms.length} period${ms.length === 1 ? "" : "s"}${metAdd}</span></div>${ms.length
+        ? `<div class="table-wrap"><table class="table"><thead><tr><th>Period</th><th>Line item</th><th>Impr.</th><th>Clicks</th><th>CTR</th><th>CPM</th><th>Spend</th>${mine ? "<th></th>" : ""}</tr></thead><tbody>${ms.map(m => `<tr>
+            <td>${escapeHTML(m.period_start || "—")}${m.period_end ? " → " + escapeHTML(m.period_end) : ""}</td>
+            <td>${escapeHTML(itemName(m.item_id))}</td>
+            <td>${fmtInt(m.impressions)}</td><td>${fmtInt(m.clicks)}</td>
+            <td>${escapeHTML(fmtRate(m.ctr))}</td><td>${escapeHTML(fmtRate(m.cpm, true))}</td>
+            <td>${escapeHTML(fmtMoney(m.spend))}</td>
+            ${mine ? `<td><button class="task-btn" type="button" data-camp-metric-edit="${m.id}" aria-label="Edit delivery" title="Edit or delete"><i data-lucide="pencil" class="icon-sm"></i></button></td>` : ""}</tr>`).join("")}
+            <tr class="rp-total"><td>Total</td><td></td><td>${fmtInt(t.impressions)}</td><td>${fmtInt(t.clicks)}</td><td>${escapeHTML(fmtRate(t.ctr))}</td><td>${escapeHTML(fmtRate(t.cpm, true))}</td><td>${escapeHTML(fmtMoney(t.spend))}</td>${mine ? "<td></td>" : ""}</tr>
+          </tbody></table></div>`
+        : '<div class="dependency-empty" style="padding:16px 4px">No delivery logged yet. Use + Log after each reporting period.</div>'}</article>`;
+      const work = tasks.filter(x => (x.client || "") === (c.client_name || " "));
+      const workCard = groupCard("Work for this client", work, "No tasks for this client yet.");
+      showDetail("Campaign", c.name, `${campClientName(c)} · ${c.business || ""}`,
+        overview + itemsCard + metricsCard + workCard, c.business,
+        { kind: "campaign", ref: c.name }, null);
+    }
+    async function refreshCampaignDetail() {
+      await loadCampaigns();
+      renderCampaigns();
+      const c = campaigns.find(x => String(x.id) === String(detailCampaignId));
+      if (c && !$("#detailModal").classList.contains("hidden")) openCampaignDetail(c);
+    }
+    $("#detailGrid").addEventListener("click", e => {
+      const openCamp = e.target.closest("[data-campaign-open]");
+      if (openCamp) {
+        const c = campaigns.find(x => String(x.id) === openCamp.dataset.campaignOpen);
+        if (c) { openCampaignDetail(c); return; }
+      }
+      const cAddFor = e.target.closest("[data-client-campaign-add]");
+      if (cAddFor) {
+        const cl = clients.find(x => String(x.id) === cAddFor.dataset.clientCampaignAdd);
+        if (cl) openEntityEditor("campaign", { business: cl.business, client_id: cl.id, status: "planning" });
+        return;
+      }
+      const rep = e.target.closest("[data-camp-report]"), cEdit = e.target.closest("[data-camp-edit]");
+      const iAdd = e.target.closest("[data-camp-item-add]"), iEdit = e.target.closest("[data-camp-item-edit]");
+      const mAdd = e.target.closest("[data-camp-metric-add]"), mEdit = e.target.closest("[data-camp-metric-edit]");
+      const camp = campaigns.find(x => String(x.id) === String(detailCampaignId));
+      if (rep) return openCampaignReport(rep.dataset.campReport);
+      if (cEdit && camp) return openEntityEditor("campaign", camp);
+      if (iAdd) return openEntityEditor("campaign-item", { campaign_id: Number(iAdd.dataset.campItemAdd) });
+      if (iEdit && camp) {
+        const it = (camp.items || []).find(x => String(x.id) === iEdit.dataset.campItemEdit);
+        if (it) openEntityEditor("campaign-item", { ...it, campaign_id: camp.id });
+        return;
+      }
+      if (mAdd) return openEntityEditor("campaign-metric", { campaign_id: Number(mAdd.dataset.campMetricAdd) });
+      if (mEdit && camp) {
+        const m = (camp.metrics || []).find(x => String(x.id) === mEdit.dataset.campMetricEdit);
+        if (m) openEntityEditor("campaign-metric", { ...m, campaign_id: camp.id });
+      }
+    });
+
+    // ---------- Client-ready campaign report ----------
+    let reportText = "";
+    async function openCampaignReport(cid) {
+      try {
+        const res = await fetch(`/api/campaigns/${cid}/report`, { credentials: "same-origin" });
+        if (!res.ok) { showToast("Couldn't build the report."); return; }
+        renderReport(await res.json());
+        showModal("#reportModal");
+      } catch (e) { showToast("Couldn't reach the server."); }
+    }
+    function renderReport(r) {
+      const c = r.campaign, t = c.totals || {}, f = c.flight || {};
+      const items = c.items || [], ms = c.metrics || [];
+      $("#reportTitle").textContent = `${c.name} — ${campClientName(c)}`;
+      const kpi = (k, v) => `<div class="rp-kpi"><div class="rp-k">${escapeHTML(k)}</div><div class="rp-v">${escapeHTML(v)}</div></div>`;
+      const flight = (c.start_on && c.end_on) ? `${c.start_on} to ${c.end_on}` : "Dates not set";
+      const itemRows = items.map(i => {
+        const d = i.delivered || {};
+        return `<tr><td>${escapeHTML(i.name)}</td><td>${escapeHTML(i.market || "—")}</td>
+          <td>${escapeHTML(i.start_on && i.end_on ? i.start_on + " – " + i.end_on : "—")}</td>
+          <td>${escapeHTML(fmtMoney(i.budget))}</td><td>${fmtInt(d.impressions)}</td>
+          <td>${fmtInt(d.clicks)}</td><td>${escapeHTML(fmtRate(d.ctr))}</td><td>${escapeHTML(fmtMoney(d.spend))}</td></tr>`;
+      }).join("");
+      const periodRows = ms.map(m => `<tr><td>${escapeHTML(m.period_start || "—")}${m.period_end ? " – " + escapeHTML(m.period_end) : ""}</td>
+        <td>${fmtInt(m.impressions)}</td><td>${fmtInt(m.reach)}</td><td>${fmtInt(m.clicks)}</td>
+        <td>${escapeHTML(fmtRate(m.ctr))}</td><td>${escapeHTML(fmtRate(m.cpm, true))}</td><td>${escapeHTML(fmtMoney(m.spend))}</td></tr>`).join("");
+      const workRows = (r.work_completed || []).map(w => `<tr><td>${escapeHTML(w.completed_on || "—")}</td><td>${escapeHTML(w.name)}</td></tr>`).join("");
+      $("#reportSheet").innerHTML = `
+        <h1>${escapeHTML(c.name)}</h1>
+        <div class="rp-sub">${escapeHTML(campClientName(c))}${c.channel ? " · " + escapeHTML(c.channel) : ""}</div>
+        <div class="rp-sub">${escapeHTML(flight)}${c.goal ? " · " + escapeHTML(c.goal) : ""}</div>
+        <div class="rp-kpis">
+          ${kpi("Impressions", fmtInt(t.impressions))}
+          ${kpi("Clicks", fmtInt(t.clicks))}
+          ${kpi("Click rate", fmtRate(t.ctr))}
+          ${kpi("Spend", fmtMoney(t.spend))}
+        </div>
+        ${t.budget ? `<div class="rp-note">${fmtMoney(t.spend)} of a ${fmtMoney(t.budget)} budget delivered (${fmtPct(t.spend_pct)})${f.state === "running" ? `, with ${f.days_left} days left in flight` : ""}.</div>` : ""}
+        ${t.reach_best_period ? `<div class="rp-note">Best single-period reach: ${fmtInt(t.reach_best_period)} listeners. Reach is not summed across periods — the same listener is often reached more than once.</div>` : ""}
+        ${periodRows ? `<h2>Delivery by period</h2><table><thead><tr><th>Period</th><th>Impressions</th><th>Reach</th><th>Clicks</th><th>CTR</th><th>CPM</th><th>Spend</th></tr></thead><tbody>${periodRows}
+          <tr class="rp-total"><td>Total</td><td>${fmtInt(t.impressions)}</td><td>—</td><td>${fmtInt(t.clicks)}</td><td>${escapeHTML(fmtRate(t.ctr))}</td><td>${escapeHTML(fmtRate(t.cpm, true))}</td><td>${escapeHTML(fmtMoney(t.spend))}</td></tr></tbody></table>` : ""}
+        ${itemRows ? `<h2>Line items</h2><table><thead><tr><th>Line item</th><th>Market</th><th>Dates</th><th>Budget</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Spend</th></tr></thead><tbody>${itemRows}</tbody></table>` : ""}
+        ${workRows ? `<h2>Work completed</h2><table><thead><tr><th>Date</th><th>What was done</th></tr></thead><tbody>${workRows}</tbody></table>` : ""}
+        ${c.next_action ? `<h2>What's next</h2><div>${escapeHTML(c.next_action)}</div>` : ""}
+        <div class="rp-foot">Prepared ${escapeHTML(r.generated_on || "")} by ${escapeHTML(emailName(r.generated_by || ""))} · Clever Wolf Digital</div>`;
+      // Plain-text twin for "Copy text", so it can be pasted into an email as-is.
+      const L = [];
+      L.push(`${c.name} — ${campClientName(c)}`, flight, "");
+      L.push(`Impressions: ${fmtInt(t.impressions)}`, `Clicks: ${fmtInt(t.clicks)}`,
+             `Click rate: ${fmtRate(t.ctr)}`, `Spend: ${fmtMoney(t.spend)}${t.budget ? " of " + fmtMoney(t.budget) : ""}`);
+      if (ms.length) {
+        L.push("", "Delivery by period:");
+        ms.forEach(m => L.push(`  ${m.period_start || "?"}${m.period_end ? " – " + m.period_end : ""}: ${fmtInt(m.impressions)} impressions, ${fmtInt(m.clicks)} clicks, ${fmtRate(m.ctr)} CTR, ${fmtMoney(m.spend)}`));
+      }
+      if (items.length) {
+        L.push("", "Line items:");
+        items.forEach(i => L.push(`  ${i.name}${i.market ? " (" + i.market + ")" : ""}: ${fmtMoney(i.budget)} budget, ${fmtInt((i.delivered || {}).impressions)} impressions`));
+      }
+      if ((r.work_completed || []).length) {
+        L.push("", "Work completed:");
+        r.work_completed.forEach(w => L.push(`  ${w.completed_on || ""} ${w.name}`));
+      }
+      if (c.next_action) L.push("", "What's next:", "  " + c.next_action);
+      L.push("", `Prepared ${r.generated_on || ""} · Clever Wolf Digital`);
+      reportText = L.join("\n");
+    }
+    $("#reportPrint").addEventListener("click", () => window.print());
+    $("#reportCopy").addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(reportText); showToast("Report copied"); }
+      catch (e) { showToast("Couldn't copy — use Print / PDF instead."); }
+    });
+    $$("[data-close-report]").forEach(b => b.addEventListener("click", () => hideModal("#reportModal")));
+
     let detailClientId = null;
     function openClientDetail(c) {
       detailClientId = c.id;
@@ -2433,9 +2818,15 @@
       const invCard = ME.is_super_admin ? `<article class="card"><div class="kim-group-head"><h3>Invoices</h3><span>${inv.length ? (owed ? fmtMoney(owed) + " outstanding" : "all paid") : "0"}${invAdd}</span></div>${inv.length
         ? `<ul class="kim-list" id="clientInvoiceList">${inv.slice(0, 12).map(i => `<li><i data-lucide="receipt" class="icon-sm"></i><span class="kim-name">${escapeHTML(i.period ? monthLabel(i.period) : "One-off")}${i.reference ? " · " + escapeHTML(i.reference) : ""}</span><span class="kim-meta"><span class="inv-amount">${escapeHTML(fmtMoney(i.amount))}</span>${invPill(i)}${invoiceActions(i)}</span></li>`).join("")}</ul>`
         : '<div class="dependency-empty" style="padding:16px 4px">No invoices yet. Set a monthly retainer and one is drafted on the 1st.</div>'}</article>` : "";
+      // Campaigns running for this client — the way in from Clients to the ad work.
+      const camps = campaigns.filter(x => String(x.client_id) === String(c.id));
+      const campAdd = campaignManage.includes(c.business) ? ` · <button class="mini-add" type="button" data-client-campaign-add="${c.id}">+ Add</button>` : "";
+      const campCard = (camps.length || campAdd) ? `<article class="card"><div class="kim-group-head"><h3>Campaigns</h3><span>${camps.length}${campAdd}</span></div>${camps.length
+        ? `<ul class="kim-list">${camps.map(x => `<li data-campaign-open="${x.id}" role="button" tabindex="0" style="cursor:pointer"><i data-lucide="megaphone" class="icon-sm"></i><span class="kim-name">${escapeHTML(x.name)}</span><span class="kim-meta"><span class="kim-due">${escapeHTML(fmtMoney((x.totals || {}).spend))} / ${escapeHTML(fmtMoney((x.totals || {}).budget))}</span><span class="camp-pill ${campStatus(x)}">${escapeHTML(campStatus(x))}</span></span></li>`).join("")}</ul>`
+        : '<div class="dependency-empty" style="padding:16px 4px">No campaigns for this client yet.</div>'}</article>` : "";
       const mine = tasks.filter(t => (t.client || "") === c.name);
       const taskCard = groupCard("Tasks for this client", mine, "No tasks generated yet.");
-      showDetail("Client", c.name, `${c.business || ""} · ${c.status || ""}`, overviewCard(rows) + contactsCard + notesCard + recCard + invCard + taskCard, c.business, { kind: "client", ref: c.name }, { type: "client", item: c });
+      showDetail("Client", c.name, `${c.business || ""} · ${c.status || ""}`, overviewCard(rows) + contactsCard + notesCard + recCard + invCard + campCard + taskCard, c.business, { kind: "client", ref: c.name }, { type: "client", item: c });
     }
     async function removeContact(id) {
       try {
@@ -2491,6 +2882,14 @@
       if (type === "parent-select") return `<option value="">— None (top level) —</option>` + businesses.map(b => `<option value="${b.id}" ${String(b.id) === String(current) ? "selected" : ""}>${escapeHTML(b.name)}</option>`).join("");
       if (type === "client-select") return `<option value="">— None —</option>` + clients.map(c => `<option value="${c.id}" ${String(c.id) === String(current) ? "selected" : ""}>${escapeHTML(c.name)}</option>`).join("");
       if (type === "assignee-select") return `<option value="">Unassigned</option>` + assignableUsers().map(u => `<option value="${escapeHTML(u.email)}" ${u.email === current ? "selected" : ""}>${escapeHTML(u.name)}</option>`).join("");
+      // Only businesses this person may actually run campaigns for — offering one
+      // they'd be 403'd on is a worse experience than not offering it.
+      if (type === "campaign-business-select") return campaignManage.map(b => `<option value="${escapeHTML(b)}" ${b === current ? "selected" : ""}>${escapeHTML(b)}</option>`).join("");
+      if (type === "campaign-item-select") {
+        const camp = campaigns.find(x => String(x.id) === String(entityItem && entityItem.campaign_id));
+        return `<option value="">Whole campaign</option>` + ((camp && camp.items) || []).map(i =>
+          `<option value="${i.id}" ${String(i.id) === String(current) ? "selected" : ""}>${escapeHTML(i.name)}</option>`).join("");
+      }
       return "";
     }
     const ENTITY_SPECS = {
@@ -2503,6 +2902,7 @@
         { k: "kind", label: "Type", type: "select", opts: [["business", "Business"], ["subbusiness", "Sub-business"]] },
         { k: "parent_id", label: "Parent business", type: "parent-select" },
         { k: "initials", label: "Initials (optional)" },
+        { k: "restricted", label: "Access", type: "select", opts: [["0", "Everyone with access (normal)"], ["1", "Locked — only people granted this business"]] },
       ] },
       project: { title: "Project", ep: "projects", fixed: { kind: "project" }, fields: [
         { k: "name", label: "Name", req: true, full: true },
@@ -2551,6 +2951,44 @@
         { k: "estimate_min", label: "Est. minutes", type: "number" },
         { k: "assignee", label: "Assign to", type: "assignee-select" },
       ] },
+      campaign: { title: "Campaign", ep: "campaigns", fields: [
+        { k: "name", label: "Campaign name", req: true, full: true },
+        { k: "business", label: "Business", type: "campaign-business-select" },
+        { k: "client_id", label: "Client", type: "client-select" },
+        { k: "status", label: "Status", type: "select", opts: [["planning", "Planning"], ["live", "Live"], ["paused", "Paused"], ["ended", "Ended"]] },
+        { k: "channel", label: "Channel (e.g. Spotify Audio)" },
+        { k: "goal", label: "Goal / objective" },
+        { k: "start_on", label: "Flight starts (YYYY-MM-DD)" },
+        { k: "end_on", label: "Flight ends (YYYY-MM-DD)" },
+        { k: "budget", label: "Budget ($)", type: "number" },
+        { k: "owner", label: "Owner", type: "assignee-select" },
+        { k: "next_action", label: "Next action", full: true },
+      ] },
+      // Line items and delivery hang off a campaign, so they POST to a nested path
+      // and PUT/DELETE against their own id — hence the explicit url builders.
+      "campaign-item": { title: "Line item", ep: "campaign-items", parent: "campaign_id",
+        postUrl: it => `/api/campaigns/${it.campaign_id}/items`,
+        itemUrl: it => `/api/campaign-items/${it.id}`, fields: [
+        { k: "name", label: "Line item name", req: true, full: true },
+        { k: "market", label: "Market (e.g. Oahu)" },
+        { k: "creative", label: "Creative / asset" },
+        { k: "start_on", label: "Starts (YYYY-MM-DD)" },
+        { k: "end_on", label: "Ends (YYYY-MM-DD)" },
+        { k: "budget", label: "Budget ($)", type: "number" },
+        { k: "notes", label: "Notes", type: "textarea", full: true },
+      ] },
+      "campaign-metric": { title: "Delivery", ep: "campaign-metrics", parent: "campaign_id", noName: true,
+        postUrl: it => `/api/campaigns/${it.campaign_id}/metrics`,
+        itemUrl: it => `/api/campaign-metrics/${it.id}`, fields: [
+        { k: "period_start", label: "Period start (YYYY-MM-DD)", full: true },
+        { k: "period_end", label: "Period end (YYYY-MM-DD)" },
+        { k: "item_id", label: "Line item", type: "campaign-item-select" },
+        { k: "impressions", label: "Impressions", type: "number" },
+        { k: "clicks", label: "Clicks", type: "number" },
+        { k: "reach", label: "Reach (listeners)", type: "number" },
+        { k: "spend", label: "Spend ($)", type: "number" },
+        { k: "notes", label: "Notes", type: "textarea", full: true },
+      ] },
       // An invoice has no `name`, so it opts out of the shared name-required check.
       invoice: { title: "Invoice", ep: "invoices", noName: true, fields: [
         { k: "client_id", label: "Client", type: "client-select", req: true, full: true },
@@ -2595,7 +3033,8 @@
     }
     async function reloadCatalogAndRender() {
       await loadCatalog();
-      renderBusinessGrid(); renderProjectGrid(); renderCampaignGrid(); renderTeam(); renderClientsView(); renderBilling(); renderBusinessDropdown(); renderTaskClientDropdown(); renderPins();
+      await loadCampaigns();
+      renderBusinessGrid(); renderProjectGrid(); renderCampaignGrid(); renderTeam(); renderClientsView(); renderBilling(); renderCampaigns(); renderBusinessDropdown(); renderTaskClientDropdown(); renderPins();
       renderIcons();
     }
     async function saveEntity() {
@@ -2611,6 +3050,7 @@
       if (entityType === "business") {
         payload.parent_id = payload.parent_id ? Number(payload.parent_id) : null;
         payload.tier = payload.tier ? Number(payload.tier) : null;
+        payload.restricted = Number(payload.restricted) ? 1 : 0;
       }
       if (entityType === "recurring" && payload.client_id) {
         const c = clients.find(x => String(x.id) === String(payload.client_id));
@@ -2625,11 +3065,29 @@
           payload[k] = String(payload[k] || "").trim() || null;
         }
       }
+      if (entityType === "campaign") {
+        payload.client_id = payload.client_id ? Number(payload.client_id) : null;
+        if (!payload.business) { $("#entityError").textContent = "Pick a business."; return; }
+        for (const k of ["start_on", "end_on", "channel", "goal", "next_action"]) {
+          payload[k] = String(payload[k] || "").trim() || null;
+        }
+      }
+      if (entityType === "campaign-item" || entityType === "campaign-metric") {
+        // The parent id lives on the item being edited, never in the form.
+        payload.campaign_id = Number((entityItem || {}).campaign_id) || null;
+        if (!payload.campaign_id) { $("#entityError").textContent = "Missing campaign."; return; }
+        if (entityType === "campaign-metric") payload.item_id = payload.item_id ? Number(payload.item_id) : null;
+        for (const k of ["start_on", "end_on", "period_start", "period_end", "market", "creative"]) {
+          if (k in payload) payload[k] = String(payload[k] || "").trim() || null;
+        }
+      }
       if (entityType === "contact") {
         if (!String(payload.name || "").trim() && !String(payload.email || "").trim()) { $("#entityError").textContent = "Add a name or an email."; return; }
       } else if (!spec.noName && !String(payload.name || "").trim()) { $("#entityError").textContent = "Name is required."; return; }
       const editing = entityItem && entityItem.id;
-      const url = editing ? `/api/${spec.ep}/${entityItem.id}` : `/api/${spec.ep}`;
+      const url = editing
+        ? (spec.itemUrl ? spec.itemUrl(entityItem) : `/api/${spec.ep}/${entityItem.id}`)
+        : (spec.postUrl ? spec.postUrl({ ...payload, ...(entityItem || {}) }) : `/api/${spec.ep}`);
       const btn = $("#entitySave"); btn.disabled = true;
       try {
         const res = await fetch(url, { method: editing ? "PUT" : "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -2638,6 +3096,7 @@
           hideModal("#entityModal");
           await reloadCatalogAndRender();
           if (spec.ep === "contacts" || spec.ep === "invoices") { const cc = clients.find(x => String(x.id) === String(detailClientId)); if (cc && !$("#detailModal").classList.contains("hidden")) openClientDetail(cc); }
+          if (["campaigns", "campaign-items", "campaign-metrics"].includes(spec.ep)) await refreshCampaignDetail();
           showToast(spec.title + (editing ? " updated" : " added"));
         }
         else $("#entityError").textContent = d.detail || ("Error " + res.status);
@@ -2649,11 +3108,13 @@
       if (!spec || !entityItem || !entityItem.id) return;
       const btn = $("#entityDelete"); btn.disabled = true;
       try {
-        const res = await fetch(`/api/${spec.ep}/${entityItem.id}`, { method: "DELETE", credentials: "same-origin" });
+        const delUrl = spec.itemUrl ? spec.itemUrl(entityItem) : `/api/${spec.ep}/${entityItem.id}`;
+        const res = await fetch(delUrl, { method: "DELETE", credentials: "same-origin" });
         if (res.ok) {
           hideModal("#entityModal");
           await reloadCatalogAndRender();
           if (spec.ep === "contacts" || spec.ep === "invoices") { const cc = clients.find(x => String(x.id) === String(detailClientId)); if (cc && !$("#detailModal").classList.contains("hidden")) openClientDetail(cc); }
+          if (["campaigns", "campaign-items", "campaign-metrics"].includes(spec.ep)) await refreshCampaignDetail();
           showToast(spec.title + " deleted");
         }
         else { const d = await res.json().catch(() => ({})); showToast("Couldn't delete: " + (d.detail || res.status)); }
@@ -3583,6 +4044,7 @@
       if (id === "feedback") renderFeedback();
       if (id === "mytasks") renderMyTasks();
       if (id === "billing") renderBilling();
+      if (id === "campaigns") renderCampaigns();
       if (id === "overview") renderDashCalendar();
       if (id === "schedule") renderSchedule();
       $("#breadcrumbName").textContent = id.charAt(0).toUpperCase() + id.slice(1);
@@ -3723,6 +4185,7 @@
       renderTeam();
       renderClientsView();
       renderBilling();
+      renderCampaigns();
       renderBusinessDropdown();
       renderTaskClientDropdown();
       // Task rows are role-dependent now (the ✎ edit button), and they're first drawn
@@ -3739,6 +4202,7 @@
         await loadCatalog();
         await loadPins();
         await loadAttachCounts();
+        await loadCampaigns();
         const res = await fetch("/api/me", { credentials: "same-origin" });
         if (!res.ok) { applyAccess(); return; }
         const me = await res.json();
@@ -3804,6 +4268,16 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.9", date: "Aug 6, 2026", items: [
+        "New Campaigns view: run advertising campaigns for a client with a flight (start and end dates), a budget, line items, and delivery numbers.",
+        "Each campaign shows two bars at a glance — how much of the flight has elapsed, and how much of the budget you've spent — plus whether you're on pace, ahead, or behind.",
+        "Line items let one campaign hold several flights, creatives or markets, each with its own dates and budget.",
+        "Log delivery after each reporting period (impressions, reach, clicks, spend). Click rate, CPM and CPC are calculated for you and never stored, so they can't go stale.",
+        "“Client report” builds a clean, client-ready summary — headline numbers, delivery by period, line items, work completed during the flight, and what's next. Print it, save it as a PDF, or copy it as plain text for an email.",
+        "Campaigns also appear inside each client, so their work, money and advertising sit together.",
+        "Locked businesses: a business can now be restricted to only the people granted it — and unlike everything else, being a Super Admin is NOT enough to see one. Its clients, campaigns, tasks, invoices and files all follow the lock.",
+        "Set it under the business's Access field. The account owner always keeps access, so a business can never be locked away from everyone.",
+      ] },
       { version: "2.8", date: "Aug 6, 2026", items: [
         "New Billing view (Super Admins only): every client retainer, and whether it's been invoiced and paid.",
         "On the 1st of each month a draft invoice appears automatically for each active client with a monthly retainer, due on the 15th.",
@@ -4078,6 +4552,7 @@
       { view: "overview", sel: "#userAvatar", title: "Skip the authenticator", body: "Click your initials to add a passkey — then sign in with Face ID, Touch ID, or Windows Hello instead of a 6-digit code. Your authenticator stays as a backup." },
       { view: "overview", sel: "#patchOpen", title: "What's new", body: "New features land here after each update. Click What's new anytime and use ← → to browse past release notes." },
       { title: "Teams & assigning work", body: "Assign a task to a whole team, one or more people, or both — use the Assign to picker in Quick Add. Everyone on a task sees it and is emailed the moment they're added. Admins build reusable teams in Super Admin.", sel: null },
+      { view: "campaigns", sel: "#campaignsGrid", title: "Campaigns", body: "Advertising you run for a client: a flight, a budget, line items, and delivery logged each period. The two bars show how much of the flight has gone versus how much budget you've spent. Click a campaign for its numbers — and for a client-ready report you can print or paste into an email.", campaigns: true },
       { view: "billing", sel: "#billingMetrics", title: "Billing", body: "Did we invoice this client, and did they pay? A draft appears for every monthly retainer on the 1st; one click marks it sent, then paid. Anything past due turns Overdue and emails whoever owns that client — never the client.", admin: true },
       { title: "You're all set!", body: "That's the tour. Open the Tutorial tab anytime to replay it or read the full guide.", sel: null },
     ];
@@ -4122,7 +4597,8 @@
       }, 70);
     }
     function startTour() {
-      TOUR = TOUR_STEPS.filter(s => !s.admin || ME.is_super_admin);
+      TOUR = TOUR_STEPS.filter(s => (!s.admin || ME.is_super_admin)
+        && (!s.campaigns || campaigns.length || campaignManage.length));
       tourActive = true; tourI = 0; $("#tourBlocker").classList.remove("hidden"); renderTour();
     }
     function endTour() {

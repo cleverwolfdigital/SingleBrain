@@ -37,7 +37,10 @@ All other files are secondary. Prioritize revenue actions over new builds.
   + **editing any task**, teams/multi-assignee,
   businesses/projects/clients, **client billing** (admin-only invoice tracking: auto-drafted monthly
   retainer invoices, draft→sent→paid, overdue reminders to the client's owner — it never invoices the
-  client itself), **file attachments + Google Drive**, calendar, reports, journal) are
+  client itself), **campaigns** (client + flight + budget, line items, per-period delivery with derived
+  CTR/CPM/CPC, and a client-ready report), **locked businesses** (visible only to explicitly-granted
+  people — Super Admin is deliberately NOT enough), **file attachments + Google Drive**, calendar,
+  reports, journal) are
   listed canonically in `singlebrain-app/app/api.py` (`DASHBOARD_FEATURES`). When a feature changes,
   update that list **plus** the tutorial, guided tour, and patch notes together, then deploy
   (git push + `scp` to the VPS). Old Cloudflare site + `website/ai/index.html` are retired.

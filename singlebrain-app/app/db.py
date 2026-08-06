@@ -39,12 +39,21 @@ _COLUMN_MIGRATIONS = {
         "state": "TEXT",
         "kind": "TEXT DEFAULT 'business'",
         "parent_id": "INTEGER",
+        "restricted": "INTEGER DEFAULT 0",   # locked to explicitly-granted people
     },
     "projects": {
         "state": "TEXT",
         "badge": "TEXT",
         "kind": "TEXT DEFAULT 'project'",
         "priority": "TEXT",
+        # Campaign fields — null on ordinary projects.
+        "client_id": "INTEGER",
+        "client_name": "TEXT",
+        "start_on": "TEXT",       # flight start
+        "end_on": "TEXT",         # flight end
+        "budget": "REAL",
+        "goal": "TEXT",
+        "channel": "TEXT",
     },
     "staff": {
         "email": "TEXT",

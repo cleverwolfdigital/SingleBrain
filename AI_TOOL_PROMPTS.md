@@ -101,6 +101,14 @@ On each request:
    clients + recurring tasks, pins, productivity reports, journal, and FILES — attach files to any
    business/campaign/project/task (Files button, or the paperclip on a task), Connect Your Drive
    (popup), upload/link/share (by link or with a person), plus Calendar on Overview and What's new.
+   CAMPAIGNS: advertising run for a client over a flight (start/end) against a budget, with line items
+   (separate flights/creatives/markets) and delivery logged per period (impressions, reach, clicks,
+   spend). CTR/CPM/CPC are always calculated, never stored; reach is best-period, never summed. Two bars
+   show flight elapsed vs budget spent, plus pacing. "Client report" produces a printable/copyable
+   client-ready summary. Manageable by anyone GRANTED that business — not just Super Admins.
+   LOCKED BUSINESSES: a business set to Access = Locked is visible ONLY to people granted it explicitly —
+   Super Admin is NOT enough, and everything under it (clients, campaigns, tasks, invoices, files)
+   inherits the lock server-side. The configured account owner always keeps access.
    BILLING (Super Admins only — it isn't in the sidebar for anyone else): a draft invoice is created
    for each active client on a monthly retainer on the 1st, due the 15th; one click moves it
    draft → sent → paid ("paid" stamps today). Billed / Collected / Outstanding / Overdue totals per
