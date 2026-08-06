@@ -1986,7 +1986,14 @@
         bizSel.insertAdjacentHTML("beforeend", `<option value="${escapeHTML(t.business)}">${escapeHTML(t.business)}</option>`);
       }
       bizSel.value = t.business;
-      $("#taskClient").value = t.client || "";
+      // Same for the client: the catalog only carries clients under businesses this
+      // person can see, so a task linked to one outside that would silently lose its
+      // client the moment they saved an unrelated edit.
+      const clientSel = $("#taskClient");
+      if (t.client && ![...clientSel.options].some(o => o.value === t.client)) {
+        clientSel.insertAdjacentHTML("beforeend", `<option value="${escapeHTML(t.client)}">${escapeHTML(t.client)}</option>`);
+      }
+      clientSel.value = t.client || "";
       $("#taskCategory").value = t.category || "";
       $("#taskPriority").value = t.priority || "Medium";
       $("#taskDueDate").value = t.dueDate || "";
@@ -4268,6 +4275,12 @@
 
     // Patch notes — a dismissible "what's new" notice. Bump the top version on each release.
     const PATCH_NOTES = [
+      { version: "2.10", date: "Aug 6, 2026", items: [
+        "Access now works the same on the server as it does on screen: you're only sent the businesses, clients, contacts, updates and recurring tasks you've actually been given access to.",
+        "Before this, the data for every business was sent to your browser and simply hidden — anyone signed in could have read it. Now it never leaves the server.",
+        "Your pinned items drop off the sidebar automatically if you lose access to what they point at.",
+        "Tasks assigned to you in a business you don't otherwise have access to keep working exactly as before — you still see them, edit them, and run their timers.",
+      ] },
       { version: "2.9", date: "Aug 6, 2026", items: [
         "New Campaigns view: run advertising campaigns for a client with a flight (start and end dates), a budget, line items, and delivery numbers.",
         "Each campaign shows two bars at a glance — how much of the flight has elapsed, and how much of the budget you've spent — plus whether you're on pace, ahead, or behind.",

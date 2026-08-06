@@ -39,7 +39,9 @@ All other files are secondary. Prioritize revenue actions over new builds.
   retainer invoices, draft→sent→paid, overdue reminders to the client's owner — it never invoices the
   client itself), **campaigns** (client + flight + budget, line items, per-period delivery with derived
   CTR/CPM/CPC, and a client-ready report), **locked businesses** (visible only to explicitly-granted
-  people — Super Admin is deliberately NOT enough), **file attachments + Google Drive**, calendar,
+  people — Super Admin is deliberately NOT enough), **server-side access scoping** (`/api/catalog` sends
+  only what you've been granted; staff/teams stay whole so names resolve; assigned tasks outside your
+  access still work), **file attachments + Google Drive**, calendar,
   reports, journal) are
   listed canonically in `singlebrain-app/app/api.py` (`DASHBOARD_FEATURES`). When a feature changes,
   update that list **plus** the tutorial, guided tour, and patch notes together, then deploy

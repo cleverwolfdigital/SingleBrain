@@ -106,6 +106,10 @@ On each request:
    spend). CTR/CPM/CPC are always calculated, never stored; reach is best-period, never summed. Two bars
    show flight elapsed vs budget spent, plus pacing. "Client report" produces a printable/copyable
    client-ready summary. Manageable by anyone GRANTED that business — not just Super Admins.
+   ACCESS SCOPING: users are only SENT the businesses they've been granted (plus those businesses'
+   clients, contacts, updates, recurring tasks) — enforced server-side, not just hidden. Staff and teams
+   stay complete so assignee names resolve. A task assigned to someone outside their access still works
+   normally (see, edit, timer); stale pins drop off the sidebar.
    LOCKED BUSINESSES: a business set to Access = Locked is visible ONLY to people granted it explicitly —
    Super Admin is NOT enough, and everything under it (clients, campaigns, tasks, invoices, files)
    inherits the lock server-side. The configured account owner always keeps access.

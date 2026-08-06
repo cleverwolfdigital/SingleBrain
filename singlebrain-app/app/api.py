@@ -130,6 +130,14 @@ def _require_business_visible(email, name):
         raise HTTPException(403, "You don't have access to that business.")
 
 
+def _require_business_unlocked(email, name):
+    """Weaker guard for TASK writes. Being assigned a task in a business you were
+    never granted is normal and supported — an assignee must still be able to edit
+    their own task. Only a LOCKED business refuses here."""
+    if name and name in _hidden_businesses(email):
+        raise HTTPException(403, "You don't have access to that business.")
+
+
 def _access_lists(email):
     """(businesses, projects) a user may view. (None, None) for admins = everything.
 
@@ -399,7 +407,7 @@ def create_task(t: TaskIn, request: Request):
     current = auth.current_user(request)
     # Filing work under a locked business you can't see would create a task that
     # immediately vanishes from your own list — refuse it plainly instead.
-    _require_business_visible(current, t.business)
+    _require_business_unlocked(current, t.business)
     if _can_assign(current):
         people = _clean_emails(([t.assignee] if t.assignee else []) + list(t.assignees or []))
         team_id = t.team_id or None
@@ -453,8 +461,8 @@ def update_task(task_id: int, t: TaskIn, request: Request):
     if t.priority not in ("High", "Medium", "Low"):
         raise HTTPException(422, "Priority must be High, Medium, or Low.")
     est = t.estimate_min if (t.estimate_min and t.estimate_min > 0) else None
-    _require_business_visible(actor, before.get("business"))
-    _require_business_visible(actor, t.business)
+    _require_business_unlocked(actor, before.get("business"))
+    _require_business_unlocked(actor, t.business)
     db.execute(
         "UPDATE tasks SET name=?, business=?, category=?, priority=?, due=?, notes=?, "
         "estimate_min=?, client=? WHERE id=?",
@@ -748,6 +756,12 @@ DASHBOARD_FEATURES = (
     "during the flight, what's next — printable to PDF or copyable as plain text for an email. Campaigns "
     "also show inside each client. You may manage campaigns for any business you've been GRANTED — Super "
     "Admin is not required.\n"
+    "- Access scoping: the dashboard only SENDS a user the businesses they've been granted, plus those "
+    "businesses' clients, contacts, updates and recurring tasks. It is enforced server-side, not merely "
+    "hidden in the interface. Staff and teams are the deliberate exception — they stay complete so "
+    "assignee names resolve everywhere. A task ASSIGNED to someone in a business they don't otherwise "
+    "have access to still works normally: they see it, can edit it, and can run its timer. Pins to "
+    "something a user can no longer see disappear from their sidebar.\n"
     "- Locked (restricted) businesses: a business can be set to Access = Locked when editing it. Then ONLY "
     "people explicitly granted that business can see it — and unlike every other rule in this app, being a "
     "Super Admin is NOT enough. Its clients, campaigns, tasks, invoices and files all inherit the lock, "
@@ -1036,9 +1050,18 @@ def admin_set_access(email: str, body: AccessIn, request: Request):
 @app.get("/api/catalog")
 def catalog_all(request: Request):
     viewer = auth.current_user(request)
-    # A locked business is filtered out HERE, server-side. Hiding it in the frontend
-    # would leave the whole record one /api/catalog call away from anyone signed in.
-    hidden = _hidden_businesses(viewer)
+    # The catalog is filtered HERE, server-side, to exactly what this viewer may see.
+    # It used to return the whole portfolio to anyone signed in and rely on the
+    # frontend to hide the rest — which left every business and client one
+    # /api/catalog call away from any staff account.
+    #
+    # _access_lists() already folds both rules into one answer: (None, None) means
+    # unrestricted access, and a list means "these only" — for ordinary staff that's
+    # their grants, and for an admin being withheld a LOCKED business it's everything
+    # except that. So this single filter covers both cases.
+    allowed_biz, allowed_proj = _access_lists(viewer)
+    allowed_biz = None if allowed_biz is None else set(allowed_biz)
+    allowed_proj = set(allowed_proj or [])
     biz = db.query("SELECT * FROM businesses ORDER BY COALESCE(tier, 9), name")
     names = {b["id"]: b["name"] for b in biz}
     for b in biz:
@@ -1048,17 +1071,24 @@ def catalog_all(request: Request):
     recurring = db.query("SELECT * FROM recurring_tasks ORDER BY id")
     contacts = db.query("SELECT * FROM client_contacts ORDER BY id")
     notes = db.query("SELECT * FROM client_notes ORDER BY id DESC")
-    if hidden:
-        hidden_ids = {b["id"] for b in biz if b["name"] in hidden}
-        biz = [b for b in biz if b["name"] not in hidden
-               and b.get("parent_id") not in hidden_ids]
-        projects = [p for p in projects if (p.get("business") or "") not in hidden]
-        gone = {c["id"] for c in clients if (c.get("business") or "") in hidden}
-        clients = [c for c in clients if c["id"] not in gone]
-        recurring = [r for r in recurring if r.get("client_id") not in gone
-                     and (r.get("business") or "") not in hidden]
-        contacts = [c for c in contacts if c.get("client_id") not in gone]
-        notes = [n for n in notes if n.get("client_id") not in gone]
+    if allowed_biz is not None:
+        biz = [b for b in biz if b["name"] in allowed_biz]
+        kept_ids = {b["id"] for b in biz}
+        for b in biz:
+            # Don't name a parent they can't see.
+            if b.get("parent_id") not in kept_ids:
+                b["parent_name"] = None
+        projects = [p for p in projects
+                    if (p.get("business") or "") in allowed_biz or p["name"] in allowed_proj]
+        clients = [c for c in clients if (c.get("business") or "") in allowed_biz]
+        kept_clients = {c["id"] for c in clients}
+        recurring = [r for r in recurring
+                     if (r.get("client_id") in kept_clients if r.get("client_id")
+                         else (r.get("business") or "") in allowed_biz)]
+        contacts = [c for c in contacts if c.get("client_id") in kept_clients]
+        notes = [n for n in notes if n.get("client_id") in kept_clients]
+    # staff and teams stay whole on purpose: every screen resolves assignee emails to
+    # names through them, so filtering them would turn teammates into raw emails.
     return {
         "businesses": biz,
         "projects": projects,
@@ -2666,8 +2696,28 @@ class PinIn(BaseModel):
 
 @app.get("/api/pins")
 def get_pins(request: Request):
+    """Only pins pointing at something the viewer can still see. A pin made before a
+    business was locked (or before access was revoked) would otherwise sit in the
+    sidebar naming it, and click through to nothing."""
     email = (auth.current_user(request) or "").strip().lower()
-    return db.query("SELECT kind, ref FROM user_pins WHERE email=? ORDER BY created_at", (email,))
+    rows = db.query("SELECT kind, ref FROM user_pins WHERE email=? ORDER BY created_at", (email,))
+    allowed_biz, allowed_proj = _access_lists(email)
+    if allowed_biz is None:
+        return rows
+    allowed_biz, allowed_proj = set(allowed_biz), set(allowed_proj or [])
+    client_biz = {c["name"]: (c.get("business") or "") for c in db.query("SELECT name, business FROM clients")}
+    project_biz = {p["name"]: (p.get("business") or "") for p in db.query("SELECT name, business FROM projects")}
+
+    def visible(kind, ref):
+        if kind == "business":
+            return ref in allowed_biz
+        if kind == "client":
+            return client_biz.get(ref, "") in allowed_biz
+        if kind in ("project", "campaign"):
+            return ref in allowed_proj or project_biz.get(ref, "") in allowed_biz
+        return False
+
+    return [r for r in rows if visible(r["kind"], r["ref"])]
 
 
 @app.post("/api/pins")
